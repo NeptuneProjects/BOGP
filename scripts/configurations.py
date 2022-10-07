@@ -11,7 +11,7 @@ import numpy as np
 
 from tritonoa.io import read_ssp
 
-SMOKE_TEST = True
+SMOKE_TEST = False
 
 
 def format_simstring(simulation_config):
