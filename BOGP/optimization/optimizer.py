@@ -199,8 +199,14 @@ class Optimizer:
             results = Results()
 
             X, y = _generate_initial_data()
-            logger.info(f"Initial candidates: {list(map(tuple, X.detach().cpu().numpy()))}")
-            mll, model = self.initialize_model(X, y, covar_module=self.config.kernel_func)
+            # X.to
+            logger.info(
+                f"Initial candidates: {list(map(tuple, X.detach().cpu().numpy()))}"
+            )
+            mll, model = self.initialize_model(
+                X, y, covar_module=self.config.kernel_func
+            )
+
             fit_gpytorch_model(mll)
 
             pbar = tqdm(
@@ -218,7 +224,9 @@ class Optimizer:
             for _ in pbar:
                 acqfunc = _get_acqfunc()
                 X_new, y_new = _optimize_acqf_and_get_observation(acqfunc)
-                logger.info(f"Iter {count} | New Candidates: {list(map(tuple, X_new.detach().cpu().numpy()))}")
+                logger.info(
+                    f"Iter {count} | New Candidates: {list(map(tuple, X_new.detach().cpu().numpy()))}"
+                )
                 results.append(Result(X, y, model, acqfunc, X_new, y_new))
 
                 X = torch.cat([X, X_new])
@@ -231,18 +239,23 @@ class Optimizer:
                     covar_module=self.config.kernel_func,
                 )
                 fit_gpytorch_model(mll)
+                logger.info(
+                    f"Iter {count} | CUDA Memory usage: {100 * torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated():.2f}%"
+                )
                 count += 1
 
             for p in model.parameters():
                 p.requires_grad = False
-            results.append(Result(X.detach().cpu(), y.detach().cpu(), model))
+            results.append(Result(X.detach().cpu(), y.detach().cpu(), model.to("cpu")))
             logger.info("Optimization completed.")
             return results
-        
+
         except:
             logger.exception("Exception raised in optimization loop.")
             raise Exception("Exception raised in optimization loop.")
-            # return results
+        # finally:
+        # return results
+        # TODO: Find way to return results object in case exception is raised.
 
     def save(self, path):
         torch.save(self._construct_dict(), path)
