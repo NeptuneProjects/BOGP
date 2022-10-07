@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+import copy
 from dataclasses import dataclass, field
 import logging
 import os
@@ -121,7 +122,7 @@ class Optimizer:
         else:
             self.device = torch.device("cpu")
         self.seed = seed
-        self.bounds = self.get_bounds(self.search_parameters).to(self.device)
+        self.bounds = self.get_bounds(self.search_parameters)
 
     def __del__(self):
         pass
@@ -149,14 +150,13 @@ class Optimizer:
             X = (self.bounds[0] - self.bounds[1]) * torch.rand(
                 self.config.n_warmup,
                 self.bounds.size(1),
-                device=self.device,
                 dtype=DTYPE,
-            ) + self.bounds[1].to(self.device)
+            ) + self.bounds[1]
             parameters = {
                 item["name"]: X[..., i] for i, item in enumerate(self.search_parameters)
             }
             y = self.obj_func.evaluate(parameters, self.fixed_parameters)
-            return X, y
+            return X.to(self.device), y.to(self.device)
 
         def _get_acqfunc():
             if self.config.acq_func.__name__[0] == "q":
@@ -175,7 +175,7 @@ class Optimizer:
         def _optimize_acqf_and_get_observation(acq_func):
             candidates, _ = optimize_acqf(
                 acq_function=acq_func,
-                bounds=self.bounds,
+                bounds=self.bounds.to(self.device),
                 q=self.config.q,
                 num_restarts=self.config.n_restarts,
                 raw_samples=self.config.raw_samples,
@@ -188,7 +188,7 @@ class Optimizer:
             }
             y_new = self.obj_func.evaluate(new_parameters, self.fixed_parameters)
 
-            return X_new, y_new
+            return X_new, y_new.to(self.device)
 
         try:
 
@@ -199,13 +199,15 @@ class Optimizer:
             results = Results()
 
             X, y = _generate_initial_data()
-            # X.to
+            logger.info(f"Device: {self.device}")
             logger.info(
                 f"Initial candidates: {list(map(tuple, X.detach().cpu().numpy()))}"
             )
             mll, model = self.initialize_model(
                 X, y, covar_module=self.config.kernel_func
             )
+            mll.to(self.device),
+            model.to(self.device)
 
             fit_gpytorch_model(mll)
 
@@ -227,7 +229,19 @@ class Optimizer:
                 logger.info(
                     f"Iter {count} | New Candidates: {list(map(tuple, X_new.detach().cpu().numpy()))}"
                 )
-                results.append(Result(X, y, model, acqfunc, X_new, y_new))
+                with torch.no_grad():
+                    saved_model = copy.deepcopy(model)
+                    saved_acqfunc = copy.deepcopy(acqfunc)
+                    results.append(
+                        Result(
+                            X.detach().cpu(),
+                            y.detach().cpu(),
+                            saved_model.to("cpu"),
+                            saved_acqfunc.to("cpu"),
+                            X_new.detach().cpu(),
+                            y_new.detach().cpu()
+                        )
+                    )
 
                 X = torch.cat([X, X_new])
                 y = torch.cat([y, y_new])
@@ -238,24 +252,30 @@ class Optimizer:
                     state_dict=model.state_dict(),
                     covar_module=self.config.kernel_func,
                 )
+                
                 fit_gpytorch_model(mll)
+                memory_free, memory_total = torch.cuda.mem_get_info(self.device.type + ':0')
                 logger.info(
-                    f"Iter {count} | CUDA Memory usage: {100 * torch.cuda.memory_allocated() / torch.cuda.max_memory_allocated():.2f}%"
+                    f"Iter {count} | CUDA Memory usage: {100 * (1 - memory_free / memory_total):.2f}%"
                 )
                 count += 1
 
-            for p in model.parameters():
-                p.requires_grad = False
-            results.append(Result(X.detach().cpu(), y.detach().cpu(), model.to("cpu")))
-            logger.info("Optimization completed.")
-            return results
+            with torch.no_grad():
+                results.append(
+                    Result(
+                        X.detach().cpu(),
+                        y.detach().cpu(),
+                        model.to("cpu")
+                    )
+                )
 
         except:
             logger.exception("Exception raised in optimization loop.")
             raise Exception("Exception raised in optimization loop.")
-        # finally:
-        # return results
-        # TODO: Find way to return results object in case exception is raised.
+        else:
+            logger.info("Optimization completed.")
+        finally:
+            return results
 
     def save(self, path):
         torch.save(self._construct_dict(), path)
