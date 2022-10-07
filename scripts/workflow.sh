@@ -6,6 +6,8 @@
 SIM="$1"
 JOBS=$2
 DEVICE=$(echo "$3" | awk '{print toupper($0)}')
+OFFSET=${4:-0}
+
 if [[ $SIM == "r" ]]
     then
         SIMDESC="range estimation"
@@ -24,5 +26,5 @@ elif [[ $DEVICE == "CUDA" ]]
     then
         find ./Data/Simulations/localization/queue/*.json \
         | parallel -j$JOBS --progress \
-        'CUDA_VISIBLE_DEVICES="$(({%}-1))" python3 ./Source/scripts/simulations.py '$SIM' {} --path ./Data/Simulations --device cuda'
+        'CUDA_VISIBLE_DEVICES="$(({%}-1+'$OFFSET'))" python3 ./Source/scripts/simulations.py '$SIM' {} --path ./Data/Simulations --device cuda'
 fi
