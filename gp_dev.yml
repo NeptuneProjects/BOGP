@@ -1,0 +1,27 @@
+name: gp
+channels:
+  - pytorch
+  - gpytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - botorch
+  - cmocean
+  # - cudatoolkit=11.3
+  - feather-format
+  - gpytorch
+  - jupyterlab
+  - matplotlib
+  - numpy
+  - pandas
+  - pip
+  - pytorch
+  - scikit-optimize
+  - scipy
+  - tqdm
+  - pip:
+    - git+https://github.com/NeptuneProjects/TritonOA.git
+    - gpytorch
+    - pyram
+    - pyro-ppl
