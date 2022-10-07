@@ -20,6 +20,7 @@ from tritonoa.kraken import run_kraken
 
 logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+logger.propagate = False
 logfmt = logging.Formatter(fmt="%(asctime)s | %(name)-27s | %(levelname)-8s | %(message)s")
 
 
@@ -70,6 +71,7 @@ class Simulator:
         logger.addHandler(fh)
         optimizer.logger.setLevel(logging.DEBUG)
         optimizer.logger.addHandler(fh)
+        optimizer.logger.propagate = False
         
         # config["simulation_config"].update(simulation)
 
