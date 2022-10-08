@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Script that aggregates results.
 Example usage:
-python3 ./Source/scripts/aggregate.py r 
+python3 ./Source/scripts/aggregate.py r l
 """
 from argparse import ArgumentParser
 from pathlib import Path
