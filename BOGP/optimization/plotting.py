@@ -77,6 +77,21 @@ def _plot_best_observations_confint(
     return ax
 
 
+def plot_performance_history(df, ax=None, label=None):
+    if ax is None:
+        ax = plt.gca()
+
+    mean = df.mean(axis=0).values
+    std = df.std(axis=0).values
+    ucb = mean + std
+    lcb = mean - std
+    evals = df.columns.to_numpy()
+
+    line, = ax.plot(evals, mean, label=label)
+    ax.fill_between(evals, lcb, ucb, alpha=0.2)
+    return line
+
+
 class ResultsPlotter:
     def __init__(self, optim: dict, results: list):
         self.optim = optim
@@ -96,7 +111,7 @@ class ResultsPlotter:
         reverse_x=False,
         reverse_y=False,
         ObjFunc=None,
-        objfunc_kwargs=None
+        objfunc_kwargs=None,
     ):
         if ObjFunc is None:
             ObjFunc = import_from_str(
@@ -388,6 +403,10 @@ class ResultsPlotter:
                 ax.set_xticklabels([])
                 ax.set_yticks([])
 
+                plt.suptitle(
+                    f"Evaluation {i + 1}: Estimated (True) Range = {self.results[-1].best_parameters[0]:.2f} ({self.optim['obj_func_kwargs']['parameters']['rec_r']}) | Depth = {self.results[-1].best_parameters[1]:.2f} ({self.optim['obj_func_kwargs']['parameters']['src_z']})"
+                )
+
             plt.show()
 
         return ax
@@ -472,8 +491,10 @@ class ResultsPlotter:
             **surf_kwargs,
         )
         cbar = plt.colorbar(im, ax=ax, **cbar_kwargs)
+        # Plot location of samples
         if (x1_sample is not None) and (x2_sample is not None):
             ax.scatter(x1_sample, x2_sample, **sample_kwargs)
+        # Plot location of candidates
         if x1_new is not None:
             try:
                 for item in x1_new:
@@ -488,6 +509,7 @@ class ResultsPlotter:
                 ax.axhline(x2_new, **line_kwargs)
         if (x1_new is not None) and (x2_new is not None) and show_next_sample:
             ax.scatter(x1_new, x2_new, **next_kwargs)
+        # Plot location of global optimum
         if show_optimum:
             ind1_max, ind2_max = np.unravel_index(np.argmax(y), y.shape)
             ax.scatter(x1[ind1_max, 0], x2[0, ind2_max], **optimum_kwargs)
