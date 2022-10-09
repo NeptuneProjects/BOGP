@@ -15,7 +15,7 @@ ROOT = Path.cwd() / "Data" / "Simulations"
 EXPERIMENT = ROOT / "localization"
 
 EVALUATIONS = {
-    "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement"],
+    "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
     # "acq_func": ["qExpectedImprovement"],
     "snr": ["inf", "20"],
     # "snr": ["inf"],
