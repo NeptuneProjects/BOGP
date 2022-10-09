@@ -141,7 +141,7 @@ class ResultsPlotter:
         for i, result in enumerate(results):
             mu, variance = self._evaluate_posterior(result.model.posterior, X_test)
 
-            fig = plt.figure(figsize=(6, 4))
+            fig = plt.figure(figsize=(6, 4), facecolor="white")
             gspec = GridSpec(2, 1, hspace=0.0, height_ratios=[3, 2])
 
             ax = fig.add_subplot(gspec[0])
@@ -249,7 +249,7 @@ class ResultsPlotter:
             x1 = result.X[:, idx1].detach().cpu().numpy().squeeze()
             x2 = result.X[:, idx2].detach().cpu().numpy().squeeze()
 
-            fig = plt.figure(figsize=(15, 3))
+            fig = plt.figure(figsize=(15, 3), facecolor="white")
             gspec = GridSpec(1, 5, wspace=0.0)
 
             # Plot objective function
