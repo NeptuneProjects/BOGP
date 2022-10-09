@@ -28,6 +28,7 @@ elif [[ $DEVICE == "CUDA" ]]
         | parallel -j$JOBS --progress \
         'CUDA_VISIBLE_DEVICES="$(({%}-1+'$OFFSET'))" python3 ./Source/scripts/simulations.py '$SIM' {} --path ./Data/Simulations --device cuda'
 fi
-
+python3 ./Source/scripts/aggregate.py r l
+python3 ./Source/scripts/aggregate.py s l
 # For debugging:
 # find ./Data/Simulations/localization/queue/*.json | parallel -j1 --progress 'CUDA_VISIBLE_DEVICES=1 python3 ./Source/scripts/simulations.py l {} --path ./Data/Simulations --device cuda'

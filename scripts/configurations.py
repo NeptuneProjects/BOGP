@@ -40,28 +40,28 @@ def gen_config_files(simulation):
     # Set random seed generator
     MAIN_SEED = 2009
     # Number of Monte Carlo simulations to run for each trial
-    N_SIM = 50 if not SMOKE_TEST else 2
+    N_SIM = 500 if not SMOKE_TEST else 2
 
     # Number of samples used to evaluate & fit surrogate model
     N_SAMPLES = 512
     # Number of random "warmup" samples to initialize BO loop
     N_WARMUP = 10 if not SMOKE_TEST else 2
     # Total number of evaluations (including warmup)
-    N_TOTAL = 503 if not SMOKE_TEST else 10
+    N_TOTAL = 1000 if not SMOKE_TEST else 10
 
     # ==========================================================================
     # ============= Edit this section to configure simulations =================
     # ==========================================================================
     # List of acquisition functions to evaluate
     ACQ_FUNCS = [
-        # {
-        #     "acq_func": "ExpectedImprovement",
-        #     "acq_func_kwargs": {"num_samples": N_SAMPLES},
-        # },
-        # {
-        #     "acq_func": "ProbabilityOfImprovement",
-        #     "acq_func_kwargs": {"num_samples": N_SAMPLES},
-        # },
+        {
+            "acq_func": "ExpectedImprovement",
+            "acq_func_kwargs": {"num_samples": N_SAMPLES},
+        },
+        {
+            "acq_func": "ProbabilityOfImprovement",
+            "acq_func_kwargs": {"num_samples": N_SAMPLES},
+        },
         {
             "acq_func": "qExpectedImprovement",
             "acq_func_kwargs": {"num_samples": N_SAMPLES},
@@ -71,7 +71,7 @@ def gen_config_files(simulation):
     ]
 
     # List of SNRs to evaluate
-    SNR_DB = [np.Inf, 20]
+    SNR_DB = [np.Inf, 10]
 
     # List of ranges & depths to simulate
     RANGE = [3.0, 6.0, 10.0, 0.5]
@@ -128,7 +128,7 @@ def gen_config_files(simulation):
     elif simulation == "localize" or simulation == "l":
         qpath = Path.cwd() / "Data" / "Simulations" / "localization" / "queue"
         SEARCH_CONFIG = [
-            {"name": "rec_r", "bounds": [0.001, 12.0]},
+            {"name": "rec_r", "bounds": [0.01, 12.0]},
             {"name": "src_z", "bounds": [0.5, 200.0]},
         ]
         OPTIMIZER_CONFIG["search_parameters"] = SEARCH_CONFIG
