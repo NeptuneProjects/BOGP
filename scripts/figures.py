@@ -27,27 +27,28 @@ FIGURE_PATH = ROOT / "Reports" / "JASA" / "figures"
 
 def main(figures: list):
     for figure in figures:
-        print(f"Producing Figure {figure:02d}" + 60*'-')
+        print(f"Producing Figure {figure:02d}" + 60 * "-")
         try:
             eval(f"figure{figure}()")
         except NameError:
             warnings.warn(f"Figure {figure} is not defined or implemented yet.")
             continue
-            
 
 
 def figure1():
     # Set the true parameters:
     fig = plt.figure(figsize=(6, 10))
     gs = GridSpec(nrows=4, ncols=1, figure=fig, height_ratios=[1, 1, 1, 1])
-    true_ranges = [0.5, 3., 6., 10.]
+    true_ranges = [0.5, 3.0, 6.0, 10.0]
 
     for j, range_true in enumerate(true_ranges):
         depth_true = 62
         freq = 201
 
         # Load CTD data
-        z_data, c_data, _ = read_ssp(ROOT / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None)
+        z_data, c_data, _ = read_ssp(
+            ROOT / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None
+        )
         z_data = np.append(z_data, 217)
         c_data = np.append(c_data, c_data[-1])
 
@@ -59,23 +60,9 @@ def figure1():
             # Top medium
             # Layered media
             "layerdata": [
-                {
-                    "z": z_data,
-                    "c_p": c_data,
-                    "rho": 1
-                },
-                {
-                    "z": [217, 240],
-                    "c_p": [1572.37, 1593.02],
-                    "rho": 1.8,
-                    "a_p": 0.3
-                },
-                {
-                    "z": [240, 1040],
-                    "c_p": [1881, 3245.8],
-                    "rho": 2.1,
-                    "a_p": 0.09
-                }
+                {"z": z_data, "c_p": c_data, "rho": 1},
+                {"z": [217, 240], "c_p": [1572.37, 1593.02], "rho": 1.8, "a_p": 0.3},
+                {"z": [240, 1040], "c_p": [1881, 3245.8], "rho": 2.1, "a_p": 0.09},
             ],
             # Bottom medium
             "bot_opt": "A",
@@ -91,7 +78,7 @@ def figure1():
             "snr": np.Inf,
             # Source parameters
             "src_z": depth_true,
-            "freq": freq
+            "freq": freq,
         }
 
         # Run simulation with true parameters:
@@ -105,29 +92,29 @@ def figure1():
         # Define parameter search space:
         [fixed_parameters.pop(item) for item in ["rec_r", "src_z"]]
         search_parameters = [
-            {
-                "name": "rec_r",
-                "bounds": [0.001, 12.0]
-            },
-            {
-                "name": "src_z",
-                "bounds": [0.5, 200.]
-            }
+            {"name": "rec_r", "bounds": [0.001, 12.0]},
+            {"name": "src_z", "bounds": [0.5, 200.0]},
         ]
 
         # Define search grid & run MFP
-        dr = 1 / 1e3 # [km]
-        dz = 1 # [m]
-        rvec = np.arange(search_parameters[0]["bounds"][0], search_parameters[0]["bounds"][1] + dr, dr)
-        zvec = np.arange(search_parameters[1]["bounds"][0], search_parameters[1]["bounds"][1], dz)
+        dr = 1 / 1e3  # [km]
+        dz = 1  # [m]
+        rvec = np.arange(
+            search_parameters[0]["bounds"][0],
+            search_parameters[0]["bounds"][1] + dr,
+            dr,
+        )
+        zvec = np.arange(
+            search_parameters[1]["bounds"][0], search_parameters[1]["bounds"][1], dz
+        )
 
         pbar = tqdm(
             zvec,
-            bar_format='{l_bar}{bar:20}{r_bar}{bar:-20b}',
+            bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
             desc="  MFP",
             leave=True,
             position=0,
-            unit=" step"
+            unit=" step",
         )
         p_rep = np.zeros((len(zvec), len(rvec), len(fixed_parameters["rec_z"])))
         B_bart = np.zeros((len(zvec), len(rvec)))
@@ -142,7 +129,9 @@ def figure1():
         # Bn = B_bart / np.max(B_bart)
         Bn = B_bart
         logBn = 10 * np.log10(Bn)
-        src_z_ind, src_r_ind = np.unravel_index(np.argmax(logBn), (len(zvec), len(rvec)))
+        src_z_ind, src_r_ind = np.unravel_index(
+            np.argmax(logBn), (len(zvec), len(rvec))
+        )
 
         ax = fig.add_subplot(gs[j])
         im = ax.imshow(
@@ -150,10 +139,19 @@ def figure1():
             aspect="auto",
             extent=[min(rvec), max(rvec), min(zvec), max(zvec)],
             origin="lower",
-            vmin=-10, vmax=0, interpolation="none",
-            cmap="jet"
+            vmin=-10,
+            vmax=0,
+            interpolation="none",
+            cmap="jet",
         )
-        ax.plot(rvec[src_r_ind], zvec[src_z_ind], 'w*', markersize=15, markeredgewidth=1.5, markeredgecolor="k")
+        ax.plot(
+            rvec[src_r_ind],
+            zvec[src_z_ind],
+            "w*",
+            markersize=15,
+            markeredgewidth=1.5,
+            markeredgecolor="k",
+        )
         ax.invert_yaxis()
         ax.set_xlim([0, 12])
         ax.set_ylim([200, 0])
@@ -164,18 +162,30 @@ def figure1():
             ax.set_xlabel("Range [km]")
             ax.set_ylabel("Depth [m]")
             # ax_div = make_axes_locatable(ax)
-            
 
             # im.colorbar(label="Normalized Correlation [dB]", ax=ax)
         ax.set_title(f"R = {range_true:.1f} km, z = 62 m")
 
-    cax = inset_axes(ax, width="100%", height="10%", loc="center", bbox_to_anchor=(0, -0.85, 1, 1), bbox_transform=ax.transAxes)
-    fig.colorbar(im, cax=cax, label="Normalized Correlation [dB]", orientation="horizontal")
-    fig.savefig(FIGURE_PATH / "figure01.png", dpi=300, facecolor="white", bbox_inches="tight")
+    cax = inset_axes(
+        ax,
+        width="100%",
+        height="10%",
+        loc="center",
+        bbox_to_anchor=(0, -0.85, 1, 1),
+        bbox_transform=ax.transAxes,
+    )
+    fig.colorbar(
+        im, cax=cax, label="Normalized Correlation [dB]", orientation="horizontal"
+    )
+    fig.savefig(
+        FIGURE_PATH / "figure01.png", dpi=300, facecolor="white", bbox_inches="tight"
+    )
 
 
 def figure3():
-    zw, cw, _ = read_ssp(ROOT / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None)
+    zw, cw, _ = read_ssp(
+        ROOT / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None
+    )
     zw = np.append(zw, 217)
     cw = np.append(cw, cw[-1])
 
@@ -190,7 +200,7 @@ def figure3():
 
     z1 = np.concatenate([zw, zb1])
     c1 = np.concatenate([cw, cb1])
-    
+
     upper_zlim = [240, 0]
     lower_zlim = [1200, 240]
     lower_clim = [1450, 1600]
@@ -204,10 +214,15 @@ def figure3():
         color="k",
         mec="k",
         mew=1,
-        clip_on=False
+        clip_on=False,
     )
 
-    fig, axs = plt.subplots(figsize=(4, 8), nrows=2, ncols=2, gridspec_kw={"wspace": 0.05, "hspace": 0, "width_ratios": [0.67, 0.33]})
+    fig, axs = plt.subplots(
+        figsize=(4, 8),
+        nrows=2,
+        ncols=2,
+        gridspec_kw={"wspace": 0.05, "hspace": 0, "width_ratios": [0.67, 0.33]},
+    )
 
     ax = axs[0, 0]
     ax.plot(c1, z1)
@@ -225,7 +240,6 @@ def figure3():
     ax.spines.right.set_linestyle((0, (5, 10)))
     ax.spines.right.set_linewidth(0.5)
     ax.spines.bottom.set_visible(False)
-    
 
     ax = axs[0, 1]
     ax.axhline(217, c="k", lw=1)
@@ -239,7 +253,7 @@ def figure3():
         xytext=(800, 205),
         textcoords="data",
         bbox=props,
-        arrowprops=dict(arrowstyle="->")
+        arrowprops=dict(arrowstyle="->"),
     )
     ax.set_xlim(upper_clim)
     ax.xaxis.set_tick_params(top=True, bottom=False)
@@ -249,23 +263,28 @@ def figure3():
     ax.spines.left.set_linestyle((0, (5, 10)))
     ax.spines.left.set_linewidth(0.5)
     ax.spines.bottom.set_visible(False)
-    
 
     ax = axs[1, 0]
     ax.axhline(242, c="k", lw=1)
     ax.axhline(1040, c="k", lw=1)
     ax.fill_between(lower_clim, 240, 1040, color="tan", alpha=0.15, linewidth=0)
     ax.fill_between(lower_clim, 1040, 1200, color="gray", alpha=0.15, linewidth=0)
-    ax.text(1460, 450, "Mudrock\n$\\rho = 2.06\ \mathrm{g\ cm^{-3}}$\n$a=0.06\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$", bbox=props, va="center")
+    ax.text(
+        1460,
+        450,
+        "Mudrock\n$\\rho = 2.06\ \mathrm{g\ cm^{-3}}$\n$a=0.06\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
+        bbox=props,
+        va="center",
+    )
     # ax.text(1460, 985, "Bedrock halfspace\n$c = 5200\ \mathrm{m\ s^{-1}}}$\n$\\rho = 2.66\ \mathrm{g\ cm^{-3}}$\n$a=0.02\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$", bbox=props)
     ax.annotate(
         "Bedrock halfspace\n$c = 5200\ \mathrm{m\ s^{-1}}}$\n$\\rho = 2.66\ \mathrm{g\ cm^{-3}}$\n$a=0.02\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
-        xy = (1500, 1100),
+        xy=(1500, 1100),
         xycoords="data",
-        xytext = (1460, 985),
+        xytext=(1460, 985),
         textcoords="data",
         bbox=props,
-        arrowprops=dict(arrowstyle="->")
+        arrowprops=dict(arrowstyle="->"),
     )
     ax.set_xlim(lower_clim)
     ax.set_xticklabels([])
@@ -274,8 +293,6 @@ def figure3():
     ax.spines.right.set_linestyle((0, (5, 10)))
     ax.spines.right.set_linewidth(0.5)
     ax.spines.top.set_visible(False)
-    
-
 
     ax = axs[1, 1]
     ax.plot(cb2, zb2)
@@ -291,8 +308,10 @@ def figure3():
     ax.spines.left.set_linewidth(0.5)
     ax.spines.top.set_visible(False)
 
-    fig.savefig(FIGURE_PATH / "environment.png", dpi=300, facecolor="white", bbox_inches="tight")
-    
+    fig.savefig(
+        FIGURE_PATH / "environment.png", dpi=300, facecolor="white", bbox_inches="tight"
+    )
+
     return
 
 
@@ -300,5 +319,5 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("figures", type=str)
     args = parser.parse_args()
-    figures = list(map(lambda i:int(i.strip()), args.figures.split(',')))
+    figures = list(map(lambda i: int(i.strip()), args.figures.split(",")))
     main(figures)
