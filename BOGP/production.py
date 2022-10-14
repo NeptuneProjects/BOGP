@@ -17,6 +17,7 @@ from .acoustics import MatchedFieldProcessor
 # from .optimization.optimizer import import_from_str, OptimizerConfig, Optimizer
 from .optimization import optimizer
 from tritonoa.kraken import run_kraken
+import utils
 
 logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -218,7 +219,7 @@ def worker(config: dict):
     logger.info("Saved optimization results.")
     
     logger.info("Cleaning up acoustic modeling files.")
-    clean_up_kraken_files(trial_path)
+    utils.clean_up_kraken_files(trial_path)
     logger.info("Cleaned up acoustic modeling files.")
     
 
@@ -260,8 +261,3 @@ def dispatcher(config: dict):
     logger.info("Moving configuration file from queue to run directory.")
     shutil.move(configpath.absolute(), (config["experiment_path"] / configpath.name).absolute())
     logger.info("Moved configuration file from queue to run directory.")
-
-
-def clean_up_kraken_files(path):
-    extensions = ["env", "mod", "prt"]
-    [[f.unlink() for f in path.glob(f"*.{ext}")] for ext in extensions]

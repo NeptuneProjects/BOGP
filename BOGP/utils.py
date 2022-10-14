@@ -1,8 +1,17 @@
 #!/usr/bin/env python3
 
 from itertools import product
+from pathlib import Path
 
 import pandas as pd
+
+
+def clean_up_kraken_files(path):
+    if isinstance(path, str):
+        path = Path(path)
+
+    extensions = ["env", "mod", "prt"]
+    [[f.unlink() for f in path.glob(f"*.{ext}")] for ext in extensions]
 
 
 def concatenate_simulation_results(paths):
