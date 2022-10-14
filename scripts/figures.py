@@ -195,30 +195,16 @@ def figure3():
     zb2 = np.array([np.NaN, 240, 1040])
     cb2 = np.array([np.NaN, 1881, 3245.8])
 
-    # zb3 = np.array([np.NaN, 1040, 1200])
-    # cb3 = np.array([np.NaN, 5200, 5200])
-
     z1 = np.concatenate([zw, zb1])
     c1 = np.concatenate([cw, cb1])
 
     upper_zlim = [240, 0]
-    lower_zlim = [1200, 240]
+    lower_zlim = [1100, 240]
     lower_clim = [1450, 1600]
     upper_clim = [1800, 3400]
 
-    d = 2
-    kwargs = dict(
-        marker=[(-1, -d), (1, d)],
-        markersize=9,
-        linestyle="none",
-        color="k",
-        mec="k",
-        mew=1,
-        clip_on=False,
-    )
-
     fig, axs = plt.subplots(
-        figsize=(4, 8),
+        figsize=(4, 5),
         nrows=2,
         ncols=2,
         gridspec_kw={"wspace": 0.05, "hspace": 0, "width_ratios": [0.67, 0.33]},
@@ -227,7 +213,7 @@ def figure3():
     ax = axs[0, 0]
     ax.plot(c1, z1)
     ax.axhline(217, c="k", lw=1)
-    # ax.axhline(240, c="k", lw=1)
+    ax.fill_between(lower_clim, 0, 217, color="lightblue", alpha=0.15, linewidth=0)
     ax.fill_between(lower_clim, 217, 240, color="yellow", alpha=0.15, linewidth=0)
     ax.set_xlim(lower_clim)
     ax.set_xlabel("Sound Speed [m/s]")
@@ -241,16 +227,17 @@ def figure3():
     ax.spines.right.set_linewidth(0.5)
     ax.spines.bottom.set_visible(False)
 
+
     ax = axs[0, 1]
     ax.axhline(217, c="k", lw=1)
+    ax.fill_between(upper_clim, 0, 217, color="lightblue", alpha=0.15, linewidth=0)
     ax.fill_between(upper_clim, 217, 240, color="yellow", alpha=0.15, linewidth=0)
     props = dict(boxstyle="round", facecolor="white", alpha=0.9)
-    # ax.text(400, 205, "Sediment\n$\\rho = 1.76\ \mathrm{g\ cm^{-3}}$\n$a=0.2\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$", bbox=props)
     ax.annotate(
-        "Sediment\n$\\rho = 1.76\ \mathrm{g\ cm^{-3}}$\n$a=0.2\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
-        xy=(2500, 230),
+        "Sediment layer\n$\\rho = 1.76\ \mathrm{g\ cm^{-3}}$\n$a=0.2\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
+        xy=(2500, 235),
         xycoords="data",
-        xytext=(800, 205),
+        xytext=(800, 185),
         textcoords="data",
         bbox=props,
         arrowprops=dict(arrowstyle="->"),
@@ -268,20 +255,19 @@ def figure3():
     ax.axhline(242, c="k", lw=1)
     ax.axhline(1040, c="k", lw=1)
     ax.fill_between(lower_clim, 240, 1040, color="tan", alpha=0.15, linewidth=0)
-    ax.fill_between(lower_clim, 1040, 1200, color="gray", alpha=0.15, linewidth=0)
+    ax.fill_between(lower_clim, 1040, 1100, color="gray", alpha=0.15, linewidth=0)
     ax.text(
         1460,
         450,
-        "Mudrock\n$\\rho = 2.06\ \mathrm{g\ cm^{-3}}$\n$a=0.06\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
+        "Mudrock layer\n$\\rho = 2.06\ \mathrm{g\ cm^{-3}}$\n$a=0.06\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
         bbox=props,
         va="center",
     )
-    # ax.text(1460, 985, "Bedrock halfspace\n$c = 5200\ \mathrm{m\ s^{-1}}}$\n$\\rho = 2.66\ \mathrm{g\ cm^{-3}}$\n$a=0.02\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$", bbox=props)
     ax.annotate(
         "Bedrock halfspace\n$c = 5200\ \mathrm{m\ s^{-1}}}$\n$\\rho = 2.66\ \mathrm{g\ cm^{-3}}$\n$a=0.02\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
-        xy=(1500, 1100),
+        xy=(1500, 1090),
         xycoords="data",
-        xytext=(1460, 985),
+        xytext=(1460, 940),
         textcoords="data",
         bbox=props,
         arrowprops=dict(arrowstyle="->"),
@@ -289,7 +275,7 @@ def figure3():
     ax.set_xlim(lower_clim)
     ax.set_xticklabels([])
     ax.set_ylim(lower_zlim)
-    ax.set_yticks([240, 400, 600, 800, 1000, 1040])
+    ax.set_yticks([240, 400, 600, 800, 1040])
     ax.spines.right.set_linestyle((0, (5, 10)))
     ax.spines.right.set_linewidth(0.5)
     ax.spines.top.set_visible(False)
@@ -299,7 +285,7 @@ def figure3():
     ax.axhline(242, c="k", lw=1)
     ax.axhline(1040, c="k", lw=1)
     ax.fill_between(upper_clim, 240, 1040, color="tan", alpha=0.15, linewidth=0)
-    ax.fill_between(upper_clim, 1040, 1200, color="gray", alpha=0.15, linewidth=0)
+    ax.fill_between(upper_clim, 1040, 1100, color="gray", alpha=0.15, linewidth=0)
     ax.set_xlim(upper_clim)
     ax.invert_yaxis()
     ax.set_ylim(lower_zlim)
