@@ -9,6 +9,7 @@ import warnings
 
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
+import matplotlib.ticker as mticker
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
 from tqdm import tqdm
@@ -25,12 +26,12 @@ FIGURE_PATH = ROOT / "Reports" / "JASA" / "figures"
 
 
 def main(figures: list):
-    for i, _ in enumerate(figures):
-        print(f"Producing Figure {i + 1:02d}" + 60*'-')
+    for figure in figures:
+        print(f"Producing Figure {figure:02d}" + 60*'-')
         try:
-            eval(f"figure{i + 1}()")
+            eval(f"figure{figure}()")
         except NameError:
-            warnings.warn(f"Figure {i + 1} is not defined or implemented yet.")
+            warnings.warn(f"Figure {figure} is not defined or implemented yet.")
             continue
             
 
@@ -171,6 +172,129 @@ def figure1():
     cax = inset_axes(ax, width="100%", height="10%", loc="center", bbox_to_anchor=(0, -0.85, 1, 1), bbox_transform=ax.transAxes)
     fig.colorbar(im, cax=cax, label="Normalized Correlation [dB]", orientation="horizontal")
     fig.savefig(FIGURE_PATH / "figure01.png", dpi=300, facecolor="white", bbox_inches="tight")
+
+
+def figure3():
+    zw, cw, _ = read_ssp(ROOT / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None)
+    zw = np.append(zw, 217)
+    cw = np.append(cw, cw[-1])
+
+    zb1 = np.array([np.NaN, 217, 240])
+    cb1 = np.array([np.NaN, 1572.37, 1593.02])
+
+    zb2 = np.array([np.NaN, 240, 1040])
+    cb2 = np.array([np.NaN, 1881, 3245.8])
+
+    # zb3 = np.array([np.NaN, 1040, 1200])
+    # cb3 = np.array([np.NaN, 5200, 5200])
+
+    z1 = np.concatenate([zw, zb1])
+    c1 = np.concatenate([cw, cb1])
+    
+    upper_zlim = [240, 0]
+    lower_zlim = [1200, 240]
+    lower_clim = [1450, 1600]
+    upper_clim = [1800, 3400]
+
+    d = 2
+    kwargs = dict(
+        marker=[(-1, -d), (1, d)],
+        markersize=9,
+        linestyle="none",
+        color="k",
+        mec="k",
+        mew=1,
+        clip_on=False
+    )
+
+    fig, axs = plt.subplots(figsize=(4, 8), nrows=2, ncols=2, gridspec_kw={"wspace": 0.05, "hspace": 0, "width_ratios": [0.67, 0.33]})
+
+    ax = axs[0, 0]
+    ax.plot(c1, z1)
+    ax.axhline(217, c="k", lw=1)
+    # ax.axhline(240, c="k", lw=1)
+    ax.fill_between(lower_clim, 217, 240, color="yellow", alpha=0.15, linewidth=0)
+    ax.set_xlim(lower_clim)
+    ax.set_xlabel("Sound Speed [m/s]")
+    ax.xaxis.set_ticks_position("top")
+    ax.xaxis.set_label_position("top")
+    ax.invert_yaxis()
+    ax.set_ylim(upper_zlim)
+    ax.set_yticks([0, 50, 100, 150, 200, 217])
+    ax.set_ylabel("Depth [m]", y=0)
+    ax.spines.right.set_linestyle((0, (5, 10)))
+    ax.spines.right.set_linewidth(0.5)
+    ax.spines.bottom.set_visible(False)
+    
+
+    ax = axs[0, 1]
+    ax.axhline(217, c="k", lw=1)
+    ax.fill_between(upper_clim, 217, 240, color="yellow", alpha=0.15, linewidth=0)
+    props = dict(boxstyle="round", facecolor="white", alpha=0.9)
+    # ax.text(400, 205, "Sediment\n$\\rho = 1.76\ \mathrm{g\ cm^{-3}}$\n$a=0.2\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$", bbox=props)
+    ax.annotate(
+        "Sediment\n$\\rho = 1.76\ \mathrm{g\ cm^{-3}}$\n$a=0.2\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
+        xy=(2500, 230),
+        xycoords="data",
+        xytext=(800, 205),
+        textcoords="data",
+        bbox=props,
+        arrowprops=dict(arrowstyle="->")
+    )
+    ax.set_xlim(upper_clim)
+    ax.xaxis.set_tick_params(top=True, bottom=False)
+    ax.set_xticklabels([])
+    ax.set_ylim(upper_zlim)
+    ax.set_yticks([])
+    ax.spines.left.set_linestyle((0, (5, 10)))
+    ax.spines.left.set_linewidth(0.5)
+    ax.spines.bottom.set_visible(False)
+    
+
+    ax = axs[1, 0]
+    ax.axhline(242, c="k", lw=1)
+    ax.axhline(1040, c="k", lw=1)
+    ax.fill_between(lower_clim, 240, 1040, color="tan", alpha=0.15, linewidth=0)
+    ax.fill_between(lower_clim, 1040, 1200, color="gray", alpha=0.15, linewidth=0)
+    ax.text(1460, 450, "Mudrock\n$\\rho = 2.06\ \mathrm{g\ cm^{-3}}$\n$a=0.06\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$", bbox=props, va="center")
+    # ax.text(1460, 985, "Bedrock halfspace\n$c = 5200\ \mathrm{m\ s^{-1}}}$\n$\\rho = 2.66\ \mathrm{g\ cm^{-3}}$\n$a=0.02\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$", bbox=props)
+    ax.annotate(
+        "Bedrock halfspace\n$c = 5200\ \mathrm{m\ s^{-1}}}$\n$\\rho = 2.66\ \mathrm{g\ cm^{-3}}$\n$a=0.02\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
+        xy = (1500, 1100),
+        xycoords="data",
+        xytext = (1460, 985),
+        textcoords="data",
+        bbox=props,
+        arrowprops=dict(arrowstyle="->")
+    )
+    ax.set_xlim(lower_clim)
+    ax.set_xticklabels([])
+    ax.set_ylim(lower_zlim)
+    ax.set_yticks([240, 400, 600, 800, 1000, 1040])
+    ax.spines.right.set_linestyle((0, (5, 10)))
+    ax.spines.right.set_linewidth(0.5)
+    ax.spines.top.set_visible(False)
+    
+
+
+    ax = axs[1, 1]
+    ax.plot(cb2, zb2)
+    ax.axhline(242, c="k", lw=1)
+    ax.axhline(1040, c="k", lw=1)
+    ax.fill_between(upper_clim, 240, 1040, color="tan", alpha=0.15, linewidth=0)
+    ax.fill_between(upper_clim, 1040, 1200, color="gray", alpha=0.15, linewidth=0)
+    ax.set_xlim(upper_clim)
+    ax.invert_yaxis()
+    ax.set_ylim(lower_zlim)
+    ax.set_yticks([])
+    ax.spines.left.set_linestyle((0, (5, 10)))
+    ax.spines.left.set_linewidth(0.5)
+    ax.spines.top.set_visible(False)
+
+    fig.savefig(FIGURE_PATH / "environment.png", dpi=300, facecolor="white", bbox_inches="tight")
+    
+    return
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
