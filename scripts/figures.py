@@ -9,7 +9,6 @@ import warnings
 
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
-import matplotlib.ticker as mticker
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
 from tqdm import tqdm
@@ -188,13 +187,10 @@ def figure3():
     )
     zw = np.append(zw, 217)
     cw = np.append(cw, cw[-1])
-
     zb1 = np.array([np.NaN, 217, 240])
     cb1 = np.array([np.NaN, 1572.37, 1593.02])
-
     zb2 = np.array([np.NaN, 240, 1040])
     cb2 = np.array([np.NaN, 1881, 3245.8])
-
     z1 = np.concatenate([zw, zb1])
     c1 = np.concatenate([cw, cb1])
 
@@ -226,7 +222,6 @@ def figure3():
     ax.spines.right.set_linestyle((0, (5, 10)))
     ax.spines.right.set_linewidth(0.5)
     ax.spines.bottom.set_visible(False)
-
 
     ax = axs[0, 1]
     ax.axhline(217, c="k", lw=1)
@@ -297,8 +292,6 @@ def figure3():
     fig.savefig(
         FIGURE_PATH / "environment.png", dpi=300, facecolor="white", bbox_inches="tight"
     )
-
-    return
 
 
 if __name__ == "__main__":
