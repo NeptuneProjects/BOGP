@@ -14,10 +14,9 @@ import numpy as np
 from tqdm import tqdm
 
 from .acoustics import MatchedFieldProcessor
-# from .optimization.optimizer import import_from_str, OptimizerConfig, Optimizer
 from .optimization import optimizer
 from tritonoa.kraken import run_kraken
-import utils
+from . import utils
 
 logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
 logger = logging.getLogger(__name__)
