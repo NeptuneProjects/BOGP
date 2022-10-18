@@ -181,6 +181,12 @@ def figure1():
     )
 
 
+def figure2():
+    "Caption: "
+    eval_idx = np.linspace(0, 200, 11, dtype=int).tolist()
+    return
+
+
 def figure3():
     zw, cw, _ = read_ssp(
         ROOT / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None
