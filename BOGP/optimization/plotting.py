@@ -87,7 +87,7 @@ def plot_performance_history(df, ax=None, label=None):
     lcb = mean - std
     evals = df.columns.to_numpy()
 
-    line, = ax.plot(evals, mean, label=label)
+    (line,) = ax.plot(evals, mean, label=label)
     ax.fill_between(evals, lcb, ucb, alpha=0.2)
     return line
 
@@ -112,13 +112,17 @@ class ResultsPlotter:
         reverse_y=False,
         ObjFunc=None,
         objfunc_kwargs=None,
+        savepath=None,
+        show=False
     ):
         if ObjFunc is None:
             ObjFunc = import_from_str(
                 self.optim["obj_func_module"], self.optim["obj_func_name"]
             )
         if len(parameters_to_plot) == 1:
-            return self._plot_training_1D(X_test, ObjFunc, index)
+            return self._plot_training_1D(
+                X_test, ObjFunc, index, parameter_labels, savepath, show
+            )
         elif len(parameters_to_plot) == 2:
             return self._plot_training_2D(
                 X_test,
@@ -134,7 +138,9 @@ class ResultsPlotter:
         else:
             raise NotImplementedError("A maximum of two parameters may be plotted!")
 
-    def _plot_training_1D(self, X_test, ObjFunc, index):
+    def _plot_training_1D(
+        self, X_test, ObjFunc, index, parameter_labels=None, savepath=None, show=False
+    ):
 
         parameters = {
             item["name"]: X_test[..., i]
@@ -176,7 +182,7 @@ class ResultsPlotter:
             if index is None:
                 ax.set_title(f"Iteration {i}")
             else:
-                ax.set_title(f"Index {index[i]}")
+                ax.set_title(f"Iteration {index[i]}")
             ax.set_ylabel("Objective\nFunction")
             ax.set_xlim([X_test.min() - X_offset, X_test.max() + X_offset])
 
@@ -194,10 +200,17 @@ class ResultsPlotter:
                     ax,
                 )
                 ax.set_ylabel("Acquisition\nFunction")
-                ax.set_xlabel("Domain")
+                if parameter_labels is not None:
+                    ax.set_xlabel("x1")
+                else:
+                    ax.set_xlabel(parameter_labels)
                 ax.set_xlim([X_test.min() - X_offset, X_test.max() + X_offset])
 
-            plt.show()
+            if savepath is not None:
+                fig.savefig(savepath / f"1D_training_{i:03d}.png")
+
+            if show:
+                plt.show()
 
     def _plot_training_2D(
         self,
