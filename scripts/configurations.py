@@ -45,10 +45,12 @@ def gen_config_files(simulation):
     # Number of samples used to evaluate & fit surrogate model
     N_SAMPLES = 512
     # Number of random "warmup" samples to initialize BO loop
-    N_WARMUP = 10 if not SMOKE_TEST else 2
+    N_WARMUP = 3 if not SMOKE_TEST else 2 # For range estimation
+    # N_WARMUP = 10 if not SMOKE_TEST else 2 # For localization
     # Total number of evaluations (including warmup)
-    N_TOTAL = 1000 if not SMOKE_TEST else 10
-
+    N_TOTAL = 200 if not SMOKE_TEST else 10 # For range estimation
+    # N_TOTAL = 500 if not SMOKE_TEST else 10 # For localization
+    
     # ==========================================================================
     # ============= Edit this section to configure simulations =================
     # ==========================================================================
