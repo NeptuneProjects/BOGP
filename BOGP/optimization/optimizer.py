@@ -254,10 +254,11 @@ class Optimizer:
                 )
                 
                 fit_gpytorch_model(mll)
-                memory_free, memory_total = torch.cuda.mem_get_info(self.device.type + ':0')
-                logger.info(
-                    f"Iter {count} | CUDA Memory usage: {100 * (1 - memory_free / memory_total):.2f}%"
-                )
+                if torch.cuda.is_available():
+                    memory_free, memory_total = torch.cuda.mem_get_info(self.device.type + ':0')
+                    logger.info(
+                        f"Iter {count} | CUDA Memory usage: {100 * (1 - memory_free / memory_total):.2f}%"
+                    )
                 count += 1
 
             with torch.no_grad():
