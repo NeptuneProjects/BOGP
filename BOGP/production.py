@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from concurrent.futures import as_completed, ProcessPoolExecutor
-# from itertools import product
+
 import logging
 import multiprocessing
 import os
@@ -18,10 +18,12 @@ from .optimization import optimizer
 from tritonoa.kraken import run_kraken
 from . import utils
 
-logging.basicConfig(encoding='utf-8', level=logging.DEBUG)
+logging.basicConfig(encoding="utf-8", level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 logger.propagate = False
-logfmt = logging.Formatter(fmt="%(asctime)s | %(name)-27s | %(levelname)-8s | %(message)s")
+logfmt = logging.Formatter(
+    fmt="%(asctime)s | %(name)-27s | %(levelname)-8s | %(message)s"
+)
 
 
 class Simulator:
@@ -39,30 +41,7 @@ class Simulator:
             return self._run_localization
 
     def run(self, config: dict):
-        
-        # configs = product(
-        #     *[
-        #         config.get("simulation_config").get(k)
-        #         for k in config.get("simulation_config").keys()
-        #     ]
-        # )
-        # titles = [k for k in config.get("simulation_config").keys()]
-        # simulations = [
-        #     {title: config[i] for i, title in enumerate(titles)} for config in configs
-        # ]
-
-        # count = 1
-        # print("-" * 80)
-        # for simulation in simulations:
-        #     simstring = " ".join(
-        #         [
-        #             f"{k}={v}" if k != "acq_func" else f"{k}={v['acq_func']}"
-        #             for k, v in simulation.items()
-        #         ]
-        #     )
-        #     print(f"Executing simulation {count:03d}/{len(simulations):03d}:", end=" ")
-        #     print(simstring)
-        config["experiment_path"] = config["path"] / config["desc"].replace(' ', '__')
+        config["experiment_path"] = config["path"] / config["desc"].replace(" ", "__")
         os.makedirs(config["experiment_path"], exist_ok=True)
 
         fh = logging.FileHandler(config["experiment_path"] / "debug.log")
@@ -72,13 +51,7 @@ class Simulator:
         optimizer.logger.setLevel(logging.DEBUG)
         optimizer.logger.addHandler(fh)
         optimizer.logger.propagate = False
-        
-        # config["simulation_config"].update(simulation)
-
-        # config["environment_config"].update(simulation)
-        config["environment_config"]["tmpdir"] = (
-            config["experiment_path"] / "measured"
-        )
+        config["environment_config"]["tmpdir"] = config["experiment_path"] / "measured"
         logger.info("Running KRAKEN with true parameters.")
         measured_data = self.run_with_true_parameters(config["environment_config"])
         logger.info("Ran KRAKEN with true parameters.")
@@ -86,14 +59,10 @@ class Simulator:
         np.savez(
             config["environment_config"]["tmpdir"] / "measured.npz", **measured_data
         )
-        with open(
-            config["environment_config"]["tmpdir"] / "parameters.pkl", "wb"
-        ) as f:
+        with open(config["environment_config"]["tmpdir"] / "parameters.pkl", "wb") as f:
             pickle.dump(config["environment_config"], f)
         logger.info("Data saved from KRAKEN run with true parameters.")
         dispatcher(config)
-        # count += 1
-        # print("-" * 80)
 
     # SIMULATION: RANGE ESTIMATION
     def _run_range_estimation(self, workers: int = 1, path=None, device=None):
@@ -120,7 +89,6 @@ class Simulator:
         config = {
             # "name": NAME,
             "workers": workers,
-            # "path": path / NAME,
             "path": path / self.config["name"],
             "device": device,
         } | self.config
@@ -193,7 +161,7 @@ def worker(config: dict):
     trial_path = (
         config.get("experiment_path") / "Runs" / f"{config.get('trial_seed'):010d}"
     )
-    
+
     if trial_path.exists():
         logger.info(f"Trial run directory {trial_path} exists.")
         dir_contents = [i.name for i in trial_path.glob("*")]
@@ -204,37 +172,39 @@ def worker(config: dict):
 
     config["environment_config"]["tmpdir"] = trial_path
     config["environment_config"]["title"] = f"{config.get('trial_seed'):010d}"
-    
+
     logger.info(f"Creating trial run directory {trial_path}")
     os.makedirs(trial_path, exist_ok=True)
     logger.info(f"Created trial run directory {trial_path}")
-    
+
     logger.info("Initializing optimizer configuration.")
     optim_config = optimizer.OptimizerConfig(**config_kwargs)
     logger.info("Initialized optimizer configuration.")
-    
+
     logger.info("Initializing optimizer.")
     optim = optimizer.Optimizer(optim_config, **optim_kwargs)
     logger.info("Initialized optimizer.")
-    
+
     logger.info("Running optimization loop.")
     results = optim.run(disable_pbar=True)
     logger.info("Ran optimization loop.")
-    
+
     logger.info("Saving optimization results.")
     optim.save(trial_path / "optim.pth")
     results.save(trial_path / "results.pth")
     logger.info("Saved optimization results.")
-    
+
     logger.info("Cleaning up acoustic modeling files.")
     utils.clean_up_kraken_files(trial_path)
     logger.info("Cleaned up acoustic modeling files.")
-    
+
 
 def dispatcher(config: dict):
     n_trials = config.get("n_sim")
     random.seed(config.get("main_seed"))
-    logger.info(f"Running {n_trials} evaluations using master random seed {config.get('main_seed')}.")
+    logger.info(
+        f"Running {n_trials} evaluations using master random seed {config.get('main_seed')}."
+    )
 
     pbar_kwargs = {
         "desc": "Running MC",
@@ -264,8 +234,10 @@ def dispatcher(config: dict):
             results = []
             for future in tqdm(as_completed(futures), **pbar_kwargs):
                 results.append(future.result())
-        
+
     configpath = Path(config["configpath"])
     logger.info("Moving configuration file from queue to run directory.")
-    shutil.move(configpath.absolute(), (config["experiment_path"] / configpath.name).absolute())
+    shutil.move(
+        configpath.absolute(), (config["experiment_path"] / configpath.name).absolute()
+    )
     logger.info("Moved configuration file from queue to run directory.")
