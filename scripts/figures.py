@@ -4,6 +4,7 @@ python3 ./Source/scripts/figures.py
 """
 import argparse
 from pathlib import Path
+import pickle
 import sys
 import warnings
 
@@ -11,14 +12,16 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
+import torch
 from tqdm import tqdm
-
-from tritonoa.kraken import run_kraken
-from tritonoa.io import read_ssp
-from tritonoa.sp import beamformer, snrdb_to_sigma, added_wng
 
 sys.path.insert(0, str(Path.cwd() / "Source"))
 from BOGP import utils
+from BOGP.optimization import plotting
+from BOGP.optimization.optimizer import import_from_str, Results
+from tritonoa.kraken import run_kraken
+from tritonoa.io import read_ssp
+from tritonoa.sp import beamformer, snrdb_to_sigma, added_wng
 
 ROOT = Path.home() / "Research" / "Projects" / "BOGP"
 FIGURE_PATH = ROOT / "Reports" / "JASA" / "figures"
@@ -26,7 +29,7 @@ FIGURE_PATH = ROOT / "Reports" / "JASA" / "figures"
 
 def main(figures: list):
     for figure in figures:
-        print(f"Producing Figure {figure:02d}" + 60 * "-")
+        print(f"Producing Figure {figure:02d} " + 60 * "-")
         try:
             eval(f"figure{figure}()")
         except NameError:
@@ -177,14 +180,51 @@ def figure1():
         im, cax=cax, label="Normalized Correlation [dB]", orientation="horizontal"
     )
     fig.savefig(
-        FIGURE_PATH / "figure01.png", dpi=300, facecolor="white", bbox_inches="tight"
+        FIGURE_PATH / "MFP.png",
+        dpi=300,
+        facecolor="white",
+        bbox_inches="tight",
     )
 
 
 def figure2():
-    "Caption: "
-    eval_idx = np.linspace(0, 200, 11, dtype=int).tolist()
-    return
+    DATAPATH = ROOT / "Data" / "Simulations"
+    EXPERIMENT = DATAPATH / "Protected" / "range_estimation"
+    DATA_FOLDER = (
+        EXPERIMENT
+        / "acq_func=ExpectedImprovement__snr=Inf__rec_r=3.0"
+        / "Runs"
+        / "0063373286"
+    )
+    # eval_index = np.linspace(0, 80, 9, dtype=int).tolist()
+    eval_index = [0, 1, 2, 10, 20, 30, 50, 70, 80]
+    optim_config = torch.load(
+        DATA_FOLDER / "optim.pth", map_location=torch.device("cpu")
+    )
+    results = Results().load(DATA_FOLDER / "results.pth")
+
+    model_data = np.load(DATA_FOLDER.parent.parent / "measured" / "measured.npz")
+    K = model_data["covariance"]
+    p_rec = model_data["pressure"]
+    with open(DATA_FOLDER.parent.parent / "measured" / "parameters.pkl", "rb") as f:
+        parameters = pickle.load(f)
+
+    optim_config["obj_func_kwargs"] = {"K": K, "parameters": parameters}
+
+    search_parameters = [{"name": "x1", "bounds": [0.001, 10]}]
+    X_test = torch.linspace(
+        search_parameters[0]["bounds"][0], search_parameters[0]["bounds"][1], 1001
+    ).unsqueeze(1)
+    pltr = plotting.ResultsPlotter(optim_config, results)
+    parameters_to_plot = ["x1"]
+    fig = pltr.plot_training_iterations(
+        X_test,
+        parameters_to_plot,
+        index=eval_index,
+        parameter_labels="$\mathbf{x}$ (Range [km])",
+        consolidate=True,
+    )
+    fig.savefig(FIGURE_PATH / "optim_1D.png", dpi=300, bbox_inches="tight")
 
 
 def figure3():

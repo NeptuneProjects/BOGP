@@ -8,6 +8,7 @@ import torch
 
 from .optimizer import import_from_str, ObjectiveFunction
 
+SMOKE_TEST = False
 SURF_KWARGS = {""}
 CBAR_KWARGS = {"location": "top", "pad": 0, "shrink": 0.9}
 LINE_KWARGS = {"c": "k", "ls": "dashed", "lw": 0.5}
@@ -112,8 +113,9 @@ class ResultsPlotter:
         reverse_y=False,
         ObjFunc=None,
         objfunc_kwargs=None,
+        consolidate=False,
         savepath=None,
-        show=False
+        show=False,
     ):
         if ObjFunc is None:
             ObjFunc = import_from_str(
@@ -121,7 +123,13 @@ class ResultsPlotter:
             )
         if len(parameters_to_plot) == 1:
             return self._plot_training_1D(
-                X_test, ObjFunc, index, parameter_labels, savepath, show
+                X_test,
+                ObjFunc,
+                index,
+                parameter_labels=parameter_labels,
+                consolidate=consolidate,
+                savepath=savepath,
+                show=show,
             )
         elif len(parameters_to_plot) == 2:
             return self._plot_training_2D(
@@ -139,19 +147,26 @@ class ResultsPlotter:
             raise NotImplementedError("A maximum of two parameters may be plotted!")
 
     def _plot_training_1D(
-        self, X_test, ObjFunc, index, parameter_labels=None, savepath=None, show=False
+        self,
+        X_test,
+        ObjFunc,
+        index,
+        parameter_labels=None,
+        consolidate=False,
+        savepath=None,
+        show=False,
     ):
-
         parameters = {
             item["name"]: X_test[..., i]
             for i, item in enumerate(self.optim["search_parameters"])
         }
-        y_test = self._evaluate_obj_func(
-            ObjFunc,
-            parameters,
-            self.optim["fixed_parameters"],
-            self.optim["obj_func_kwargs"],
-        )
+        if not SMOKE_TEST:
+            y_test = self._evaluate_obj_func(
+                ObjFunc,
+                parameters,
+                self.optim["fixed_parameters"],
+                self.optim["obj_func_kwargs"],
+            )
         X_offset = 0.1 * X_test.min()
 
         if index is not None:
@@ -159,52 +174,129 @@ class ResultsPlotter:
         else:
             results = self.results
 
-        for i, result in enumerate(results):
-            mu, variance = self._evaluate_posterior(result.model.posterior, X_test)
+        if consolidate:
 
-            fig = plt.figure(figsize=(6, 4), facecolor="white")
-            gspec = GridSpec(2, 1, hspace=0.0, height_ratios=[3, 2])
+            fig = plt.figure(figsize=(6, 12), facecolor="white")
+            outer_grid = fig.add_gridspec(len(results), 1, hspace=0.1)
 
-            ax = fig.add_subplot(gspec[0])
-            ax = self._plot_gp_1D(
-                result.X.detach().cpu().numpy().squeeze(),
-                result.y.detach().cpu().numpy().squeeze(),
-                result.X_new.detach().cpu().numpy().squeeze()
-                if result.X_new is not None
-                else None,
-                X_test.detach().cpu().numpy().squeeze(),
-                y_test.detach().cpu().numpy().squeeze(),
-                mu.detach().cpu().numpy().squeeze(),
-                variance.detach().cpu().numpy().squeeze(),
-                ax,
-            )
-            ax.set_xticks([])
-            if index is None:
-                ax.set_title(f"Iteration {i}")
-            else:
-                ax.set_title(f"Iteration {index[i]}")
-            ax.set_ylabel("Objective\nFunction")
-            ax.set_xlim([X_test.min() - X_offset, X_test.max() + X_offset])
+            for i, result in enumerate(results):
+                mu, variance = self._evaluate_posterior(result.model.posterior, X_test)
 
-            if i != len(results) - 1:
-                alpha = self._evaluate_acq_func(result.acqfunc, X_test.unsqueeze(-1))
-                ax = fig.add_subplot(gspec[1])
-                ax = self._plot_acqfunc_1D(
-                    X_test.detach().cpu().numpy().squeeze(),
+                inner_grid = outer_grid[i].subgridspec(
+                    2, 1, hspace=0, height_ratios=[3, 2]
+                )
+                axs = inner_grid.subplots()
+                if not SMOKE_TEST:
+                    axs[0] = self._plot_gp_1D(
+                        result.X.detach().cpu().numpy().squeeze(),
+                        result.y.detach().cpu().numpy().squeeze(),
+                        result.X_new.detach().cpu().numpy().squeeze()
+                        if result.X_new is not None
+                        else None,
+                        X_test.detach().cpu().numpy().squeeze(),
+                        y_test.detach().cpu().numpy().squeeze(),
+                        mu.detach().cpu().numpy().squeeze(),
+                        variance.detach().cpu().numpy().squeeze(),
+                        axs[0],
+                    )
+                axs[0].set_xticks([])
+                if i == 0:
+                    axs[0].text(0.1, 0.9, "Initialization", va="top")
+                elif index is None:
+                    axs[0].text(0.1, 0.9, f"Iteration {i}", va="top")
+                else:
+                    axs[0].text(0.1, 0.9, f"Iteration {index[i]}", va="top")
+                axs[0].set_xlim([X_test.min() - X_offset, X_test.max() + X_offset])
+                axs[0].set_yticks([0., 1.])
+                # if i == len(results) - 1:
+                axs[0].set_ylabel("$f(\mathbf{x})$", rotation=0, va="center")
+                axs[0].yaxis.set_label_coords(-0.05, 0.5)
+
+                # if i != len(results) - 1:
+                if not SMOKE_TEST:
+                    alpha = self._evaluate_acq_func(result.acqfunc, X_test.unsqueeze(-1))
+
+                    axs[1] = self._plot_acqfunc_1D(
+                        X_test.detach().cpu().numpy().squeeze(),
+                        result.X_new.detach().cpu().numpy().squeeze()
+                        if result.X_new is not None
+                        else None,
+                        (alpha / alpha.abs().max()).detach().cpu().numpy().squeeze()
+                        if alpha is not None
+                        else None,
+                        axs[1],
+                    )
+                axs[1].set_xlim([X_test.min() - X_offset, X_test.max() + X_offset])
+                axs[1].yaxis.tick_right()
+                axs[0].set_yticks([0., 1.])
+                # if i == len(results) - 1:
+                axs[1].set_ylabel("$\\alpha(\mathbf{x})$", rotation=0, va="center")
+                axs[1].yaxis.set_label_coords(1.05, 0.5)
+
+                if i == len(results) - 1:
+                    if parameter_labels is None:
+                        axs[1].set_xlabel("x1")
+                    else:
+                        axs[1].set_xlabel(parameter_labels)
+                else:
+                    axs[1].set_xticklabels([])
+
+            if savepath is not None:
+                fig.savefig(savepath / f"1D_training_{i:03d}.png", bbox_inches="tight")
+            if show:
+                plt.show()
+            return fig
+
+        else:
+
+            for i, result in enumerate(results):
+                mu, variance = self._evaluate_posterior(result.model.posterior, X_test)
+
+                fig = plt.figure(figsize=(6, 4), facecolor="white")
+                gspec = GridSpec(2, 1, hspace=0.0, height_ratios=[3, 2])
+
+                ax = fig.add_subplot(gspec[0])
+                ax = self._plot_gp_1D(
+                    result.X.detach().cpu().numpy().squeeze(),
+                    result.y.detach().cpu().numpy().squeeze(),
                     result.X_new.detach().cpu().numpy().squeeze()
                     if result.X_new is not None
                     else None,
-                    alpha.detach().cpu().numpy().squeeze()
-                    if alpha is not None
-                    else None,
+                    X_test.detach().cpu().numpy().squeeze(),
+                    y_test.detach().cpu().numpy().squeeze(),
+                    mu.detach().cpu().numpy().squeeze(),
+                    variance.detach().cpu().numpy().squeeze(),
                     ax,
                 )
-                ax.set_ylabel("Acquisition\nFunction")
-                if parameter_labels is not None:
-                    ax.set_xlabel("x1")
+                ax.set_xticks([])
+                if index is None:
+                    ax.set_title(f"Iteration {i}")
                 else:
-                    ax.set_xlabel(parameter_labels)
+                    ax.set_title(f"Iteration {index[i]}")
+                ax.set_ylabel("Objective\nFunction")
                 ax.set_xlim([X_test.min() - X_offset, X_test.max() + X_offset])
+
+                if i != len(results) - 1:
+                    alpha = self._evaluate_acq_func(
+                        result.acqfunc, X_test.unsqueeze(-1)
+                    )
+                    ax = fig.add_subplot(gspec[1])
+                    ax = self._plot_acqfunc_1D(
+                        X_test.detach().cpu().numpy().squeeze(),
+                        result.X_new.detach().cpu().numpy().squeeze()
+                        if result.X_new is not None
+                        else None,
+                        alpha.detach().cpu().numpy().squeeze()
+                        if alpha is not None
+                        else None,
+                        ax,
+                    )
+                    ax.set_ylabel("Acquisition\nFunction")
+                    if parameter_labels is not None:
+                        ax.set_xlabel("x1")
+                    else:
+                        ax.set_xlabel(parameter_labels)
+                    ax.set_xlim([X_test.min() - X_offset, X_test.max() + X_offset])
 
             if savepath is not None:
                 fig.savefig(savepath / f"1D_training_{i:03d}.png")
