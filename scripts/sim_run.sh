@@ -2,6 +2,7 @@
 # 
 # Runs configuration and production scripts. Sample usage:
 # bash ./Source/scripts/sim_run.sh l 4 cuda 2
+# bash ./Source/scripts/sim_run.sh l 4 cpu 2
 
 SIM="$1"
 JOBS=$2

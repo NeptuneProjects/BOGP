@@ -1,7 +1,7 @@
 #!/bin/bash
 # 
 # Runs configuration script. Sample usage:
-# bash ./Source/scripts/sim_config.sh l 4 cuda
+# bash ./Source/scripts/sim_config.sh l
 
 SIM="$1"
 if [[ $SIM == "r" ]]
