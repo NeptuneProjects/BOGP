@@ -12,20 +12,22 @@ OFFSET=${4:-0}
 if [[ $SIM == "r" ]]
     then
         SIMDESC="range estimation"
+        SIMPATH="range_estimation"
 elif [[ $SIM == "l" ]]
     then
         SIMDESC="localization"
+        SIMPATH=$SIMDESC
 fi
 
 echo "Running $SIMDESC on $DEVICE with $JOBS jobs."
 if [[ $DEVICE == "CPU" ]]
     then
-        find ./Data/Simulations/localization/queue/*.json \
+        find ./Data/Simulations/$SIMPATH/queue/*.json \
         | parallel -j$JOBS --progress \
         'python3 ./Source/scripts/simulations.py '$SIM' {} --path ./Data/Simulations'
 elif [[ $DEVICE == "CUDA" ]]
     then
-        find ./Data/Simulations/localization/queue/*.json \
+        find ./Data/Simulations/$SIMPATH/queue/*.json \
         | parallel -j$JOBS --progress \
         'CUDA_VISIBLE_DEVICES="$(({%}-1+'$OFFSET'))" python3 ./Source/scripts/simulations.py '$SIM' {} --path ./Data/Simulations --device cuda'
 fi
