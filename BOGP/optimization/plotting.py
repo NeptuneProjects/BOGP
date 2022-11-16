@@ -23,6 +23,80 @@ OPTIMUM_KWARGS = {
 }
 
 
+def plot_experiment_best_observations(df, evaluations, xlim=None):
+    fig = plt.figure(figsize=(7, 7), facecolor="w")
+    gs = GridSpec(4, 2, figure=fig, hspace=0.075, wspace=0.05)
+
+    lines = []
+    legend_populated = False
+    max_evals = 0
+    for i, row in enumerate(evaluations["rec_r"]):
+        for j, col in enumerate(evaluations["snr"]):
+            ax = fig.add_subplot(gs[i, j])
+            for k, acq_func in enumerate(evaluations["acq_func"]):
+                selection = (
+                    (df["acq_func"] == acq_func)
+                    & (df["snr"] == float(col))
+                    & (df["rec_r"] == float(row))
+                )
+                selected_data = df[selection].pivot(
+                    index="seed", columns="evaluation", values="best_value"
+                )
+                if len(selected_data.columns) > max_evals:
+                    max_evals = len(selected_data.columns)
+                line = plot_performance_history(
+                    selected_data,
+                    label=evaluations["acq_func_abbrev"][k],
+                    upper_threshold=1.0,
+                )
+                if not legend_populated:
+                    lines.append(line)
+
+            optimum = ax.axhline(
+                1.0, c="k", ls="--", lw=1, alpha=0.5, label="Global Optimum"
+            )
+            if not legend_populated:
+                lines.append(optimum)
+
+            legend_populated = True
+
+            if xlim is None:
+                ax.set_xlim([-5, max_evals + 10])
+            else:
+                ax.set_xlim(xlim)
+            ax.set_ylim(0, 1.05)
+
+            if i == 0 and j == 0:
+                ax.set_title("Noiseless")
+            elif i == 0 and j == 1:
+                ax.set_title(f"SNR = {col} dB")
+
+            if i != 3:
+                ax.set_xticklabels([])
+            if j != 0:
+                ax.set_yticklabels([])
+
+            if j == 0:
+                if i != 3:
+                    ax.set_ylabel(f"$R={float(row):.1f}$ km\n")
+                elif i == 3:
+                    ax.set_xlabel("Evaluation")
+                    ax.set_ylabel(f"$R={float(row):.1f}$ km\nBest Evaluation")
+
+            if i == 3 and j == 1:
+                ax.legend(
+                    lines,
+                    [l.get_label() for l in lines],
+                    loc="right",
+                    ncol=3 if len(lines) % 3 == 0 else 2,
+                    bbox_to_anchor=(1, -0.4),
+                )
+
+    fig.suptitle("Optimization Performance History", y=0.94)
+
+    return fig
+
+
 def plot_best_observations(
     best_values,
     labels: list = None,
@@ -78,14 +152,21 @@ def _plot_best_observations_confint(
     return ax
 
 
-def plot_performance_history(df, ax=None, label=None):
+def plot_performance_history(
+    df, ax=None, label=None, lower_threshold=None, upper_threshold=None
+):
     if ax is None:
         ax = plt.gca()
 
     mean = df.mean(axis=0).values
     std = df.std(axis=0).values
+
     ucb = mean + std
+    if upper_threshold is not None:
+        ucb[ucb > upper_threshold] = upper_threshold
     lcb = mean - std
+    if lower_threshold is not None:
+        lcb[lcb < lower_threshold] = lower_threshold
     evals = df.columns.to_numpy()
 
     (line,) = ax.plot(evals, mean, label=label)
@@ -207,14 +288,16 @@ class ResultsPlotter:
                 else:
                     axs[0].text(0.1, 0.9, f"Iteration {index[i]}", va="top")
                 axs[0].set_xlim([X_test.min() - X_offset, X_test.max() + X_offset])
-                axs[0].set_yticks([0., 1.])
+                axs[0].set_yticks([0.0, 1.0])
                 # if i == len(results) - 1:
                 axs[0].set_ylabel("$f(\mathbf{x})$", rotation=0, va="center")
                 axs[0].yaxis.set_label_coords(-0.05, 0.5)
 
                 # if i != len(results) - 1:
                 if not SMOKE_TEST:
-                    alpha = self._evaluate_acq_func(result.acqfunc, X_test.unsqueeze(-1))
+                    alpha = self._evaluate_acq_func(
+                        result.acqfunc, X_test.unsqueeze(-1)
+                    )
 
                     axs[1] = self._plot_acqfunc_1D(
                         X_test.detach().cpu().numpy().squeeze(),
@@ -228,7 +311,7 @@ class ResultsPlotter:
                     )
                 axs[1].set_xlim([X_test.min() - X_offset, X_test.max() + X_offset])
                 axs[1].yaxis.tick_right()
-                axs[0].set_yticks([0., 1.])
+                axs[0].set_yticks([0.0, 1.0])
                 # if i == len(results) - 1:
                 axs[1].set_ylabel("$\\alpha(\mathbf{x})$", rotation=0, va="center")
                 axs[1].yaxis.set_label_coords(1.05, 0.5)

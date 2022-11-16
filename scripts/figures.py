@@ -12,6 +12,7 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 import numpy as np
+import pandas as pd
 import torch
 from tqdm import tqdm
 
@@ -338,6 +339,20 @@ def figure3():
     fig.savefig(
         FIGURE_PATH / "environment.png", dpi=300, facecolor="white", bbox_inches="tight"
     )
+
+
+def figure4():
+    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "range_estimation"
+    evaluations = {
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement"],
+        "acq_func_abbrev": ["PI", "EI"],
+        "snr": ["inf", "20"],
+        "rec_r": ["0.5", "3.0", "6.0", "10.0"]
+    }
+    df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
+    df["best_param"] = df["best_param"].str.strip("[").str.strip("]").astype(float)
+    fig = plotting.plot_experiment_best_observations(df, evaluations, xlim=[-5, 205])
+    fig.savefig(FIGURE_PATH / "RangeEst_PerfHist.png", dpi=200, facecolor="white", bbox_inches="tight")
 
 
 if __name__ == "__main__":
