@@ -27,6 +27,8 @@ from tritonoa.sp import beamformer, snrdb_to_sigma, added_wng
 ROOT = Path.home() / "Research" / "Projects" / "BOGP"
 FIGURE_PATH = ROOT / "Reports" / "JASA" / "figures"
 
+DPI = 200
+
 
 def main(figures: list):
     for figure in figures:
@@ -182,7 +184,7 @@ def figure1():
     )
     fig.savefig(
         FIGURE_PATH / "MFP.png",
-        dpi=300,
+        dpi=DPI,
         facecolor="white",
         bbox_inches="tight",
     )
@@ -225,7 +227,7 @@ def figure2():
         parameter_labels="$\mathbf{x}$ (Range [km])",
         consolidate=True,
     )
-    fig.savefig(FIGURE_PATH / "optim_1D.png", dpi=300, bbox_inches="tight")
+    fig.savefig(FIGURE_PATH / "optim_1D.png", dpi=DPI, facecolor="white", bbox_inches="tight")
 
 
 def figure3():
@@ -337,7 +339,7 @@ def figure3():
     ax.spines.top.set_visible(False)
 
     fig.savefig(
-        FIGURE_PATH / "environment.png", dpi=300, facecolor="white", bbox_inches="tight"
+        FIGURE_PATH / "environment.png", dpi=DPI, facecolor="white", bbox_inches="tight"
     )
 
 
@@ -351,16 +353,23 @@ def figure4():
     }
     df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
     df["best_param"] = df["best_param"].str.strip("[").str.strip("]").astype(float)
-    fig = plotting.plot_experiment_best_observations(df, evaluations, xlim=[-5, 205])
-    fig.savefig(FIGURE_PATH / "RangeEst_PerfHist.png", dpi=200, facecolor="white", bbox_inches="tight")
+    fig = plotting.plot_aggregated_data(
+        df,
+        evaluations,
+        "best_value",
+        optimum=1.0,
+        upper_threshold=1.0,
+        title="Performance History",
+        xlabel="Evaluation",
+        ylabel="$\hat{f}(\mathbf{x})$",
+        xlim=[-2, 202],
+        ylim=[0, 1.05]
+    )
+    fig.savefig(FIGURE_PATH / "RangeEst_PerfHist.png", dpi=DPI, facecolor="white", bbox_inches="tight")
 
 
 def figure5():
-    pass
-
-
-def figure6():
-    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "localization"
+    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "range_estimation"
     evaluations = {
         "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
         "acq_func_abbrev": ["PI", "EI", "qEI"],
@@ -369,8 +378,101 @@ def figure6():
     }
     df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
     df["best_param"] = df["best_param"].str.strip("[").str.strip("]").astype(float)
-    fig = plotting.plot_experiment_best_observations(df, evaluations, xlim=[-5, 205])
-    fig.savefig(FIGURE_PATH / "Localization_PerfHist.png", dpi=200, facecolor="white", bbox_inches="tight")
+    fig = plotting.plot_aggregated_data(
+        df,
+        evaluations,
+        "best_param",
+        compute_error_with=evaluations["rec_r"],
+        title="Error History",
+        xlabel="Evaluation",
+        ylabel="$\\vert\hat{r}_{src} - r_{src}\\vert$",
+        xlim=[-2, 202],
+        ylim=[0, 10]
+    )
+    fig.savefig(FIGURE_PATH / "RangeEst_ErrHist.png", dpi=DPI, facecolor="white", bbox_inches="tight")
+
+
+def figure6():
+    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "localization_500iter_newparams"
+    evaluations = {
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
+        "acq_func_abbrev": ["PI", "EI", "qEI"],
+        "snr": ["inf", "20"],
+        "rec_r": ["0.5", "3.0", "6.0", "10.0"],
+        "src_z": ["62"]
+    }
+    df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
+    new_cols = df["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
+    df = pd.concat([df, new_cols], axis=1).drop("best_param", axis=1)
+    fig = plotting.plot_aggregated_data(
+        df,
+        evaluations,
+        "best_value",
+        optimum=1.0,
+        upper_threshold=1.0,
+        title="Performance History",
+        xlabel="Evaluation",
+        ylabel="$\hat{f}(\mathbf{x})$",
+        xlim=[-5, 505],
+        ylim=[0, 1.05]
+    )
+    fig.savefig(FIGURE_PATH / "Localization_PerfHist.png", dpi=DPI, facecolor="white", bbox_inches="tight")
+
+
+def figure7():
+    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "localization_500iter_newparams"
+    evaluations = {
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
+        "acq_func_abbrev": ["PI", "EI", "qEI"],
+        "snr": ["inf", "20"],
+        "rec_r": ["0.5", "3.0", "6.0", "10.0"],
+        "src_z": ["62"]
+    }
+    df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
+    new_cols = df["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
+    df = pd.concat([df, new_cols], axis=1).drop("best_param", axis=1)
+    fig = plotting.plot_aggregated_data(
+        df,
+        evaluations,
+        "best_param0",
+        compute_error_with=evaluations["rec_r"],
+        title="Range Error History",
+        xlabel="Evaluation",
+        ylabel="$\\vert\hat{r}_{src} - r_{src}\\vert$",
+        xlim=[-5, 505],
+        ylim=[0, 10]
+    )
+    fig.savefig(FIGURE_PATH / "Localization_ErrHistRange.png", dpi=DPI, facecolor="white", bbox_inches="tight")
+
+
+def figure8():
+    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "localization_500iter_newparams"
+    evaluations = {
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
+        "acq_func_abbrev": ["PI", "EI", "qEI"],
+        "snr": ["inf", "20"],
+        "rec_r": ["0.5", "3.0", "6.0", "10.0"],
+        "src_z": ["62"]
+    }
+    df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
+    new_cols = df["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
+    df = pd.concat([df, new_cols], axis=1).drop("best_param", axis=1)
+    fig = plotting.plot_aggregated_data(
+        df,
+        evaluations,
+        "best_param1",
+        compute_error_with=float(evaluations["src_z"][0]),
+        title="Depth Error History",
+        xlabel="Evaluation",
+        ylabel="$\\vert\hat{z}_{src} - z_{src}\\vert$",
+        xlim=[-5, 505],
+        ylim=[0, 150]
+    )
+    fig.savefig(FIGURE_PATH / "Localization_ErrHistDepth.png", dpi=DPI, facecolor="white", bbox_inches="tight")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()

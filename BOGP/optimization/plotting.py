@@ -23,9 +23,25 @@ OPTIMUM_KWARGS = {
 }
 
 
-def plot_experiment_best_observations(df, evaluations, xlim=None):
+def plot_aggregated_data(
+    df,
+    evaluations,
+    value_to_plot,
+    compute_error_with=None,
+    optimum=None,
+    upper_threshold=None,
+    lower_threshold=None,
+    xlabel="x",
+    ylabel="y",
+    xlim=None,
+    ylim=None,
+    title=None,
+):
+    """
+    values: best_value, best_param, best_param0, best_param1, etc.
+    """
     fig = plt.figure(figsize=(7, 7), facecolor="w")
-    gs = GridSpec(4, 2, figure=fig, hspace=0.075, wspace=0.05)
+    gs = GridSpec(4, 2, figure=fig, hspace=0.075, wspace=0.05)  # Grid is hard-coded
 
     lines = []
     legend_populated = False
@@ -39,24 +55,46 @@ def plot_experiment_best_observations(df, evaluations, xlim=None):
                     & (df["snr"] == float(col))
                     & (df["rec_r"] == float(row))
                 )
-                selected_data = df[selection].pivot(
-                    index="seed", columns="evaluation", values="best_value"
-                )
+
+                if compute_error_with is not None:
+                    selected_data = abs(
+                        (
+                            df[selection]
+                            .pivot(
+                                index="seed", columns="evaluation", values=value_to_plot
+                            )
+                            .astype(float)
+                        )
+                        - (
+                            float(compute_error_with[i])
+                            if isinstance(compute_error_with, list)
+                            else compute_error_with
+                        )
+                    )
+                else:
+                    selected_data = (
+                        df[selection]
+                        .pivot(index="seed", columns="evaluation", values=value_to_plot)
+                        .astype(float)
+                    )
+
                 if len(selected_data.columns) > max_evals:
                     max_evals = len(selected_data.columns)
-                line = plot_performance_history(
+                line = plot_line_with_confint(
                     selected_data,
                     label=evaluations["acq_func_abbrev"][k],
-                    upper_threshold=1.0,
+                    upper_threshold=upper_threshold,
+                    lower_threshold=lower_threshold,
                 )
                 if not legend_populated:
                     lines.append(line)
 
-            optimum = ax.axhline(
-                1.0, c="k", ls="--", lw=1, alpha=0.5, label="Global Optimum"
-            )
-            if not legend_populated:
-                lines.append(optimum)
+            if optimum is not None:
+                optimum = ax.axhline(
+                    1.0, c="k", ls="--", lw=1, alpha=0.5, label="Global Optimum"
+                )
+                if not legend_populated:
+                    lines.append(optimum)
 
             legend_populated = True
 
@@ -64,7 +102,8 @@ def plot_experiment_best_observations(df, evaluations, xlim=None):
                 ax.set_xlim([-5, max_evals + 10])
             else:
                 ax.set_xlim(xlim)
-            ax.set_ylim(0, 1.05)
+            if ylim is not None:
+                ax.set_ylim(ylim)
 
             if i == 0 and j == 0:
                 ax.set_title("Noiseless")
@@ -80,8 +119,8 @@ def plot_experiment_best_observations(df, evaluations, xlim=None):
                 if i != 3:
                     ax.set_ylabel(f"$R={float(row):.1f}$ km\n")
                 elif i == 3:
-                    ax.set_xlabel("Evaluation")
-                    ax.set_ylabel(f"$R={float(row):.1f}$ km\nBest Evaluation")
+                    ax.set_xlabel(xlabel)
+                    ax.set_ylabel(f"$R={float(row):.1f}$ km\n{ylabel}")
 
             if i == 3 and j == 1:
                 ax.legend(
@@ -92,67 +131,12 @@ def plot_experiment_best_observations(df, evaluations, xlim=None):
                     bbox_to_anchor=(1, -0.4),
                 )
 
-    fig.suptitle("Optimization Performance History", y=0.94)
+    fig.suptitle(title, y=0.94)
 
     return fig
 
 
-def plot_best_observations(
-    best_values,
-    labels: list = None,
-    ax=None,
-    lcb_constraint=None,
-    ucb_constraint=None,
-    **kwargs,
-):
-    if ax is None:
-        ax = plt.gca()
-
-    for i in range(len(best_values)):
-        data = best_values[i]
-        mu = data.mean(axis=0)
-        sigma = data.std(axis=0)
-        _plot_best_observations(mu, ax=ax, kwargs={"label": labels[i]})
-        _plot_best_observations_confint(
-            mu,
-            sigma,
-            ax=ax,
-            lcb_constraint=lcb_constraint,
-            ucb_constraint=ucb_constraint,
-            kwargs={"alpha": 0.1},
-        )
-
-    ax.legend()
-    ax.set_xlabel("Observation")
-    ax.set_ylabel("Best Observed Value")
-
-    return ax
-
-
-def _plot_best_observations(best_values, ax=None, kwargs={}):
-    if ax is None:
-        ax = plt.gca()
-    return ax.plot(np.arange(len(best_values)), best_values, **kwargs)
-
-
-def _plot_best_observations_confint(
-    mu, sigma, ax=None, lcb_constraint=None, ucb_constraint=None, kwargs={}
-):
-    if ax is None:
-        ax = plt.gca()
-
-    lcb = mu - sigma
-    if lcb_constraint is not None:
-        lcb[lcb < lcb_constraint] = lcb_constraint
-    ucb = mu + sigma
-    if ucb_constraint is not None:
-        ucb[ucb > ucb_constraint] = ucb_constraint
-
-    ax = ax.fill_between(np.arange(len(mu)), lcb, ucb, **kwargs)
-    return ax
-
-
-def plot_performance_history(
+def plot_line_with_confint(
     df, ax=None, label=None, lower_threshold=None, upper_threshold=None
 ):
     if ax is None:
