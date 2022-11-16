@@ -344,8 +344,8 @@ def figure3():
 def figure4():
     EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "range_estimation"
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement"],
-        "acq_func_abbrev": ["PI", "EI"],
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
+        "acq_func_abbrev": ["PI", "EI", "qEI"],
         "snr": ["inf", "20"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"]
     }
@@ -354,6 +354,23 @@ def figure4():
     fig = plotting.plot_experiment_best_observations(df, evaluations, xlim=[-5, 205])
     fig.savefig(FIGURE_PATH / "RangeEst_PerfHist.png", dpi=200, facecolor="white", bbox_inches="tight")
 
+
+def figure5():
+    pass
+
+
+def figure6():
+    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "localization"
+    evaluations = {
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
+        "acq_func_abbrev": ["PI", "EI", "qEI"],
+        "snr": ["inf", "20"],
+        "rec_r": ["0.5", "3.0", "6.0", "10.0"]
+    }
+    df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
+    df["best_param"] = df["best_param"].str.strip("[").str.strip("]").astype(float)
+    fig = plotting.plot_experiment_best_observations(df, evaluations, xlim=[-5, 205])
+    fig.savefig(FIGURE_PATH / "Localization_PerfHist.png", dpi=200, facecolor="white", bbox_inches="tight")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
