@@ -60,8 +60,76 @@ class ObjectiveFunction:
             return _evaluate_objfunc()
 
 
+class Optimizer:
+    def __init__(
+        self,
+        obj_func: base.BaseTestProblem,
+        search_parameters: dict,
+        fixed_parameters: dict = {},
+        obj_func_kwargs: dict = {}
+    ):
+        self.obj_func = ObjectiveFunction(obj_func)
+        try:
+            self.obj_func_name = obj_func._get_name()
+        except AttributeError:
+            self.obj_func_name = obj_func.__name__
+        self.obj_func_module = obj_func.__module__
+        self.search_parameters = search_parameters
+        self.fixed_parameters = fixed_parameters
+        self.obj_func_kwargs = obj_func_kwargs
+    
+    @staticmethod
+    def get_bounds(search_parameters):
+        bounds = torch.zeros(2, len(search_parameters))
+        for i, parameter in enumerate(search_parameters):
+            bounds[:, i] = torch.tensor(parameter["bounds"])
+        return bounds
+
+
 @dataclass
-class OptimizerConfig:
+class RandomSearchConfig:
+    main_seed: int = field(default=2009)
+    n_total: int = field(default=10)
+
+
+class RandomSearch(Optimizer):
+    def __init__(
+        self,
+        config: RandomSearchConfig,
+        obj_func: base.BaseTestProblem,
+        search_parameters: dict,
+        fixed_parameters: dict = {},
+        obj_func_kwargs: dict = {},
+    ):
+        super().__init__(
+            obj_func,
+            search_parameters,
+            fixed_parameters,
+            obj_func_kwargs,
+        )
+        self.config = config
+        
+    def get_candidates(self):
+        """
+        (r2 - r1) * torch.rand(M, N) + r1
+        """
+        bounds = self.get_bounds(self.search_parameters)
+        N = bounds.shape[1]
+        interval = (bounds[1] - bounds[0]).unsqueeze(-1)
+        X_new = interval * torch.rand(N, self.config.n_total) + bounds[0].unsqueeze(-1)
+        return X_new.T
+
+    def run(self):
+        X = self.get_candidates()
+        parameters = {
+            item["name"]: X[..., i] for i, item in enumerate(self.search_parameters)
+        }
+        y = self.obj_func.evaluate(parameters, self.fixed_parameters)
+        return X, y
+
+
+@dataclass
+class BayesianOptimizationGPConfig:
     kernel_func: Optional[Module] = field(default=None)
     acq_func: AcquisitionFunction = field(default_factory=AcquisitionFunction)
     acq_func_kwargs: Union[dict, None] = field(default=None)
@@ -95,10 +163,10 @@ class OptimizerConfig:
         pass
 
 
-class Optimizer:
+class BayesianOptimizationGP(Optimizer):
     def __init__(
         self,
-        config: OptimizerConfig,
+        config: BayesianOptimizationGPConfig,
         obj_func: base.BaseTestProblem,
         search_parameters: dict,
         fixed_parameters: dict = {},
@@ -106,17 +174,23 @@ class Optimizer:
         device="cuda",
         seed: int = 0,
     ):
+        super().__init__(
+            obj_func,
+            search_parameters,
+            fixed_parameters,
+            obj_func_kwargs,
+        )
         self.config = config
         self.config_dict = config._construct_dict()
-        self.obj_func = ObjectiveFunction(obj_func)
-        try:
-            self.obj_func_name = obj_func._get_name()
-        except AttributeError:
-            self.obj_func_name = obj_func.__name__
-        self.obj_func_module = obj_func.__module__
-        self.search_parameters = search_parameters
-        self.fixed_parameters = fixed_parameters
-        self.obj_func_kwargs = obj_func_kwargs
+        # self.obj_func = ObjectiveFunction(obj_func)
+        # try:
+        #     self.obj_func_name = obj_func._get_name()
+        # except AttributeError:
+        #     self.obj_func_name = obj_func.__name__
+        # self.obj_func_module = obj_func.__module__
+        # self.search_parameters = search_parameters
+        # self.fixed_parameters = fixed_parameters
+        # self.obj_func_kwargs = obj_func_kwargs
         if (device == "cuda") and torch.cuda.is_available():
             self.device = torch.device("cuda")
         else:
@@ -239,7 +313,7 @@ class Optimizer:
                             saved_model.to("cpu"),
                             saved_acqfunc.to("cpu"),
                             X_new.detach().cpu(),
-                            y_new.detach().cpu()
+                            y_new.detach().cpu(),
                         )
                     )
 
@@ -252,10 +326,12 @@ class Optimizer:
                     state_dict=model.state_dict(),
                     covar_module=self.config.kernel_func,
                 )
-                
+
                 fit_gpytorch_model(mll)
                 if torch.cuda.is_available():
-                    memory_free, memory_total = torch.cuda.mem_get_info(self.device.type + ':0')
+                    memory_free, memory_total = torch.cuda.mem_get_info(
+                        self.device.type + ":0"
+                    )
                     logger.info(
                         f"Iter {count} | CUDA Memory usage: {100 * (1 - memory_free / memory_total):.2f}%"
                     )
@@ -263,11 +339,7 @@ class Optimizer:
 
             with torch.no_grad():
                 results.append(
-                    Result(
-                        X.detach().cpu(),
-                        y.detach().cpu(),
-                        model.to("cpu")
-                    )
+                    Result(X.detach().cpu(), y.detach().cpu(), model.to("cpu"))
                 )
 
         except:
@@ -338,7 +410,7 @@ class Results:
         results_dict = torch.load(path, map_location=torch.device("cpu"))
 
         for entry in results_dict:
-            _, model = Optimizer.initialize_model(
+            _, model = BayesianOptimizationGP.initialize_model(
                 entry["X"], entry["y"], state_dict=entry["model"]
             )
             if entry["acqfunc"] is not None:
@@ -380,8 +452,8 @@ def run_mc(config_kwargs, optim_kwargs, path=Path.cwd(), num_trials=10, main_see
         trial_path = path / "Runs" / f"{trial:010d}"
         os.makedirs(trial_path, exist_ok=True)
 
-        config = OptimizerConfig(**config_kwargs)
-        optimizer = Optimizer(config, seed=trial, **optim_kwargs)
+        config = BayesianOptimizationGPConfig(**config_kwargs)
+        optimizer = BayesianOptimizationGP(config, seed=trial, **optim_kwargs)
         results = optimizer.run()
 
         optimizer.save(trial_path / f"optim_{trial:010d}.pth")
