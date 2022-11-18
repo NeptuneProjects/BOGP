@@ -66,7 +66,8 @@ class Optimizer:
         obj_func: base.BaseTestProblem,
         search_parameters: dict,
         fixed_parameters: dict = {},
-        obj_func_kwargs: dict = {}
+        obj_func_kwargs: dict = {},
+        seed: int = 0,
     ):
         self.obj_func = ObjectiveFunction(obj_func)
         try:
@@ -77,6 +78,8 @@ class Optimizer:
         self.search_parameters = search_parameters
         self.fixed_parameters = fixed_parameters
         self.obj_func_kwargs = obj_func_kwargs
+        self.seed = seed
+        self.bounds = self.get_bounds(self.search_parameters)
     
     @staticmethod
     def get_bounds(search_parameters):
@@ -88,7 +91,6 @@ class Optimizer:
 
 @dataclass
 class RandomSearchConfig:
-    seed: int = field(default=2009)
     n_total: int = field(default=10)
 
 
@@ -100,12 +102,14 @@ class RandomSearch(Optimizer):
         search_parameters: dict,
         fixed_parameters: dict = {},
         obj_func_kwargs: dict = {},
+        seed: int = 0,
     ):
         super().__init__(
             obj_func,
             search_parameters,
             fixed_parameters,
             obj_func_kwargs,
+            seed
         )
         self.config = config
         
@@ -113,8 +117,9 @@ class RandomSearch(Optimizer):
         """
         (r2 - r1) * torch.rand(M, N) + r1
         """
-        torch.manual_seed(self.config.seed)
-        bounds = self.get_bounds(self.search_parameters)
+        torch.manual_seed(self.seed)
+        # bounds = self.get_bounds(self.search_parameters)
+        bounds = self.bounds
         N = bounds.shape[1]
         interval = (bounds[1] - bounds[0]).unsqueeze(-1)
         X_new = interval * torch.rand(N, self.config.n_total) + bounds[0].unsqueeze(-1)
@@ -180,6 +185,7 @@ class BayesianOptimizationGP(Optimizer):
             search_parameters,
             fixed_parameters,
             obj_func_kwargs,
+            seed
         )
         self.config = config
         self.config_dict = config._construct_dict()
@@ -196,8 +202,8 @@ class BayesianOptimizationGP(Optimizer):
             self.device = torch.device("cuda")
         else:
             self.device = torch.device("cpu")
-        self.seed = seed
-        self.bounds = self.get_bounds(self.search_parameters)
+        # self.seed = seed
+        # self.bounds = self.get_bounds(self.search_parameters)
 
     def __del__(self):
         pass
@@ -205,12 +211,12 @@ class BayesianOptimizationGP(Optimizer):
     def _construct_dict(self):
         return serialized_class_dict(self, {"config", "obj_func", "device"})
 
-    @staticmethod
-    def get_bounds(search_parameters):
-        bounds = torch.zeros(2, len(search_parameters))
-        for i, parameter in enumerate(search_parameters):
-            bounds[:, i] = torch.tensor(parameter["bounds"])
-        return bounds
+    # @staticmethod
+    # def get_bounds(search_parameters):
+    #     bounds = torch.zeros(2, len(search_parameters))
+    #     for i, parameter in enumerate(search_parameters):
+    #         bounds[:, i] = torch.tensor(parameter["bounds"])
+    #     return bounds
 
     @staticmethod
     def initialize_model(X, y, state_dict=None, covar_module=None):
@@ -222,11 +228,12 @@ class BayesianOptimizationGP(Optimizer):
 
     def run(self, disable_pbar=False):
         def _generate_initial_data():
-            X = (self.bounds[0] - self.bounds[1]) * torch.rand(
+            bounds = self.bounds
+            X = (bounds[0] - bounds[1]) * torch.rand(
                 self.config.n_warmup,
-                self.bounds.size(1),
+                bounds.size(1),
                 dtype=DTYPE,
-            ) + self.bounds[1]
+            ) + bounds[1]
             parameters = {
                 item["name"]: X[..., i] for i, item in enumerate(self.search_parameters)
             }
