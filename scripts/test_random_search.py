@@ -8,7 +8,7 @@ from botorch.test_functions import Rastrigin
 import torch
 
 sys.path.insert(0, str(Path.cwd()))
-from BOGP.optimization.optimizer import RandomSearchConfig, RandomSearch
+from BOGP.optimization.optimizer import RandomSearchConfig, RandomSearch, RandomResults, RandomResult
 from BOGP.acoustics import MatchedFieldProcessor
 
 
@@ -20,35 +20,20 @@ search_parameters = [
 obj_func_kwargs = {"dim": len(search_parameters), "negate": True}
 obj_func = Rastrigin(**obj_func_kwargs)
 
-random_search_config = RandomSearchConfig()
+random_search_config = RandomSearchConfig(n_total=9)
 random_searcher = RandomSearch(
     random_search_config,
     obj_func=obj_func,
     search_parameters=search_parameters
 )
 
-X, y = random_searcher.run()
-print(X)
-print(y)
-
-# bounds = random_searcher.get_bounds(search_parameters)
-
-# def get_candidates(M, bounds):
-#     """
-#     (r2 - r1) * torch.rand(M, N) + r1
-#     """
-#     N = bounds.shape[1]
-#     interval = (bounds[1] - bounds[0]).unsqueeze(-1)
-#     print(interval.shape)
-#     X_new = interval * torch.rand(N, M) + bounds[0].unsqueeze(-1)
-#     return X_new
+results = random_searcher.run()
+print(results[-1].best_value, results[-1].best_parameters)
+# result = RandomResult(X, y)
+# results = RandomResults([result])
+# results.save(Path.cwd() / "test.pth")
 
 
-# X_new = get_candidates(10, bounds).T
-# parameters = {
-#     item["name"]: X_new[..., i] for i, item in enumerate(search_parameters)
-# }
-# print(parameters)
-
+# loaded_results = RandomResults().load(Path.cwd() / "test.pth")
 
 #%%

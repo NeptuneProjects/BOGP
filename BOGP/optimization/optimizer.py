@@ -113,28 +113,65 @@ class RandomSearch(Optimizer):
         )
         self.config = config
         
+    # def get_candidates2(self):
+    #     """
+    #     (r2 - r1) * torch.rand(M, N) + r1
+    #     """
+    #     torch.manual_seed(self.seed)
+    #     # bounds = self.get_bounds(self.search_parameters)
+    #     bounds = self.bounds
+    #     N = bounds.shape[1]
+    #     interval = (bounds[1] - bounds[0]).unsqueeze(-1)
+    #     X_new = interval * torch.rand(N, self.config.n_total) + bounds[0].unsqueeze(-1)
+    #     print(X_new.T, X_new.T.shape)
+    #     return X_new.T.detach().cpu()
+
+    # def run2(self):
+    #     X = self.get_candidates()
+    #     y = []
+    #     for Xi in X:
+    #         parameters = {
+    #             item["name"]: Xi[..., i].unsqueeze(-1) for i, item in enumerate(self.search_parameters)
+    #         }
+    #         y.append(self.obj_func.evaluate(parameters, self.fixed_parameters))
+        
+    #     # parameters = {
+    #     #     item["name"]: X[..., i] for i, item in enumerate(self.search_parameters)
+    #     # }
+    #     # parameters["y"] = 
+        
+    #     return X, torch.tensor(y)
+        
+
     def get_candidates(self):
         """
         (r2 - r1) * torch.rand(M, N) + r1
         """
-        torch.manual_seed(self.seed)
-        # bounds = self.get_bounds(self.search_parameters)
         bounds = self.bounds
-        N = bounds.shape[1]
         interval = (bounds[1] - bounds[0]).unsqueeze(-1)
-        X_new = interval * torch.rand(N, self.config.n_total) + bounds[0].unsqueeze(-1)
+        X_new = interval * torch.rand(bounds.shape[1], 1) + bounds[0].unsqueeze(-1)
         return X_new.T.detach().cpu()
 
     def run(self):
-        X = self.get_candidates()
-        y = []
-        for Xi in X:
+        torch.manual_seed(self.seed)
+        results = RandomResults()
+
+        for i in range(self.config.n_total):
+            X_new = self.get_candidates()
             parameters = {
-                item["name"]: Xi[..., i].unsqueeze(-1) for i, item in enumerate(self.search_parameters)
+                item["name"]: X_new[..., i] for i, item in enumerate(self.search_parameters)
             }
-            y.append(self.obj_func.evaluate(parameters, self.fixed_parameters))
-        
-        return X, torch.tensor(y)
+            y_new = self.obj_func.evaluate(parameters, self.fixed_parameters)
+            if i == 0:
+                X = X_new
+                y = y_new
+            else:
+                X = torch.cat([X, X_new])
+                y = torch.cat([y, y_new])
+            
+            results.append(RandomResult(X, y))
+
+        return results
 
 
 @dataclass
@@ -389,15 +426,73 @@ class Result:
 class Results:
     def __init__(self, results: list = None):
         self.results = [] if results is None else results
-
-    def __del__(self):
-        pass
-
+    
     def __getitem__(self, idx):
         return self.results[idx]
 
     def __len__(self):
         return len(self.results)
+
+    def append(self, result):
+        self.results.append(result)
+    
+    def save(self, path):
+        torch.save(self._construct_dict(), path)
+
+
+@dataclass
+class RandomResult:
+    X: torch.Tensor = field(default_factory=torch.Tensor)
+    y: torch.Tensor = field(default_factory=torch.Tensor)
+
+    def __post_init__(self):
+        self.best_value = self.y.max().item()
+        self.best_parameters = self.X[torch.argmax(self.y)]
+    
+
+class RandomResults(Results):
+    def __init__(self, results: list = None):
+        super().__init__(results)
+    
+    def _construct_dict(self):
+        results_dict = []
+        for result in self.results:
+            results_dict.append(
+                {
+                    "X": result.X,
+                    "y": result.y
+                }
+            )
+        return results_dict
+    
+    def load(self, path):
+        results_dict = torch.load(path, map_location=torch.device("cpu"))
+
+        for entry in results_dict:
+            self.results.append(
+                RandomResult(
+                    X=entry["X"],
+                    y=entry["y"],
+                )
+            )
+        return self.results
+    
+    
+    
+class BOGPResults(Results):
+# class Results:
+    def __init__(self, results: list = None):
+        super().__init__(results)
+        # self.results = [] if results is None else results
+
+    # def __del__(self):
+    #     pass
+
+    # def __getitem__(self, idx):
+    #     return self.results[idx]
+
+    # def __len__(self):
+    #     return len(self.results)
 
     def _construct_dict(self):
         results_dict = []
@@ -414,8 +509,8 @@ class Results:
             )
         return results_dict
 
-    def append(self, result):
-        self.results.append(result)
+    # def append(self, result):
+    #     self.results.append(result)
 
     def load(self, path):
         results_dict = torch.load(path, map_location=torch.device("cpu"))
@@ -444,8 +539,8 @@ class Results:
             )
         return self.results
 
-    def save(self, path):
-        torch.save(self._construct_dict(), path)
+    # def save(self, path):
+        # torch.save(self._construct_dict(), path)
 
 
 def import_from_str(module: str, name: str):
