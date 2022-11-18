@@ -24,6 +24,18 @@ class Aggregator:
             "unit": "files",
             "colour": "blue"
         }
+    
+    def run(self, savepath=None, verbose=False):
+        if savepath is None:
+            savepath = Path.cwd()
+        df = self.read(verbose=verbose)
+        df.to_csv(savepath)
+    
+    def parse_file_structure(self):
+        files = sorted([f for f in (self.path / "Runs").glob("*/results.pth")])
+        folder_pairs = re.split("=|__", str(self.path))
+        folder_values = [folder_pairs[i + 1] for i in range(0, len(folder_pairs), 2)]
+        return files, folder_values
 
 
 class BayesianOptimizationGPAggregator(Aggregator):
@@ -39,16 +51,12 @@ class BayesianOptimizationGPAggregator(Aggregator):
             "best_param": [],
         }
 
-    def run(self, savepath=None, verbose=False):
-        if savepath is None:
-            savepath = Path.cwd()
-        df = self.read(verbose=verbose)
-        df.to_csv(savepath)
-
     def read(self, verbose=False):
-        files = sorted([f for f in (self.path / "Runs").glob("*/results.pth")])
-        folder_pairs = re.split("=|__", str(self.path))
-        folder_values = [folder_pairs[i + 1] for i in range(0, len(folder_pairs), 2)]
+        # files = sorted([f for f in (self.path / "Runs").glob("*/results.pth")])
+        # folder_pairs = re.split("=|__", str(self.path))
+        # folder_values = [folder_pairs[i + 1] for i in range(0, len(folder_pairs), 2)]
+
+        files, folder_values = self.parse_file_structure()
 
         for f in tqdm(files, disable=not verbose, **self.pbar_kwargs):
             results = Results().load(f)
@@ -68,5 +76,33 @@ class BayesianOptimizationGPAggregator(Aggregator):
 class RandomSearchAggregator(Aggregator):
     def __init__(self, path):
         super().__init__(path)
-        self.data = None
-        # TODO: Write aggregator class for random search
+        self.data = {
+            "acq_func": [],
+            "snr": [],
+            "rec_r": [],
+            "seed": [],
+            "evaluation": [],
+            "best_value": [],
+            "best_param": [],
+        }
+    
+    def read(self, verbose=False):
+        # files = sorted([f for f in (self.path / "Runs").glob("*/results.pth")])
+        # folder_pairs = re.split("=|__", str(self.path))
+        # folder_values = [folder_pairs[i + 1] for i in range(0, len(folder_pairs), 2)]
+
+        files, folder_values = self.parse_file_structure()
+
+        for f in tqdm(files, disable=not verbose, **self.pbar_kwargs):
+            results = Results().load(f)
+            for i, result in enumerate(results):
+                self.data["acq_func"].append(folder_values[0])
+                self.data["snr"].append(folder_values[1])
+                self.data["rec_r"].append(folder_values[2])
+                self.data["seed"].append(f.parent.stem)
+                self.data["evaluation"].append(i)
+                self.data["best_value"].append(result.best_value)
+                # TODO: Need to parse multiple parameters
+                self.data["best_param"].append(result.best_parameters.numpy())
+
+        return pd.DataFrame(self.data)
