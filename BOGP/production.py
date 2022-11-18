@@ -14,7 +14,7 @@ import numpy as np
 from tqdm import tqdm
 
 from .acoustics import MatchedFieldProcessor
-from .optimization import optimizer
+from .optimization import optimizer, random_search
 from tritonoa.kraken import run_kraken
 from . import utils
 
@@ -155,9 +155,11 @@ def format_optim_kwargs(config: dict):
     return optim_kwargs
 
 
+def format_random_kwargs(config: dict):
+    return
+
+
 def worker(config: dict):
-    config_kwargs = format_config_kwargs(config)
-    optim_kwargs = format_optim_kwargs(config)
     trial_path = (
         config.get("experiment_path") / "Runs" / f"{config.get('trial_seed'):010d}"
     )
@@ -177,22 +179,32 @@ def worker(config: dict):
     os.makedirs(trial_path, exist_ok=True)
     logger.info(f"Created trial run directory {trial_path}")
 
-    logger.info("Initializing optimizer configuration.")
-    optim_config = optimizer.OptimizerConfig(**config_kwargs)
-    logger.info("Initialized optimizer configuration.")
+    if config["random"]:
+        random_kwargs = format_random_kwargs(config)
+        random_config = random_search.RandomSearchConfig(**random_kwargs)
 
-    logger.info("Initializing optimizer.")
-    optim = optimizer.Optimizer(optim_config, **optim_kwargs)
-    logger.info("Initialized optimizer.")
+    elif config["SAGA"]:
+        pass
+    else:
+        config_kwargs = format_config_kwargs(config)
+        optim_kwargs = format_optim_kwargs(config)
 
-    logger.info("Running optimization loop.")
-    results = optim.run(disable_pbar=True)
-    logger.info("Ran optimization loop.")
+        logger.info("Initializing optimizer configuration.")
+        optim_config = optimizer.BayesianOptimizationGPConfig(**config_kwargs)
+        logger.info("Initialized optimizer configuration.")
 
-    logger.info("Saving optimization results.")
-    optim.save(trial_path / "optim.pth")
-    results.save(trial_path / "results.pth")
-    logger.info("Saved optimization results.")
+        logger.info("Initializing optimizer.")
+        optim = optimizer.BayesianOptimizationGP(optim_config, **optim_kwargs)
+        logger.info("Initialized optimizer.")
+
+        logger.info("Running optimization loop.")
+        results = optim.run(disable_pbar=True)
+        logger.info("Ran optimization loop.")
+
+        logger.info("Saving optimization results.")
+        optim.save(trial_path / "optim.pth")
+        results.save(trial_path / "results.pth")
+        logger.info("Saved optimization results.")
 
     logger.info("Cleaning up acoustic modeling files.")
     utils.clean_up_kraken_files(trial_path)
@@ -216,24 +228,24 @@ def dispatcher(config: dict):
         "colour": "blue",
         "total": n_trials,
     }
-    if config.get("workers") == 1:
-        for _ in range(n_trials):
-            worker(config | {"trial_seed": random.randint(0, int(1e9))})
-    else:
-        with ProcessPoolExecutor(
-            max_workers=config.get("workers"),
-            mp_context=multiprocessing.get_context("spawn"),
-        ) as executor:
-            futures = [
-                executor.submit(
-                    worker, config | {"trial_seed": random.randint(0, int(1e9))}
-                )
-                for _ in range(n_trials)
-            ]
+    # if config.get("workers") == 1:
+    for _ in range(n_trials):
+        worker(config | {"trial_seed": random.randint(0, int(1e9))})
+    # else:
+    #     with ProcessPoolExecutor(
+    #         max_workers=config.get("workers"),
+    #         mp_context=multiprocessing.get_context("spawn"),
+    #     ) as executor:
+    #         futures = [
+    #             executor.submit(
+    #                 worker, config | {"trial_seed": random.randint(0, int(1e9))}
+    #             )
+    #             for _ in range(n_trials)
+    #         ]
 
-            results = []
-            for future in tqdm(as_completed(futures), **pbar_kwargs):
-                results.append(future.result())
+    #         results = []
+    #         for future in tqdm(as_completed(futures), **pbar_kwargs):
+    #             results.append(future.result())
 
     configpath = Path(config["configpath"])
     logger.info("Moving configuration file from queue to run directory.")
