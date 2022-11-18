@@ -1,11 +1,11 @@
-name: gp
+name: gp310
 channels:
   - pytorch
   - gpytorch
   - conda-forge
   - defaults
 dependencies:
-  - python=3.9
+  - python=3.11
   - botorch
   - cmocean
   # - cudatoolkit=11.3
