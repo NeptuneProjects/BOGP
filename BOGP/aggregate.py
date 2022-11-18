@@ -67,7 +67,6 @@ class BayesianOptimizationGPAggregator(Aggregator):
                 self.data["seed"].append(f.parent.stem)
                 self.data["evaluation"].append(i)
                 self.data["best_value"].append(result.best_value)
-                # TODO: Need to parse multiple parameters
                 self.data["best_param"].append(result.best_parameters.numpy())
 
         return pd.DataFrame(self.data)
@@ -102,7 +101,6 @@ class RandomSearchAggregator(Aggregator):
                 self.data["seed"].append(f.parent.stem)
                 self.data["evaluation"].append(i)
                 self.data["best_value"].append(result.best_value)
-                # TODO: Need to parse multiple parameters
                 self.data["best_param"].append(result.best_parameters.numpy())
 
         return pd.DataFrame(self.data)
