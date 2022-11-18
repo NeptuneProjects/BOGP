@@ -88,7 +88,7 @@ class Optimizer:
 
 @dataclass
 class RandomSearchConfig:
-    main_seed: int = field(default=2009)
+    seed: int = field(default=2009)
     n_total: int = field(default=10)
 
 
@@ -113,11 +113,12 @@ class RandomSearch(Optimizer):
         """
         (r2 - r1) * torch.rand(M, N) + r1
         """
+        torch.manual_seed(self.config.seed)
         bounds = self.get_bounds(self.search_parameters)
         N = bounds.shape[1]
         interval = (bounds[1] - bounds[0]).unsqueeze(-1)
         X_new = interval * torch.rand(N, self.config.n_total) + bounds[0].unsqueeze(-1)
-        return X_new.T
+        return X_new.T.detach().cpu()
 
     def run(self):
         X = self.get_candidates()
