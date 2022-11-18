@@ -33,7 +33,6 @@ def main():
     # Calculate received pressure field
 
     # Submit experiment configuration to worker function.
-    # TODO: Create factory function
     # process.dispatcher(exp, n_workers=1)
 
     # logger.info("Complete.")
