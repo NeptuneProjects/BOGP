@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Usage:
 python3 ./Source/scripts/figures.py
+python3 ./Source/scripts/figures.py 1,2,3
 """
 import argparse
 from pathlib import Path
