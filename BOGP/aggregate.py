@@ -26,7 +26,7 @@ class Aggregator:
         }
 
 
-class RangeEstimationAggregator(Aggregator):
+class BayesianOptimizationGPAggregator(Aggregator):
     def __init__(self, path):
         super().__init__(path)
         self.data = {
@@ -63,3 +63,10 @@ class RangeEstimationAggregator(Aggregator):
                 self.data["best_param"].append(result.best_parameters.numpy())
 
         return pd.DataFrame(self.data)
+
+
+class RandomSearchAggregator(Aggregator):
+    def __init__(self, path):
+        super().__init__(path)
+        self.data = None
+        # TODO: Write aggregator class for random search
