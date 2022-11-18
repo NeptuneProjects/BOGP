@@ -29,7 +29,7 @@ def aggregate_runs():
     folders = utils.folders_of_evaluations(EVALUATIONS)
     for folder in folders:
         print(folder)
-        Agg = aggregate.RangeEstimationAggregator(path=EXPERIMENT / folder)
+        Agg = aggregate.BayesianOptimizationGPAggregator(path=EXPERIMENT / folder)
         Agg.run(savepath=EXPERIMENT / folder / "aggregated.csv", verbose=True)
 
 
@@ -60,3 +60,5 @@ if __name__ == "__main__":
         aggregate_runs()
     elif args.mode == "s":
         aggregate_simulations()
+
+# TODO: Write aggregating script for random search
