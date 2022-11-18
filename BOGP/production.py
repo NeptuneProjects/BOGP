@@ -155,33 +155,9 @@ def format_optim_kwargs(config: dict):
     return optim_kwargs
 
 
-def format_random_kwargs(config: dict):
-    random_kwargs = {
-        "n_total": config["optimizer_config"].get("n_total"),
-    }
-    return random_kwargs
-
-
-
-def execute_random_search(config: dict, optim_kwargs: dict, trial_path):
-    logger.info("Initializing random search configuration.")
-    optim_config = random_search.RandomSearchConfig(config["optimizer_config"].get("n_total"))
-    logger.info("Initialized random search configuration.")
-
-    logger.info("Initializing random search.")
-    optim = optimizer.RandomSearch(optim_config, **optim_kwargs)
-    logger.info("Initialized random search.")
-
-    logger.info("Running optimization loop.")
-    results = optim.run(disable_pbar=True)
-    logger.info("Ran optimization loop.")
-
-
-
-
 def execute_bayesian_optimization(config, optim_kwargs: dict, trial_path):
     config_kwargs = format_config_kwargs(config)
-        
+
     logger.info("Initializing optimizer configuration.")
     optim_config = optimizer.BayesianOptimizationGPConfig(**config_kwargs)
     logger.info("Initialized optimizer configuration.")
@@ -200,6 +176,26 @@ def execute_bayesian_optimization(config, optim_kwargs: dict, trial_path):
     optim.save(trial_path / "optim.pth")
     results.save(trial_path / "results.pth")
     logger.info("Saved optimization results.")
+
+
+def execute_random_search(config: dict, optim_kwargs: dict, trial_path):
+    logger.info("Initializing random search configuration.")
+    optim_config = random_search.RandomSearchConfig(
+        config["optimizer_config"].get("n_total")
+    )
+    logger.info("Initialized random search configuration.")
+
+    logger.info("Initializing random search.")
+    optim = optimizer.RandomSearch(optim_config, **optim_kwargs)
+    logger.info("Initialized random search.")
+
+    logger.info("Running optimization loop.")
+    results = optim.run()
+    logger.info("Ran optimization loop.")
+
+    logger.info("Saving random search results.")
+    results.save(trial_path / "results.pth")
+    logger.info("Saved random search results.")
 
 
 def worker(config: dict):
@@ -225,33 +221,11 @@ def worker(config: dict):
     optim_kwargs = format_optim_kwargs(config)
 
     if config["random"]:
-        execute_random_search()
-        
+        execute_random_search(config, optim_kwargs, trial_path)
     elif config["SAGA"]:
         pass
     else:
-        execute_bayesian_optimization()
-
-        # config_kwargs = format_config_kwargs(config)
-        
-        # logger.info("Initializing optimizer configuration.")
-        # optim_config = optimizer.BayesianOptimizationGPConfig(**config_kwargs)
-        # logger.info("Initialized optimizer configuration.")
-
-        # logger.info("Initializing optimizer.")
-        # optim = optimizer.BayesianOptimizationGP(
-        #     optim_config, device=config.get("device"), **optim_kwargs
-        # )
-        # logger.info("Initialized optimizer.")
-
-        # logger.info("Running optimization loop.")
-        # results = optim.run(disable_pbar=True)
-        # logger.info("Ran optimization loop.")
-
-        # logger.info("Saving optimization results.")
-        # optim.save(trial_path / "optim.pth")
-        # results.save(trial_path / "results.pth")
-        # logger.info("Saved optimization results.")
+        execute_bayesian_optimization(config, optim_kwargs, trial_path)
 
     logger.info("Cleaning up acoustic modeling files.")
     utils.clean_up_kraken_files(trial_path)
@@ -302,8 +276,6 @@ def dispatcher(config: dict):
     logger.info("Moved configuration file from queue to run directory.")
 
 
-
-
 # class Worker:
 #     def __init__(self, config):
 #         self.config = config
@@ -311,7 +283,7 @@ def dispatcher(config: dict):
 #     def execute(self, **kwargs):
 #         executor = self.get_executor()
 #         return executor(**kwargs)
-    
+
 #     def get_executor(self):
 #         if self.config["random"]:
 #             return self._execute_random_search()
@@ -322,9 +294,9 @@ def dispatcher(config: dict):
 
 #     def _execute_random_search(self):
 #         return
-    
+
 #     def _execute_SAGA(self):
 #         return
-    
+
 #     def _execute_BOGP(self):
 #         return
