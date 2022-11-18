@@ -149,14 +149,18 @@ def format_optim_kwargs(config: dict):
             config["environment_config"],
         ),
         "search_parameters": config["optimizer_config"]["search_parameters"],
-        "device": config.get("device"),
+        # "device": config.get("device"),
         "seed": config.get("trial_seed"),
     }
     return optim_kwargs
 
 
 def format_random_kwargs(config: dict):
-    return
+    random_kwargs = {
+        "seed": config.get("trial_seed"),
+        "n_total": config["optimizer_config"].get("n_total")
+    }
+    return random_kwargs
 
 
 def worker(config: dict):
@@ -183,6 +187,7 @@ def worker(config: dict):
         random_kwargs = format_random_kwargs(config)
         random_config = random_search.RandomSearchConfig(**random_kwargs)
 
+
     elif config["SAGA"]:
         pass
     else:
@@ -194,7 +199,7 @@ def worker(config: dict):
         logger.info("Initialized optimizer configuration.")
 
         logger.info("Initializing optimizer.")
-        optim = optimizer.BayesianOptimizationGP(optim_config, **optim_kwargs)
+        optim = optimizer.BayesianOptimizationGP(optim_config, device=config.get("device"), **optim_kwargs)
         logger.info("Initialized optimizer.")
 
         logger.info("Running optimization loop.")
