@@ -127,11 +127,14 @@ class RandomSearch(Optimizer):
 
     def run(self):
         X = self.get_candidates()
-        parameters = {
-            item["name"]: X[..., i] for i, item in enumerate(self.search_parameters)
-        }
-        y = self.obj_func.evaluate(parameters, self.fixed_parameters)
-        return X, y
+        y = []
+        for Xi in X:
+            parameters = {
+                item["name"]: Xi[..., i].unsqueeze(-1) for i, item in enumerate(self.search_parameters)
+            }
+            y.append(self.obj_func.evaluate(parameters, self.fixed_parameters))
+        
+        return X, torch.tensor(y)
 
 
 @dataclass
