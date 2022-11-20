@@ -11,17 +11,17 @@ sys.path.insert(0, str(Path.cwd() / "Source"))
 from BOGP import aggregate, utils
 
 ROOT = Path.cwd() / "Data" / "Simulations"
-# EXPERIMENT = ROOT / "range_estimation"
-EXPERIMENT = ROOT / "localization"
+EXPERIMENT = ROOT / "range_estimation"
+# EXPERIMENT = ROOT / "localization"
 
 EVALUATIONS = {
     "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
     # "acq_func": ["qExpectedImprovement"],
-    "snr": ["inf", "20"],
+    "snr": ["inf", "10"],
     # "snr": ["inf"],
     "rec_r": ["0.5", "3.0", "6.0", "10.0"],
     # "rec_r": ["3.0", "6.0"],
-    "src_z": ["62"]
+    # "src_z": ["62"]
 }
 
 
