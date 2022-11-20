@@ -349,7 +349,7 @@ def figure4():
     evaluations = {
         "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
         "acq_func_abbrev": ["PI", "EI", "qEI"],
-        "snr": ["inf", "20"],
+        "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"]
     }
     df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
@@ -374,7 +374,7 @@ def figure5():
     evaluations = {
         "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
         "acq_func_abbrev": ["PI", "EI", "qEI"],
-        "snr": ["inf", "20"],
+        "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"]
     }
     df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
