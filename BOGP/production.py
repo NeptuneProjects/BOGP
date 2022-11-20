@@ -249,24 +249,24 @@ def dispatcher(config: dict):
         "colour": "blue",
         "total": n_trials,
     }
-    # if config.get("workers") == 1:
-    for _ in range(n_trials):
-        worker(config | {"trial_seed": random.randint(0, int(1e9))})
-    # else:
-    #     with ProcessPoolExecutor(
-    #         max_workers=config.get("workers"),
-    #         mp_context=multiprocessing.get_context("spawn"),
-    #     ) as executor:
-    #         futures = [
-    #             executor.submit(
-    #                 worker, config | {"trial_seed": random.randint(0, int(1e9))}
-    #             )
-    #             for _ in range(n_trials)
-    #         ]
+    if config.get("workers") == 1:
+        for _ in range(n_trials):
+            worker(config | {"trial_seed": random.randint(0, int(1e9))})
+    else:
+        with ProcessPoolExecutor(
+            max_workers=config.get("workers"),
+            mp_context=multiprocessing.get_context("spawn"),
+        ) as executor:
+            futures = [
+                executor.submit(
+                    worker, config | {"trial_seed": random.randint(0, int(1e9))}
+                )
+                for _ in range(n_trials)
+            ]
 
-    #         results = []
-    #         for future in tqdm(as_completed(futures), **pbar_kwargs):
-    #             results.append(future.result())
+            results = []
+            for future in tqdm(as_completed(futures), **pbar_kwargs):
+                results.append(future.result())
 
     configpath = Path(config["configpath"])
     logger.info("Moving configuration file from queue to run directory.")
