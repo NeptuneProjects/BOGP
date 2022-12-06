@@ -470,7 +470,7 @@ def figure8():
         xlabel="Evaluation",
         ylabel="$\\vert\hat{z}_{src} - z_{src}\\vert$",
         xlim=[-5, 1005],
-        ylim=[0, 150]
+        ylim=[0, 100]
     )
     fig.savefig(FIGURE_PATH / "Localization_ErrHistDepth.png", dpi=DPI, facecolor="white", bbox_inches="tight")
 
