@@ -394,11 +394,11 @@ def figure5():
 
 
 def figure6():
-    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "localization_500iter_newparams"
+    EXPERIMENT = ROOT / "Data" / "Simulations" / "localization"
     evaluations = {
         "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
         "acq_func_abbrev": ["PI", "EI", "qEI"],
-        "snr": ["inf", "20"],
+        "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
         "src_z": ["62"]
     }
@@ -415,18 +415,18 @@ def figure6():
         title="Performance History",
         xlabel="Evaluation",
         ylabel="$\hat{f}(\mathbf{x})$",
-        xlim=[-5, 505],
+        xlim=[-5, 1005],
         ylim=[0, 1.05]
     )
     fig.savefig(FIGURE_PATH / "Localization_PerfHist.png", dpi=DPI, facecolor="white", bbox_inches="tight")
 
 
 def figure7():
-    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "localization_500iter_newparams"
+    EXPERIMENT = ROOT / "Data" / "Simulations" / "localization"
     evaluations = {
         "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
         "acq_func_abbrev": ["PI", "EI", "qEI"],
-        "snr": ["inf", "20"],
+        "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
         "src_z": ["62"]
     }
@@ -442,18 +442,18 @@ def figure7():
         title="Range Error History",
         xlabel="Evaluation",
         ylabel="$\\vert\hat{r}_{src} - r_{src}\\vert$",
-        xlim=[-5, 505],
+        xlim=[-5, 1005],
         ylim=[0, 10]
     )
     fig.savefig(FIGURE_PATH / "Localization_ErrHistRange.png", dpi=DPI, facecolor="white", bbox_inches="tight")
 
 
 def figure8():
-    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "localization_500iter_newparams"
+    EXPERIMENT = ROOT / "Data" / "Simulations" / "localization"
     evaluations = {
         "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
         "acq_func_abbrev": ["PI", "EI", "qEI"],
-        "snr": ["inf", "20"],
+        "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
         "src_z": ["62"]
     }
@@ -469,7 +469,7 @@ def figure8():
         title="Depth Error History",
         xlabel="Evaluation",
         ylabel="$\\vert\hat{z}_{src} - z_{src}\\vert$",
-        xlim=[-5, 505],
+        xlim=[-5, 1005],
         ylim=[0, 150]
     )
     fig.savefig(FIGURE_PATH / "Localization_ErrHistDepth.png", dpi=DPI, facecolor="white", bbox_inches="tight")
