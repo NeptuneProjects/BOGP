@@ -14,7 +14,7 @@ import numpy as np
 from tqdm import tqdm
 
 from .acoustics import MatchedFieldProcessor
-from .optimization import optimizer, random_search
+from .optimization import optimizer
 from tritonoa.kraken import run_kraken
 from . import utils
 
@@ -180,7 +180,7 @@ def execute_bayesian_optimization(config, optim_kwargs: dict, trial_path):
 
 def execute_random_search(config: dict, optim_kwargs: dict, trial_path):
     logger.info("Initializing random search configuration.")
-    optim_config = random_search.RandomSearchConfig(
+    optim_config = optimizer.RandomSearchConfig(
         config["optimizer_config"].get("n_total")
     )
     logger.info("Initialized random search configuration.")
@@ -220,9 +220,9 @@ def worker(config: dict):
 
     optim_kwargs = format_optim_kwargs(config)
 
-    if config["random"]:
+    if "random" in config.keys() and config["random"]:
         execute_random_search(config, optim_kwargs, trial_path)
-    elif config["SAGA"]:
+    elif "saga" in config.keys() and config["saga"]:
         pass
     else:
         execute_bayesian_optimization(config, optim_kwargs, trial_path)
