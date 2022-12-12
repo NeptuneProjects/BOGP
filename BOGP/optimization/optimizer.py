@@ -318,7 +318,7 @@ class BayesianOptimizationGP(Optimizer):
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             torch.manual_seed(self.seed)
 
-            results = Results()
+            results = BOGPResults()
 
             X, y = _generate_initial_data()
             logger.info(f"Device: {self.device}")
@@ -436,10 +436,7 @@ class Results:
     def append(self, result):
         self.results.append(result)
     
-    def save(self, path):
-        torch.save(self._construct_dict(), path)
-
-
+    
 @dataclass
 class RandomResult:
     X: torch.Tensor = field(default_factory=torch.Tensor)
@@ -476,6 +473,9 @@ class RandomResults(Results):
                 )
             )
         return self.results
+    
+    def save(self, path):
+        torch.save(self._construct_dict(), path)
     
     
     
@@ -539,8 +539,8 @@ class BOGPResults(Results):
             )
         return self.results
 
-    # def save(self, path):
-        # torch.save(self._construct_dict(), path)
+    def save(self, path):
+        torch.save(self._construct_dict(), path)
 
 
 def import_from_str(module: str, name: str):
