@@ -11,7 +11,7 @@ import numpy as np
 
 from tritonoa.io import read_ssp
 
-SMOKE_TEST = True
+SMOKE_TEST = False
 
 
 def format_simstring(simulation_config):
@@ -47,9 +47,9 @@ def gen_config_files(simulation):
     if simulation == "r":  # For range estimation
         N_WARMUP = 3 if not SMOKE_TEST else 2
         N_TOTAL = 200 if not SMOKE_TEST else 10
-    elif simulation == "l":  # For localization
+    elif simulation == "l":  # For loc alization
         N_WARMUP = 10 if not SMOKE_TEST else 2
-        N_TOTAL = 500 if not SMOKE_TEST else 10
+        N_TOTAL = 1000 if not SMOKE_TEST else 10
 
     # ==========================================================================
     # ============= Edit this section to configure simulations =================
