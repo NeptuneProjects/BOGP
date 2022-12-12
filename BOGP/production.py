@@ -220,9 +220,9 @@ def worker(config: dict):
 
     optim_kwargs = format_optim_kwargs(config)
 
-    if "random" in config.keys() and config["random"]:
+    if config["simulation_config"]["acq_func"]["acq_func"] == "random":
         execute_random_search(config, optim_kwargs, trial_path)
-    elif "saga" in config.keys() and config["saga"]:
+    elif config["acq_func"] == "saga":
         pass
     else:
         execute_bayesian_optimization(config, optim_kwargs, trial_path)
