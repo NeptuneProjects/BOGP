@@ -12,16 +12,12 @@ from BOGP import aggregate, utils
 
 ROOT = Path.cwd() / "Data" / "Simulations"
 # EXPERIMENT = ROOT / "range_estimation"
-EXPERIMENT = ROOT / "localization"
+# EXPERIMENT = ROOT / "localization"
 
 EVALUATIONS = {
     "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
-    # "acq_func": ["qExpectedImprovement"],
-    "snr": ["inf", "20"],
-    # "snr": ["inf"],
+    "snr": ["inf", "10"],
     "rec_r": ["0.5", "3.0", "6.0", "10.0"],
-    # "rec_r": ["3.0", "6.0"],
-    "src_z": ["62"]
 }
 
 
@@ -55,6 +51,13 @@ if __name__ == "__main__":
         choices=["r", "l"]
     )
     args = parser.parse_args()
+
+    if args.simulation == "r":
+        EXPERIMENT = ROOT / "range_estimation"
+        
+    elif args.simulation == "l":
+        EXPERIMENT = ROOT / "localization"
+        EVALUATIONS["src_z"] = ["62"]
 
     if args.mode == "r":
         aggregate_runs()

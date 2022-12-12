@@ -11,7 +11,7 @@ import numpy as np
 
 from tritonoa.io import read_ssp
 
-SMOKE_TEST = False
+SMOKE_TEST = True
 
 
 def format_simstring(simulation_config):
@@ -40,36 +40,39 @@ def gen_config_files(simulation):
     # Set random seed generator
     MAIN_SEED = 2009
     # Number of Monte Carlo simulations to run for each trial
-    N_SIM = 500 if not SMOKE_TEST else 2
-
+    N_SIM = 500 if not SMOKE_TEST else 10
     # Number of samples used to evaluate & fit surrogate model
     N_SAMPLES = 512
     # Number of random "warmup" samples to initialize BO loop
-    N_WARMUP = 3 if not SMOKE_TEST else 2 # For range estimation
-    # N_WARMUP = 10 if not SMOKE_TEST else 2 # For localization
-    # Total number of evaluations (including warmup)
-    N_TOTAL = 200 if not SMOKE_TEST else 10 # For range estimation
-    # N_TOTAL = 500 if not SMOKE_TEST else 10 # For localization
-    
+    if simulation == "r":  # For range estimation
+        N_WARMUP = 3 if not SMOKE_TEST else 2
+        N_TOTAL = 200 if not SMOKE_TEST else 10
+    elif simulation == "l":  # For localization
+        N_WARMUP = 10 if not SMOKE_TEST else 2
+        N_TOTAL = 500 if not SMOKE_TEST else 10
+
     # ==========================================================================
     # ============= Edit this section to configure simulations =================
     # ==========================================================================
     # List of acquisition functions to evaluate
     ACQ_FUNCS = [
+        # {
+        #     "acq_func": "ExpectedImprovement",
+        #     "acq_func_kwargs": {"num_samples": N_SAMPLES},
+        # },
+        # {
+        #     "acq_func": "ProbabilityOfImprovement",
+        #     "acq_func_kwargs": {"num_samples": N_SAMPLES},
+        # },
+        # {
+        #     "acq_func": "qExpectedImprovement",
+        #     "acq_func_kwargs": {"num_samples": N_SAMPLES},
+        #     "sampler": "SobolQMCNormalSampler",
+        #     "sampler_kwargs": {"num_samples": N_SAMPLES},
+        # },
         {
-            "acq_func": "ExpectedImprovement",
-            "acq_func_kwargs": {"num_samples": N_SAMPLES},
-        },
-        {
-            "acq_func": "ProbabilityOfImprovement",
-            "acq_func_kwargs": {"num_samples": N_SAMPLES},
-        },
-        {
-            "acq_func": "qExpectedImprovement",
-            "acq_func_kwargs": {"num_samples": N_SAMPLES},
-            "sampler": "SobolQMCNormalSampler",
-            "sampler_kwargs": {"num_samples": N_SAMPLES},
-        },
+            "acq_func": "random"
+        }
     ]
 
     # List of SNRs to evaluate
@@ -77,7 +80,8 @@ def gen_config_files(simulation):
 
     # List of ranges & depths to simulate
     RANGE = [3.0, 6.0, 10.0, 0.5]
-    DEPTH = [62]
+    if simulation == "l":
+        DEPTH = [62]
 
     # ==========================================================================
     # ==========================================================================
@@ -153,7 +157,7 @@ def gen_config_files(simulation):
             "main_seed": MAIN_SEED,
             "n_sim": N_SIM,
             "environment_config": ENVIRONMENT_CONFIG,
-            "desc": format_simstring(simulation_config)
+            "desc": format_simstring(simulation_config),
         }
         # simstring = format_simstring(MASTER_CONFIG.get("simulation_config"))
         if not qpath.exists():
