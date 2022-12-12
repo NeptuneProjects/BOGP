@@ -4,8 +4,11 @@
 # Before running, ensure scripts 'configurations.py' and 'aggregate.py' 
 # are configured for the desired workflow (i.e., specify acquisition 
 # functions, parameters, etc.)
+# 
+# Usage:
+# bash ./Source/scripts/workflow.sh
 
-SIM="r"
+SIM="l"
 JOBS=8
 DEVICE="cpu"
 OFFSET=0
