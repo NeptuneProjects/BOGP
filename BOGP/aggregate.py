@@ -6,7 +6,7 @@ import re
 import pandas as pd
 from tqdm import tqdm
 
-from .optimization.optimizer import Results
+from .optimization.optimizer import BOGPResults, RandomResults
 
 
 class Aggregator:
@@ -59,7 +59,7 @@ class BayesianOptimizationGPAggregator(Aggregator):
         files, folder_values = self.parse_file_structure()
 
         for f in tqdm(files, disable=not verbose, **self.pbar_kwargs):
-            results = Results().load(f)
+            results = BOGPResults().load(f)
             for i, result in enumerate(results):
                 self.data["acq_func"].append(folder_values[0])
                 self.data["snr"].append(folder_values[1])
@@ -93,7 +93,7 @@ class RandomSearchAggregator(Aggregator):
         files, folder_values = self.parse_file_structure()
 
         for f in tqdm(files, disable=not verbose, **self.pbar_kwargs):
-            results = Results().load(f)
+            results = RandomResults().load(f)
             for i, result in enumerate(results):
                 self.data["acq_func"].append(folder_values[0])
                 self.data["snr"].append(folder_values[1])
