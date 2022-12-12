@@ -8,7 +8,7 @@
 # Usage:
 # bash ./Source/scripts/workflow.sh
 
-SIM="r"
+SIM="l"
 JOBS=8
 DEVICE="cpu"
 OFFSET=0
