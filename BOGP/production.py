@@ -206,6 +206,10 @@ def worker(config: dict):
     if trial_path.exists():
         logger.info(f"Trial run directory {trial_path} exists.")
         dir_contents = [i.name for i in trial_path.glob("*")]
+        if (config["simulation_config"]["acq_func"]["acq_func"] == "random") and (
+            "results.pth" in dir_contents
+        ):
+            return
         if ("optim.pth" in dir_contents) and ("results.pth" in dir_contents):
             logger.info(f"optim.pth and results.pth exist.")
             logger.info(f"Skipping this run.")
