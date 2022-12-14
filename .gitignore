@@ -161,3 +161,8 @@ cython_debug/
 
 # OS
 .DS_Store
+
+# AT Files
+*.env
+*.mod
+*.prt
