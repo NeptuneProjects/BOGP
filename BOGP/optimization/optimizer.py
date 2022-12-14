@@ -60,8 +60,122 @@ class ObjectiveFunction:
             return _evaluate_objfunc()
 
 
+class Optimizer:
+    def __init__(
+        self,
+        obj_func: base.BaseTestProblem,
+        search_parameters: dict,
+        fixed_parameters: dict = {},
+        obj_func_kwargs: dict = {},
+        seed: int = 0,
+    ):
+        self.obj_func = ObjectiveFunction(obj_func)
+        try:
+            self.obj_func_name = obj_func._get_name()
+        except AttributeError:
+            self.obj_func_name = obj_func.__name__
+        self.obj_func_module = obj_func.__module__
+        self.search_parameters = search_parameters
+        self.fixed_parameters = fixed_parameters
+        self.obj_func_kwargs = obj_func_kwargs
+        self.seed = seed
+        self.bounds = self.get_bounds(self.search_parameters)
+    
+    @staticmethod
+    def get_bounds(search_parameters):
+        bounds = torch.zeros(2, len(search_parameters))
+        for i, parameter in enumerate(search_parameters):
+            bounds[:, i] = torch.tensor(parameter["bounds"])
+        return bounds
+
+
 @dataclass
-class OptimizerConfig:
+class RandomSearchConfig:
+    n_total: int = field(default=10)
+
+
+class RandomSearch(Optimizer):
+    def __init__(
+        self,
+        config: RandomSearchConfig,
+        obj_func: base.BaseTestProblem,
+        search_parameters: dict,
+        fixed_parameters: dict = {},
+        obj_func_kwargs: dict = {},
+        seed: int = 0,
+    ):
+        super().__init__(
+            obj_func,
+            search_parameters,
+            fixed_parameters,
+            obj_func_kwargs,
+            seed
+        )
+        self.config = config
+        
+    # def get_candidates2(self):
+    #     """
+    #     (r2 - r1) * torch.rand(M, N) + r1
+    #     """
+    #     torch.manual_seed(self.seed)
+    #     # bounds = self.get_bounds(self.search_parameters)
+    #     bounds = self.bounds
+    #     N = bounds.shape[1]
+    #     interval = (bounds[1] - bounds[0]).unsqueeze(-1)
+    #     X_new = interval * torch.rand(N, self.config.n_total) + bounds[0].unsqueeze(-1)
+    #     print(X_new.T, X_new.T.shape)
+    #     return X_new.T.detach().cpu()
+
+    # def run2(self):
+    #     X = self.get_candidates()
+    #     y = []
+    #     for Xi in X:
+    #         parameters = {
+    #             item["name"]: Xi[..., i].unsqueeze(-1) for i, item in enumerate(self.search_parameters)
+    #         }
+    #         y.append(self.obj_func.evaluate(parameters, self.fixed_parameters))
+        
+    #     # parameters = {
+    #     #     item["name"]: X[..., i] for i, item in enumerate(self.search_parameters)
+    #     # }
+    #     # parameters["y"] = 
+        
+    #     return X, torch.tensor(y)
+        
+
+    def get_candidates(self):
+        """
+        (r2 - r1) * torch.rand(M, N) + r1
+        """
+        bounds = self.bounds
+        interval = (bounds[1] - bounds[0]).unsqueeze(-1)
+        X_new = interval * torch.rand(bounds.shape[1], 1) + bounds[0].unsqueeze(-1)
+        return X_new.T.detach().cpu()
+
+    def run(self):
+        torch.manual_seed(self.seed)
+        results = RandomResults()
+
+        for i in range(self.config.n_total):
+            X_new = self.get_candidates()
+            parameters = {
+                item["name"]: X_new[..., i] for i, item in enumerate(self.search_parameters)
+            }
+            y_new = self.obj_func.evaluate(parameters, self.fixed_parameters)
+            if i == 0:
+                X = X_new
+                y = y_new
+            else:
+                X = torch.cat([X, X_new])
+                y = torch.cat([y, y_new])
+            
+            results.append(RandomResult(X, y))
+
+        return results
+
+
+@dataclass
+class BayesianOptimizationGPConfig:
     kernel_func: Optional[Module] = field(default=None)
     acq_func: AcquisitionFunction = field(default_factory=AcquisitionFunction)
     acq_func_kwargs: Union[dict, None] = field(default=None)
@@ -95,10 +209,10 @@ class OptimizerConfig:
         pass
 
 
-class Optimizer:
+class BayesianOptimizationGP(Optimizer):
     def __init__(
         self,
-        config: OptimizerConfig,
+        config: BayesianOptimizationGPConfig,
         obj_func: base.BaseTestProblem,
         search_parameters: dict,
         fixed_parameters: dict = {},
@@ -106,23 +220,30 @@ class Optimizer:
         device="cuda",
         seed: int = 0,
     ):
+        super().__init__(
+            obj_func,
+            search_parameters,
+            fixed_parameters,
+            obj_func_kwargs,
+            seed
+        )
         self.config = config
         self.config_dict = config._construct_dict()
-        self.obj_func = ObjectiveFunction(obj_func)
-        try:
-            self.obj_func_name = obj_func._get_name()
-        except AttributeError:
-            self.obj_func_name = obj_func.__name__
-        self.obj_func_module = obj_func.__module__
-        self.search_parameters = search_parameters
-        self.fixed_parameters = fixed_parameters
-        self.obj_func_kwargs = obj_func_kwargs
+        # self.obj_func = ObjectiveFunction(obj_func)
+        # try:
+        #     self.obj_func_name = obj_func._get_name()
+        # except AttributeError:
+        #     self.obj_func_name = obj_func.__name__
+        # self.obj_func_module = obj_func.__module__
+        # self.search_parameters = search_parameters
+        # self.fixed_parameters = fixed_parameters
+        # self.obj_func_kwargs = obj_func_kwargs
         if (device == "cuda") and torch.cuda.is_available():
             self.device = torch.device("cuda")
         else:
             self.device = torch.device("cpu")
-        self.seed = seed
-        self.bounds = self.get_bounds(self.search_parameters)
+        # self.seed = seed
+        # self.bounds = self.get_bounds(self.search_parameters)
 
     def __del__(self):
         pass
@@ -130,12 +251,12 @@ class Optimizer:
     def _construct_dict(self):
         return serialized_class_dict(self, {"config", "obj_func", "device"})
 
-    @staticmethod
-    def get_bounds(search_parameters):
-        bounds = torch.zeros(2, len(search_parameters))
-        for i, parameter in enumerate(search_parameters):
-            bounds[:, i] = torch.tensor(parameter["bounds"])
-        return bounds
+    # @staticmethod
+    # def get_bounds(search_parameters):
+    #     bounds = torch.zeros(2, len(search_parameters))
+    #     for i, parameter in enumerate(search_parameters):
+    #         bounds[:, i] = torch.tensor(parameter["bounds"])
+    #     return bounds
 
     @staticmethod
     def initialize_model(X, y, state_dict=None, covar_module=None):
@@ -147,11 +268,12 @@ class Optimizer:
 
     def run(self, disable_pbar=False):
         def _generate_initial_data():
-            X = (self.bounds[0] - self.bounds[1]) * torch.rand(
+            bounds = self.bounds
+            X = (bounds[0] - bounds[1]) * torch.rand(
                 self.config.n_warmup,
-                self.bounds.size(1),
+                bounds.size(1),
                 dtype=DTYPE,
-            ) + self.bounds[1]
+            ) + bounds[1]
             parameters = {
                 item["name"]: X[..., i] for i, item in enumerate(self.search_parameters)
             }
@@ -196,7 +318,7 @@ class Optimizer:
             warnings.filterwarnings("ignore", category=RuntimeWarning)
             torch.manual_seed(self.seed)
 
-            results = Results()
+            results = BOGPResults()
 
             X, y = _generate_initial_data()
             logger.info(f"Device: {self.device}")
@@ -239,7 +361,7 @@ class Optimizer:
                             saved_model.to("cpu"),
                             saved_acqfunc.to("cpu"),
                             X_new.detach().cpu(),
-                            y_new.detach().cpu()
+                            y_new.detach().cpu(),
                         )
                     )
 
@@ -252,10 +374,12 @@ class Optimizer:
                     state_dict=model.state_dict(),
                     covar_module=self.config.kernel_func,
                 )
-                
+
                 fit_gpytorch_model(mll)
                 if torch.cuda.is_available():
-                    memory_free, memory_total = torch.cuda.mem_get_info(self.device.type + ':0')
+                    memory_free, memory_total = torch.cuda.mem_get_info(
+                        self.device.type + ":0"
+                    )
                     logger.info(
                         f"Iter {count} | CUDA Memory usage: {100 * (1 - memory_free / memory_total):.2f}%"
                     )
@@ -263,11 +387,7 @@ class Optimizer:
 
             with torch.no_grad():
                 results.append(
-                    Result(
-                        X.detach().cpu(),
-                        y.detach().cpu(),
-                        model.to("cpu")
-                    )
+                    Result(X.detach().cpu(), y.detach().cpu(), model.to("cpu"))
                 )
 
         except:
@@ -306,15 +426,73 @@ class Result:
 class Results:
     def __init__(self, results: list = None):
         self.results = [] if results is None else results
-
-    def __del__(self):
-        pass
-
+    
     def __getitem__(self, idx):
         return self.results[idx]
 
     def __len__(self):
         return len(self.results)
+
+    def append(self, result):
+        self.results.append(result)
+    
+    
+@dataclass
+class RandomResult:
+    X: torch.Tensor = field(default_factory=torch.Tensor)
+    y: torch.Tensor = field(default_factory=torch.Tensor)
+
+    def __post_init__(self):
+        self.best_value = self.y.max().item()
+        self.best_parameters = self.X[torch.argmax(self.y)]
+    
+
+class RandomResults(Results):
+    def __init__(self, results: list = None):
+        super().__init__(results)
+    
+    def _construct_dict(self):
+        results_dict = []
+        for result in self.results:
+            results_dict.append(
+                {
+                    "X": result.X,
+                    "y": result.y
+                }
+            )
+        return results_dict
+    
+    def load(self, path):
+        results_dict = torch.load(path, map_location=torch.device("cpu"))
+
+        for entry in results_dict:
+            self.results.append(
+                RandomResult(
+                    X=entry["X"],
+                    y=entry["y"],
+                )
+            )
+        return self.results
+    
+    def save(self, path):
+        torch.save(self._construct_dict(), path)
+    
+    
+    
+class BOGPResults(Results):
+# class Results:
+    def __init__(self, results: list = None):
+        super().__init__(results)
+        # self.results = [] if results is None else results
+
+    # def __del__(self):
+    #     pass
+
+    # def __getitem__(self, idx):
+    #     return self.results[idx]
+
+    # def __len__(self):
+    #     return len(self.results)
 
     def _construct_dict(self):
         results_dict = []
@@ -331,14 +509,14 @@ class Results:
             )
         return results_dict
 
-    def append(self, result):
-        self.results.append(result)
+    # def append(self, result):
+    #     self.results.append(result)
 
     def load(self, path):
         results_dict = torch.load(path, map_location=torch.device("cpu"))
 
         for entry in results_dict:
-            _, model = Optimizer.initialize_model(
+            _, model = BayesianOptimizationGP.initialize_model(
                 entry["X"], entry["y"], state_dict=entry["model"]
             )
             if entry["acqfunc"] is not None:
@@ -380,8 +558,8 @@ def run_mc(config_kwargs, optim_kwargs, path=Path.cwd(), num_trials=10, main_see
         trial_path = path / "Runs" / f"{trial:010d}"
         os.makedirs(trial_path, exist_ok=True)
 
-        config = OptimizerConfig(**config_kwargs)
-        optimizer = Optimizer(config, seed=trial, **optim_kwargs)
+        config = BayesianOptimizationGPConfig(**config_kwargs)
+        optimizer = BayesianOptimizationGP(config, seed=trial, **optim_kwargs)
         results = optimizer.run()
 
         optimizer.save(trial_path / f"optim_{trial:010d}.pth")

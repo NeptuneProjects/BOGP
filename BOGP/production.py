@@ -149,15 +149,56 @@ def format_optim_kwargs(config: dict):
             config["environment_config"],
         ),
         "search_parameters": config["optimizer_config"]["search_parameters"],
-        "device": config.get("device"),
+        # "device": config.get("device"),
         "seed": config.get("trial_seed"),
     }
     return optim_kwargs
 
 
-def worker(config: dict):
+def execute_bayesian_optimization(config, optim_kwargs: dict, trial_path):
     config_kwargs = format_config_kwargs(config)
-    optim_kwargs = format_optim_kwargs(config)
+
+    logger.info("Initializing optimizer configuration.")
+    optim_config = optimizer.BayesianOptimizationGPConfig(**config_kwargs)
+    logger.info("Initialized optimizer configuration.")
+
+    logger.info("Initializing optimizer.")
+    optim = optimizer.BayesianOptimizationGP(
+        optim_config, device=config.get("device"), **optim_kwargs
+    )
+    logger.info("Initialized optimizer.")
+
+    logger.info("Running optimization loop.")
+    results = optim.run(disable_pbar=True)
+    logger.info("Ran optimization loop.")
+
+    logger.info("Saving optimization results.")
+    optim.save(trial_path / "optim.pth")
+    results.save(trial_path / "results.pth")
+    logger.info("Saved optimization results.")
+
+
+def execute_random_search(config: dict, optim_kwargs: dict, trial_path):
+    logger.info("Initializing random search configuration.")
+    optim_config = optimizer.RandomSearchConfig(
+        config["optimizer_config"].get("n_total")
+    )
+    logger.info("Initialized random search configuration.")
+
+    logger.info("Initializing random search.")
+    optim = optimizer.RandomSearch(optim_config, **optim_kwargs)
+    logger.info("Initialized random search.")
+
+    logger.info("Running optimization loop.")
+    results = optim.run()
+    logger.info("Ran optimization loop.")
+
+    logger.info("Saving random search results.")
+    results.save(trial_path / "results.pth")
+    logger.info("Saved random search results.")
+
+
+def worker(config: dict):
     trial_path = (
         config.get("experiment_path") / "Runs" / f"{config.get('trial_seed'):010d}"
     )
@@ -165,6 +206,10 @@ def worker(config: dict):
     if trial_path.exists():
         logger.info(f"Trial run directory {trial_path} exists.")
         dir_contents = [i.name for i in trial_path.glob("*")]
+        if (config["simulation_config"]["acq_func"]["acq_func"] == "random") and (
+            "results.pth" in dir_contents
+        ):
+            return
         if ("optim.pth" in dir_contents) and ("results.pth" in dir_contents):
             logger.info(f"optim.pth and results.pth exist.")
             logger.info(f"Skipping this run.")
@@ -177,22 +222,14 @@ def worker(config: dict):
     os.makedirs(trial_path, exist_ok=True)
     logger.info(f"Created trial run directory {trial_path}")
 
-    logger.info("Initializing optimizer configuration.")
-    optim_config = optimizer.OptimizerConfig(**config_kwargs)
-    logger.info("Initialized optimizer configuration.")
+    optim_kwargs = format_optim_kwargs(config)
 
-    logger.info("Initializing optimizer.")
-    optim = optimizer.Optimizer(optim_config, **optim_kwargs)
-    logger.info("Initialized optimizer.")
-
-    logger.info("Running optimization loop.")
-    results = optim.run(disable_pbar=True)
-    logger.info("Ran optimization loop.")
-
-    logger.info("Saving optimization results.")
-    optim.save(trial_path / "optim.pth")
-    results.save(trial_path / "results.pth")
-    logger.info("Saved optimization results.")
+    if config["simulation_config"]["acq_func"]["acq_func"] == "random":
+        execute_random_search(config, optim_kwargs, trial_path)
+    elif config["acq_func"] == "saga":
+        pass
+    else:
+        execute_bayesian_optimization(config, optim_kwargs, trial_path)
 
     logger.info("Cleaning up acoustic modeling files.")
     utils.clean_up_kraken_files(trial_path)
@@ -241,3 +278,29 @@ def dispatcher(config: dict):
         configpath.absolute(), (config["experiment_path"] / configpath.name).absolute()
     )
     logger.info("Moved configuration file from queue to run directory.")
+
+
+# class Worker:
+#     def __init__(self, config):
+#         self.config = config
+
+#     def execute(self, **kwargs):
+#         executor = self.get_executor()
+#         return executor(**kwargs)
+
+#     def get_executor(self):
+#         if self.config["random"]:
+#             return self._execute_random_search()
+#         elif self.config["SAGA"]:
+#             return self._execute_SAGA()
+#         else:
+#             return self._execute_BOGP()
+
+#     def _execute_random_search(self):
+#         return
+
+#     def _execute_SAGA(self):
+#         return
+
+#     def _execute_BOGP(self):
+#         return

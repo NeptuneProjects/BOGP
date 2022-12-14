@@ -21,7 +21,7 @@ if __name__ == "__main__":
         "simulation",
         type=str,
         help="Simulation name.",
-        choices=["range", "r", "localize", "l", "geo", "g", "ssp", "s"],
+        choices=["range", "r", "localize", "l"],
     )
     parser.add_argument("configpath", type=str, help="Path to configuration file.")
     parser.add_argument("--workers", type=int, help="Number of workers.", default=1)
