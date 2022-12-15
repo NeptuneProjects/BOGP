@@ -16,6 +16,7 @@ from tqdm import tqdm
 from .acoustics import MatchedFieldProcessor
 from .optimization import optimizer
 from tritonoa.kraken import run_kraken
+from tritonoa.sp import added_wng, snrdb_to_sigma
 from . import utils
 
 logging.basicConfig(encoding="utf-8", level=logging.DEBUG)
@@ -53,7 +54,7 @@ class Simulator:
         optimizer.logger.propagate = False
         config["environment_config"]["tmpdir"] = config["experiment_path"] / "measured"
         logger.info("Running KRAKEN with true parameters.")
-        measured_data = self.run_with_true_parameters(config["environment_config"])
+        measured_data = self.run_with_true_parameters(config["environment_config"], config["simulation_config"].get("snr", np.Inf))
         logger.info("Ran KRAKEN with true parameters.")
         config["measured_data"] = measured_data
         np.savez(
@@ -66,14 +67,13 @@ class Simulator:
 
     # SIMULATION: RANGE ESTIMATION
     def _run_range_estimation(self, workers: int = 1, path=None, device=None):
-        NAME = "range_estimation"
+        # NAME = "range_estimation"
         RANGE = [3.0, 6.0, 10.0, 0.5]
-        # RANGE = [6.0, 10.0, 0.5]
         self.config["simulation_config"]["rec_r"] = RANGE
         config = {
-            "name": NAME,
+            # "name": NAME,
             "workers": workers,
-            "path": path / NAME,
+            "path": path / self.config["name"],
             "device": device,
         } | self.config
         self.run(config)
@@ -95,10 +95,14 @@ class Simulator:
         self.run(config)
 
     @staticmethod
-    def run_with_true_parameters(parameters):
+    def run_with_true_parameters(parameters, snr=np.Inf):
+        sigma = snrdb_to_sigma(snr)
         p = run_kraken(parameters)
-        w = p / np.linalg.norm(p)
-        K = w.dot(w.conj().T)
+        p /= np.linalg.norm(p)
+        noise = added_wng(p.shape, sigma=sigma, cmplx=True)
+        p += noise
+        # w = p / np.linalg.norm(p)
+        K = p.dot(p.conj().T)
         return {"pressure": p, "covariance": K}
 
 
