@@ -42,6 +42,7 @@ def main(figures: list):
 
 
 def figure1():
+    # TODO: Replace noise-free ambiguity surfaces with 10dB surfaces.
     # Set the true parameters:
     fig = plt.figure(figsize=(6, 10))
     gs = GridSpec(nrows=4, ncols=1, figure=fig, height_ratios=[1, 1, 1, 1])
