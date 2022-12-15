@@ -42,11 +42,10 @@ def main(figures: list):
 
 
 def figure1():
-    # TODO: Replace noise-free ambiguity surfaces with 10dB surfaces.
     # Set the true parameters:
     fig = plt.figure(figsize=(6, 10))
     gs = GridSpec(nrows=4, ncols=1, figure=fig, height_ratios=[1, 1, 1, 1])
-    true_ranges = [0.5, 3.0, 6.0, 10.0]
+    true_ranges = [1.0, 3.0, 5.0, 7.0]
 
     for j, range_true in enumerate(true_ranges):
         depth_true = 62
@@ -82,7 +81,7 @@ def figure1():
             # Receiver parameters
             "rec_z": np.linspace(94.125, 212.25, 64),
             "rec_r": range_true,
-            "snr": np.Inf,
+            "snr": 20,
             # Source parameters
             "src_z": depth_true,
             "freq": freq,
@@ -99,13 +98,13 @@ def figure1():
         # Define parameter search space:
         [fixed_parameters.pop(item) for item in ["rec_r", "src_z"]]
         search_parameters = [
-            {"name": "rec_r", "bounds": [0.001, 12.0]},
+            {"name": "rec_r", "bounds": [0.001, 10.0]},
             {"name": "src_z", "bounds": [0.5, 200.0]},
         ]
 
         # Define search grid & run MFP
-        dr = 1 / 1e3  # [km]
-        dz = 1  # [m]
+        dr = 5 / 1e3  # [km]
+        dz = 2  # [m]
         rvec = np.arange(
             search_parameters[0]["bounds"][0],
             search_parameters[0]["bounds"][1] + dr,
@@ -160,7 +159,7 @@ def figure1():
             markeredgecolor="k",
         )
         ax.invert_yaxis()
-        ax.set_xlim([0, 12])
+        ax.set_xlim([0, 10])
         ax.set_ylim([200, 0])
         if j != 3:
             ax.set_xticklabels([])
