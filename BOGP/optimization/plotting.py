@@ -37,6 +37,7 @@ def plot_aggregated_data(
     ylim=None,
     title=None,
 ):
+    # TODO: Remove noise-free case
     """
     values: best_value, best_param, best_param0, best_param1, etc.
     """
