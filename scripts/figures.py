@@ -345,15 +345,22 @@ def figure3():
 
 
 def figure4():
-    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "range_estimation"
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
-        "acq_func_abbrev": ["PI", "EI", "qEI"],
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement", "random"],
+        "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"]
     }
-    df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
-    df["best_param"] = df["best_param"].str.strip("[").str.strip("]").astype(float)
+    EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "range_estimation"
+    df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
+    df1["best_param"] = df1["best_param"].str.strip("[").str.strip("]").astype(float)
+
+    EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "range_estimation"
+    df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
+    df2["best_param"] = df2["best_param"].str.strip("[").str.strip("]").astype(float)
+
+    df = pd.concat([df1, df2])
+
     fig = plotting.plot_aggregated_data(
         df,
         evaluations,
@@ -370,15 +377,22 @@ def figure4():
 
 
 def figure5():
-    EXPERIMENT = ROOT / "Data" / "Simulations" / "Protected" / "range_estimation"
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
-        "acq_func_abbrev": ["PI", "EI", "qEI"],
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement", "random"],
+        "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"]
     }
-    df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
-    df["best_param"] = df["best_param"].str.strip("[").str.strip("]").astype(float)
+    EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "range_estimation"
+    df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
+    df1["best_param"] = df1["best_param"].str.strip("[").str.strip("]").astype(float)
+
+    EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "range_estimation"
+    df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
+    df2["best_param"] = df2["best_param"].str.strip("[").str.strip("]").astype(float)
+
+    df = pd.concat([df1, df2])
+
     fig = plotting.plot_aggregated_data(
         df,
         evaluations,
@@ -394,18 +408,27 @@ def figure5():
 
 
 def figure6():
-    EXPERIMENT = ROOT / "Data" / "Simulations" / "localization"
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
-        "acq_func_abbrev": ["PI", "EI", "qEI"],
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement", "random"],
+        "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
         "src_z": ["62"]
     }
-    df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
-    new_cols = df["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "localization"
+    df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
+    new_cols = df1["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
-    df = pd.concat([df, new_cols], axis=1).drop("best_param", axis=1)
+    df1 = pd.concat([df1, new_cols], axis=1).drop("best_param", axis=1)
+
+    EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "localization"
+    df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
+    new_cols = df2["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
+    df2 = pd.concat([df2, new_cols], axis=1).drop("best_param", axis=1)
+
+    df = pd.concat([df1, df2])
+        
     fig = plotting.plot_aggregated_data(
         df,
         evaluations,
@@ -422,18 +445,27 @@ def figure6():
 
 
 def figure7():
-    EXPERIMENT = ROOT / "Data" / "Simulations" / "localization"
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
-        "acq_func_abbrev": ["PI", "EI", "qEI"],
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement", "random"],
+        "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
         "src_z": ["62"]
     }
-    df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
-    new_cols = df["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "localization"
+    df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
+    new_cols = df1["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
-    df = pd.concat([df, new_cols], axis=1).drop("best_param", axis=1)
+    df1 = pd.concat([df1, new_cols], axis=1).drop("best_param", axis=1)
+
+    EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "localization"
+    df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
+    new_cols = df2["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
+    df2 = pd.concat([df2, new_cols], axis=1).drop("best_param", axis=1)
+
+    df = pd.concat([df1, df2])
+
     fig = plotting.plot_aggregated_data(
         df,
         evaluations,
@@ -449,18 +481,27 @@ def figure7():
 
 
 def figure8():
-    EXPERIMENT = ROOT / "Data" / "Simulations" / "localization"
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement"],
-        "acq_func_abbrev": ["PI", "EI", "qEI"],
+        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement", "random"],
+        "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
         "src_z": ["62"]
     }
-    df = pd.read_csv(EXPERIMENT / "aggregated.csv", index_col=0)
-    new_cols = df["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "localization"
+    df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
+    new_cols = df1["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
-    df = pd.concat([df, new_cols], axis=1).drop("best_param", axis=1)
+    df1 = pd.concat([df1, new_cols], axis=1).drop("best_param", axis=1)
+
+    EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "localization"
+    df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
+    new_cols = df2["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
+    df2 = pd.concat([df2, new_cols], axis=1).drop("best_param", axis=1)
+
+    df = pd.concat([df1, df2])
+    
     fig = plotting.plot_aggregated_data(
         df,
         evaluations,
