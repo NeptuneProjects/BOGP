@@ -43,11 +43,15 @@ def gen_config_files(simulation):
     N_SIM = 500 if not SMOKE_TEST else 10
     # Number of samples used to evaluate & fit surrogate model
     N_SAMPLES = 512
+    # Number of random restarts
+    N_RESTARTS = 20
     # Number of random "warmup" samples to initialize BO loop
     if simulation == "r":  # For range estimation
+        NAME = "range_estimation"
         N_WARMUP = 3 if not SMOKE_TEST else 2
         N_TOTAL = 200 if not SMOKE_TEST else 10
     elif simulation == "l":  # For loc alization
+        NAME = "localization"
         N_WARMUP = 10 if not SMOKE_TEST else 2
         N_TOTAL = 1000 if not SMOKE_TEST else 10
 
@@ -56,30 +60,30 @@ def gen_config_files(simulation):
     # ==========================================================================
     # List of acquisition functions to evaluate
     ACQ_FUNCS = [
-        # {
-        #     "acq_func": "ExpectedImprovement",
-        #     "acq_func_kwargs": {"num_samples": N_SAMPLES},
-        # },
-        # {
-        #     "acq_func": "ProbabilityOfImprovement",
-        #     "acq_func_kwargs": {"num_samples": N_SAMPLES},
-        # },
-        # {
-        #     "acq_func": "qExpectedImprovement",
-        #     "acq_func_kwargs": {"num_samples": N_SAMPLES},
-        #     "sampler": "SobolQMCNormalSampler",
-        #     "sampler_kwargs": {"num_samples": N_SAMPLES},
-        # },
         {
-            "acq_func": "random"
-        }
+            "acq_func": "ExpectedImprovement",
+            "acq_func_kwargs": dict()
+        },
+        {
+            "acq_func": "ProbabilityOfImprovement",
+            "acq_func_kwargs": dict()
+        },
+        {
+            "acq_func": "qExpectedImprovement",
+            "acq_func_kwargs": dict(),
+            "sampler": "SobolQMCNormalSampler",
+            "sampler_kwargs": {"num_samples": N_SAMPLES},
+        },
+        # {
+        #     "acq_func": "random"
+        # }
     ]
 
     # List of SNRs to evaluate
-    SNR_DB = [np.Inf, 10]
+    SNR_DB = [20]
 
     # List of ranges & depths to simulate
-    RANGE = [3.0, 6.0, 10.0, 0.5]
+    RANGE = [1.0, 3.0, 5.0, 7.0]
     if simulation == "l":
         DEPTH = [62]
 
@@ -118,6 +122,8 @@ def gen_config_files(simulation):
         "n_samples": N_SAMPLES,
         "n_warmup": N_WARMUP,
         "n_total": N_TOTAL,
+        "n_restarts": N_RESTARTS,
+        "raw_samples": N_SAMPLES
     }
 
     fnames = []
@@ -151,7 +157,7 @@ def gen_config_files(simulation):
     for simulation_config in SIMULATION_CONFIGS:
         ENVIRONMENT_CONFIG.update(simulation_config)
         MASTER_CONFIG = {
-            "name": "localization",
+            "name": NAME,
             "simulation_config": simulation_config,
             "optimizer_config": OPTIMIZER_CONFIG,
             "main_seed": MAIN_SEED,
