@@ -55,7 +55,9 @@ class Simulator:
         optimizer.logger.propagate = False
         config["environment_config"]["tmpdir"] = config["experiment_path"] / "measured"
         logger.info("Running KRAKEN with true parameters.")
-        measured_data = self.run_with_true_parameters(config["environment_config"], config["simulation_config"].get("snr", np.Inf))
+        measured_data = self.run_with_true_parameters(
+            config["environment_config"], config["simulation_config"].get("snr", np.Inf)
+        )
         logger.info("Ran KRAKEN with true parameters.")
         config["measured_data"] = measured_data
         np.savez(
@@ -141,7 +143,10 @@ def format_config_kwargs(config: dict):
         "n_warmup": optimizer_config.get("n_warmup"),
         "n_total": optimizer_config.get("n_total"),
         "q": 5 if acq_func_config.get("acq_func") == "qExpectedImprovement" else 1,
-        # "optimize_acqf_kwargs": {"batch_limit": 1}
+        "optimize_acqf_kwargs": {
+            "batch_limit": optimizer_config.get("n_restarts", 20),
+            "init_batch_limit": optimizer_config.get("n_restarts", 20),
+        },
     }
     return config_kwargs
 
