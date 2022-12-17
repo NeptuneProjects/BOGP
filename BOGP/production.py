@@ -42,6 +42,7 @@ class Simulator:
             return self._run_localization
 
     def run(self, config: dict):
+        print(config["path"], config["desc"])
         config["experiment_path"] = config["path"] / config["desc"].replace(" ", "__")
         os.makedirs(config["experiment_path"], exist_ok=True)
 
@@ -67,11 +68,9 @@ class Simulator:
 
     # SIMULATION: RANGE ESTIMATION
     def _run_range_estimation(self, workers: int = 1, path=None, device=None):
-        # NAME = "range_estimation"
         RANGE = [3.0, 6.0, 10.0, 0.5]
         self.config["simulation_config"]["rec_r"] = RANGE
         config = {
-            # "name": NAME,
             "workers": workers,
             "path": path / self.config["name"],
             "device": device,
@@ -81,13 +80,11 @@ class Simulator:
     # # SIMULATION: RANGE & DEPTH LOCALIZATION
     def _run_localization(self, workers: int = 1, path=None, device=None):
         logger.info("Running localization simulation.")
-        # NAME = "localization"
         # RANGE = [3.0, 6.0, 10.0, 0.5]
         # DEPTH = [62]
         # self.config["simulation_config"]["rec_r"] = RANGE
         # self.config["simulation_config"]["src_z"] = DEPTH
         config = {
-            # "name": NAME,
             "workers": workers,
             "path": path / self.config["name"],
             "device": device,
@@ -139,9 +136,12 @@ def format_config_kwargs(config: dict):
         "acq_func_kwargs": acq_func_config.get("acq_func_kwargs"),
         "sampler": import_botorch_sampler(acq_func_config.get("sampler")),
         "sampler_kwargs": acq_func_config.get("sampler_kwargs"),
+        "n_restarts": optimizer_config.get("n_restarts"),
+        "raw_samples": optimizer_config.get("raw_samples"),
         "n_warmup": optimizer_config.get("n_warmup"),
         "n_total": optimizer_config.get("n_total"),
         "q": 5 if acq_func_config.get("acq_func") == "qExpectedImprovement" else 1,
+        # "optimize_acqf_kwargs": {"batch_limit": 1}
     }
     return config_kwargs
 
@@ -230,7 +230,7 @@ def worker(config: dict):
 
     if config["simulation_config"]["acq_func"]["acq_func"] == "random":
         execute_random_search(config, optim_kwargs, trial_path)
-    elif config["acq_func"] == "saga":
+    elif config["simulation_config"]["acq_func"]["acq_func"] == "saga":
         pass
     else:
         execute_bayesian_optimization(config, optim_kwargs, trial_path)
@@ -282,29 +282,3 @@ def dispatcher(config: dict):
         configpath.absolute(), (config["experiment_path"] / configpath.name).absolute()
     )
     logger.info("Moved configuration file from queue to run directory.")
-
-
-# class Worker:
-#     def __init__(self, config):
-#         self.config = config
-
-#     def execute(self, **kwargs):
-#         executor = self.get_executor()
-#         return executor(**kwargs)
-
-#     def get_executor(self):
-#         if self.config["random"]:
-#             return self._execute_random_search()
-#         elif self.config["SAGA"]:
-#             return self._execute_SAGA()
-#         else:
-#             return self._execute_BOGP()
-
-#     def _execute_random_search(self):
-#         return
-
-#     def _execute_SAGA(self):
-#         return
-
-#     def _execute_BOGP(self):
-#         return
