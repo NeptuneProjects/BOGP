@@ -2,7 +2,7 @@
 # 
 # Runs configuration script. Sample usage:
 # Range estimation:
-# bash ./Source/scripts/sim_config.sh l
+# bash ./Source/scripts/sim_config.sh r
 # Source localization:
 # bash ./Source/scripts/sim_config.sh l
 
