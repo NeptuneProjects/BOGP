@@ -620,14 +620,24 @@ def simulations_dashboard():
 
     EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "localization"
     df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
-    new_cols = df1["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols = (
+        df1["best_param"]
+        .str.strip("[ ")
+        .str.strip(" ]")
+        .str.split(" ", n=1, expand=True)
+    )
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
     df1 = pd.concat([df1, new_cols], axis=1).drop("best_param", axis=1)
     df1 = df1[df1["snr"] == 10]
 
     EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "localization"
     df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
-    new_cols = df2["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols = (
+        df2["best_param"]
+        .str.strip("[ ")
+        .str.strip(" ]")
+        .str.split(" ", n=1, expand=True)
+    )
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
     df2 = pd.concat([df2, new_cols], axis=1).drop("best_param", axis=1)
     df2 = df2[df2["snr"] == 10]
@@ -652,7 +662,11 @@ def simulations_dashboard():
     letters = "abcdef"
     [
         axs[0, i].text(
-            -0.2, 1.3, letters[i] + ")", transform=axs[0, i].transAxes, fontsize="xx-large"
+            -0.2,
+            1.3,
+            letters[i] + ")",
+            transform=axs[0, i].transAxes,
+            fontsize="xx-large",
         )
         for i in range(len(letters))
     ]
@@ -667,16 +681,11 @@ def simulations_dashboard():
         "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
-        "src_z": ["62"]
+        "src_z": ["62"],
     }
     ranges = [float(i) for i in simulations["rec_r"]]
 
-    TITLE_KW = {
-        "ha": "left",
-        "va": "top",
-        "x": 0,
-        "y": 1.4
-    }
+    TITLE_KW = {"ha": "left", "va": "top", "x": 0, "y": 1.4}
 
     # ================================================================ #
     # ======================= Ambiguity Surfaces ===================== #
@@ -690,7 +699,16 @@ def simulations_dashboard():
     YLABEL = "Depth [m]"
 
     # Set ranges
-    [axcol[i].text(-0.6, 0.5, f"$r_\mathrm{{src}} = {r}$ km", transform=axcol[i].transAxes, fontsize="x-large") for i, r in enumerate(ranges)]
+    [
+        axcol[i].text(
+            -0.6,
+            0.5,
+            f"$r_\mathrm{{src}} = {r}$ km",
+            transform=axcol[i].transAxes,
+            fontsize="x-large",
+        )
+        for i, r in enumerate(ranges)
+    ]
 
     # Set title
     axcol[0].set_title("Ambiguity Surface\n$f(\mathbf{x})$", **TITLE_KW)
@@ -706,14 +724,20 @@ def simulations_dashboard():
 
     if plot_flag:
         for i, r in enumerate(ranges):
-            data = np.load(ROOT / "Data" / "SWELLEX96" / "ambiguity_surfaces" / f"201Hz_62m_{r}km.npz")
+            data = np.load(
+                ROOT
+                / "Data"
+                / "SWELLEX96"
+                / "ambiguity_surfaces"
+                / f"201Hz_62m_{r}km.npz"
+            )
             B = data["B"]
             rvec = data["rvec"]
             zvec = data["zvec"]
             ax, im = plotting.plot_ambiguity_surface(B, rvec, zvec, axcol[i])
     else:
         ax = axcol[-1]
-    
+
     cax = inset_axes(
         ax,
         width="100%",
@@ -729,7 +753,7 @@ def simulations_dashboard():
     # ================================================================ #
     # ======================== Range Estimation ====================== #
     # ================================================================ #
-    
+
     XLABEL = "Evaluation"
     # ======================= Performance History ==================== #
     axcol = axs[:, 1]
@@ -852,12 +876,8 @@ def simulations_dashboard():
             )
         ]
 
-
     axcol[-1].legend(
-        handles=lines[-1],
-        ncol=5,
-        loc="center",
-        bbox_to_anchor=(0.5, -0.75)
+        handles=lines[-1], ncol=5, loc="center", bbox_to_anchor=(0.5, -0.75)
     )
 
     # ====================== Range Error History ===================== #
