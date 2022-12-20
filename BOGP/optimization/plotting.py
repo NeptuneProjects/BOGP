@@ -23,6 +23,93 @@ OPTIMUM_KWARGS = {
 }
 
 
+def plot_agg_data(
+    df,
+    simulations,
+    value_to_plot,
+    compute_error_with=None,
+    optimum=None,
+    upper_threshold=None,
+    lower_threshold=None,
+    ax=None
+):
+    if ax is None:
+        ax = plt.gca()
+    max_evals = 0
+    lines = []
+    for k, acq_func in enumerate(simulations["acq_func"]):
+        selection = df["acq_func"] == acq_func
+        if compute_error_with is not None:
+            actual_value = (
+                float(compute_error_with)
+                if isinstance(compute_error_with, list)
+                else compute_error_with
+            )
+            selected_data = abs(
+                (
+                    df[selection]
+                    .pivot(index="seed", columns="evaluation", values=value_to_plot)
+                    .astype(float)
+                )
+                - actual_value
+            )
+        else:
+            selected_data = (
+                df[selection]
+                .pivot(index="seed", columns="evaluation", values=value_to_plot)
+                .astype(float)
+            )
+
+        if len(selected_data.columns) > max_evals:
+            max_evals = len(selected_data.columns)
+        line = plot_line_with_confint(
+            selected_data,
+            ax=ax,
+            label=simulations["acq_func_abbrev"][k],
+            upper_threshold=upper_threshold,
+            lower_threshold=lower_threshold,
+        )
+        lines.append(line)
+
+    if optimum is not None:
+        optimum = ax.axhline(
+            1.0, c="k", ls="--", lw=1, alpha=0.5, label="Global Optimum"
+        )
+        lines.append(optimum)
+
+    return lines
+
+
+def plot_ambiguity_surface(B, rvec, zvec, ax):
+    
+    Bn = B
+    logBn = 10 * np.log10(Bn)
+    src_z_ind, src_r_ind = np.unravel_index(
+        np.argmax(logBn), (len(zvec), len(rvec))
+    )
+
+    im = ax.imshow(
+        logBn,
+        aspect="auto",
+        extent=[min(rvec), max(rvec), min(zvec), max(zvec)],
+        origin="lower",
+        vmin=-10,
+        vmax=0,
+        interpolation="none",
+        cmap="jet",
+    )
+    ax.plot(
+        rvec[src_r_ind],
+        zvec[src_z_ind],
+        "w*",
+        markersize=15,
+        markeredgewidth=1.5,
+        markeredgecolor="k",
+    )
+
+    return ax, im
+
+
 def plot_aggregated_data(
     df,
     evaluations,
