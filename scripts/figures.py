@@ -604,6 +604,7 @@ def figure8():
 
 def simulations_dashboard():
     # folders = utils.folders_of_evaluations(evaluations)
+    print("Loading data...")
     EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "range_estimation"
     df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
     df1["best_param"] = df1["best_param"].str.strip("[").str.strip("]").astype(float)
@@ -633,14 +634,17 @@ def simulations_dashboard():
 
     dfl = pd.concat([df1, df2])
     del df1, df2
+    print("...complete.")
 
+    print("Drawing figure...")
+    plot_flag = True
     fig, axs = plt.subplots(
         nrows=4,
         ncols=6,
         figsize=(18, 6),
         facecolor="white",
         dpi=200,
-        gridspec_kw={"width_ratios": [2, 1, 1, 1, 1, 1], "wspace": 0.4},
+        gridspec_kw={"width_ratios": [2, 1, 1, 1, 1, 1], "wspace": 0.2},
     )
     # ranges = df["rec_r"].unique()
 
@@ -648,11 +652,7 @@ def simulations_dashboard():
     letters = "abcdef"
     [
         axs[0, i].text(
-            -0.25,
-            1.1,
-            letters[i] + ")",
-            transform=axs[0, i].transAxes,
-            fontsize="xx-large",
+            -0.2, 1.3, letters[i] + ")", transform=axs[0, i].transAxes, fontsize="xx-large"
         )
         for i in range(len(letters))
     ]
@@ -667,9 +667,16 @@ def simulations_dashboard():
         "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
-        "src_z": ["62"],
+        "src_z": ["62"]
     }
     ranges = [float(i) for i in simulations["rec_r"]]
+
+    TITLE_KW = {
+        "ha": "left",
+        "va": "top",
+        "x": 0,
+        "y": 1.4
+    }
 
     # ================================================================ #
     # ======================= Ambiguity Surfaces ===================== #
@@ -682,17 +689,11 @@ def simulations_dashboard():
     XLABEL = "Range [km]"
     YLABEL = "Depth [m]"
 
-    # Draw ranges
-    [
-        axcol[i].text(
-            -0.8,
-            0.5,
-            f"$r_\mathrm{{src}} = {r}$ km",
-            transform=axcol[i].transAxes,
-            fontsize="xx-large",
-        )
-        for i, r in enumerate(ranges)
-    ]
+    # Set ranges
+    [axcol[i].text(-0.6, 0.5, f"$r_\mathrm{{src}} = {r}$ km", transform=axcol[i].transAxes, fontsize="x-large") for i, r in enumerate(ranges)]
+
+    # Set title
+    axcol[0].set_title("Ambiguity Surface\n$f(\mathbf{x})$", **TITLE_KW)
 
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
@@ -703,15 +704,16 @@ def simulations_dashboard():
     [axcol[i].set_ylim(YLIM) for i, _ in enumerate(ranges)]
     axcol[-1].set_ylabel(YLABEL)
 
-    for i, r in enumerate(ranges):
-        data = np.load(
-            ROOT / "Data" / "SWELLEX96" / "ambiguity_surfaces" / f"201Hz_62m_{r}km.npz"
-        )
-        B = data["B"]
-        rvec = data["rvec"]
-        zvec = data["zvec"]
-        ax, im = plotting.plot_ambiguity_surface(B, rvec, zvec, axcol[i])
-
+    if plot_flag:
+        for i, r in enumerate(ranges):
+            data = np.load(ROOT / "Data" / "SWELLEX96" / "ambiguity_surfaces" / f"201Hz_62m_{r}km.npz")
+            B = data["B"]
+            rvec = data["rvec"]
+            zvec = data["zvec"]
+            ax, im = plotting.plot_ambiguity_surface(B, rvec, zvec, axcol[i])
+    else:
+        ax = axcol[-1]
+    
     cax = inset_axes(
         ax,
         width="100%",
@@ -720,14 +722,15 @@ def simulations_dashboard():
         bbox_to_anchor=(0, -1.1, 1, 1),
         bbox_transform=ax.transAxes,
     )
-    fig.colorbar(
-        im, cax=cax, label="Normalized Correlation [dB]", orientation="horizontal"
-    )
+    if plot_flag:
+        fig.colorbar(
+            im, cax=cax, label="Normalized Correlation [dB]", orientation="horizontal"
+        )
     # ================================================================ #
     # ======================== Range Estimation ====================== #
     # ================================================================ #
-
-    XLABEL = "Evaluations"
+    
+    XLABEL = "Evaluation"
     # ======================= Performance History ==================== #
     axcol = axs[:, 1]
     VALUE_TO_PLOT = "best_value"
@@ -738,6 +741,9 @@ def simulations_dashboard():
     LOWER_THRESHOLD = 0
     UPPER_THRESHOLD = 1
 
+    # Set title
+    axcol[0].set_title(f"Range Estimation:\n{YLABEL}", **TITLE_KW)
+
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
     [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
@@ -745,21 +751,22 @@ def simulations_dashboard():
 
     # Set y axis
     [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
-    axcol[-1].set_ylabel(YLABEL)
+    # axcol[-1].set_ylabel(YLABEL)
 
     # Draw plots
-    plots = [
-        plotting.plot_agg_data(
-            dfr[dfr["rec_r"] == r],
-            simulations,
-            VALUE_TO_PLOT,
-            optimum=OPTIMUM,
-            lower_threshold=LOWER_THRESHOLD,
-            upper_threshold=UPPER_THRESHOLD,
-            ax=axcol[i],
-        )
-        for i, r in enumerate(ranges)
-    ]
+    if plot_flag:
+        plots = [
+            plotting.plot_agg_data(
+                dfr[dfr["rec_r"] == r],
+                simulations,
+                VALUE_TO_PLOT,
+                optimum=OPTIMUM,
+                lower_threshold=LOWER_THRESHOLD,
+                upper_threshold=UPPER_THRESHOLD,
+                ax=axcol[i],
+            )
+            for i, r in enumerate(ranges)
+        ]
 
     # ====================== Range Error History ===================== #
     axcol = axs[:, 2]
@@ -768,6 +775,9 @@ def simulations_dashboard():
     YLABEL = "$\\vert\hat{r}_{src} - r_{src}\\vert$"
     COMPUTE_ERROR_WITH = simulations["rec_r"]
 
+    # Set title
+    axcol[0].set_title(f"Range Estimation:\n{YLABEL} [km]", **TITLE_KW)
+
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
     [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
@@ -775,19 +785,20 @@ def simulations_dashboard():
 
     # Set y axis
     [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
-    axcol[-1].set_ylabel(YLABEL)
+    # axcol[-1].set_ylabel(YLABEL)
 
     # Draw plots
-    plots = [
-        plotting.plot_agg_data(
-            dfr[dfr["rec_r"] == r],
-            simulations,
-            VALUE_TO_PLOT,
-            compute_error_with=float(COMPUTE_ERROR_WITH[i]),
-            ax=axcol[i],
-        )
-        for i, r in enumerate(ranges)
-    ]
+    if plot_flag:
+        plots = [
+            plotting.plot_agg_data(
+                dfr[dfr["rec_r"] == r],
+                simulations,
+                VALUE_TO_PLOT,
+                compute_error_with=float(COMPUTE_ERROR_WITH[i]),
+                ax=axcol[i],
+            )
+            for i, r in enumerate(ranges)
+        ]
 
     # ================================================================ #
     # ========================== Localization ======================== #
@@ -803,6 +814,8 @@ def simulations_dashboard():
     LOWER_THRESHOLD = 0
     UPPER_THRESHOLD = 1
 
+    axcol[0].set_title(f"Localization:\n{YLABEL}", **TITLE_KW)
+
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
     [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
@@ -810,24 +823,41 @@ def simulations_dashboard():
 
     # Set y axis
     [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
-    axcol[-1].set_ylabel(YLABEL)
+    # axcol[-1].set_ylabel(YLABEL)
 
     # Draw plots
-    lines = [
-        plotting.plot_agg_data(
-            dfl[dfl["rec_r"] == r],
-            simulations,
-            VALUE_TO_PLOT,
-            optimum=OPTIMUM,
-            lower_threshold=LOWER_THRESHOLD,
-            upper_threshold=UPPER_THRESHOLD,
-            ax=axcol[i],
-        )
-        for i, r in enumerate(ranges)
-    ]
+    if plot_flag:
+        lines = [
+            plotting.plot_agg_data(
+                dfl[dfl["rec_r"] == r],
+                simulations,
+                VALUE_TO_PLOT,
+                optimum=OPTIMUM,
+                lower_threshold=LOWER_THRESHOLD,
+                upper_threshold=UPPER_THRESHOLD,
+                ax=axcol[i],
+            )
+            for i, r in enumerate(ranges)
+        ]
+    else:
+        lines = [
+            plotting.plot_agg_data(
+                dfl[dfl["rec_r"] == ranges[0]],
+                simulations,
+                VALUE_TO_PLOT,
+                optimum=OPTIMUM,
+                lower_threshold=LOWER_THRESHOLD,
+                upper_threshold=UPPER_THRESHOLD,
+                ax=axcol[0],
+            )
+        ]
+
 
     axcol[-1].legend(
-        handles=lines[-1], ncol=5, loc="center", bbox_to_anchor=(0.5, -0.75)
+        handles=lines[-1],
+        ncol=5,
+        loc="center",
+        bbox_to_anchor=(0.5, -0.75)
     )
 
     # ====================== Range Error History ===================== #
@@ -837,6 +867,9 @@ def simulations_dashboard():
     YLABEL = "$\\vert\hat{r}_{src} - r_{src}\\vert$"
     COMPUTE_ERROR_WITH = simulations["rec_r"]
 
+    # Set title
+    axcol[0].set_title(f"Localization:\n{YLABEL} [km]", **TITLE_KW)
+
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
     [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
@@ -844,19 +877,20 @@ def simulations_dashboard():
 
     # Set y axis
     [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
-    axcol[-1].set_ylabel(YLABEL)
+    # axcol[-1].set_ylabel(YLABEL)
 
     # Draw plots
-    lines = [
-        plotting.plot_agg_data(
-            dfl[dfl["rec_r"] == r],
-            simulations,
-            VALUE_TO_PLOT,
-            compute_error_with=float(COMPUTE_ERROR_WITH[i]),
-            ax=axcol[i],
-        )
-        for i, r in enumerate(ranges)
-    ]
+    if plot_flag:
+        lines = [
+            plotting.plot_agg_data(
+                dfl[dfl["rec_r"] == r],
+                simulations,
+                VALUE_TO_PLOT,
+                compute_error_with=float(COMPUTE_ERROR_WITH[i]),
+                ax=axcol[i],
+            )
+            for i, r in enumerate(ranges)
+        ]
 
     # ====================== Depth Error History ===================== #
     axcol = axs[:, 5]
@@ -865,6 +899,9 @@ def simulations_dashboard():
     YLABEL = "$\\vert\hat{z}_{src} - z_{src}\\vert$"
     COMPUTE_ERROR_WITH = [simulations["src_z"][0] for i in range(len(ranges))]
 
+    # Set title
+    axcol[0].set_title(f"Localization:\n{YLABEL} [m]", **TITLE_KW)
+
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
     [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
@@ -872,19 +909,20 @@ def simulations_dashboard():
 
     # Set y axis
     [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
-    axcol[-1].set_ylabel(YLABEL)
+    # axcol[-1].set_ylabel(YLABEL)
 
     # Draw plots
-    lines = [
-        plotting.plot_agg_data(
-            dfl[dfl["rec_r"] == r],
-            simulations,
-            VALUE_TO_PLOT,
-            compute_error_with=float(COMPUTE_ERROR_WITH[i]),
-            ax=axcol[i],
-        )
-        for i, r in enumerate(ranges)
-    ]
+    if plot_flag:
+        lines = [
+            plotting.plot_agg_data(
+                dfl[dfl["rec_r"] == r],
+                simulations,
+                VALUE_TO_PLOT,
+                compute_error_with=float(COMPUTE_ERROR_WITH[i]),
+                ax=axcol[i],
+            )
+            for i, r in enumerate(ranges)
+        ]
 
     fig.savefig(
         FIGURE_PATH / "sim_dashboard.png",
@@ -892,6 +930,7 @@ def simulations_dashboard():
         facecolor="white",
         bbox_inches="tight",
     )
+    print("...complete.")
 
 
 if __name__ == "__main__":
