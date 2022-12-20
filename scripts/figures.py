@@ -41,6 +41,10 @@ def main(figures: list):
             continue
 
 
+def figure9():
+    simulations_dashboard()
+
+
 def figure1():
     # Set the true parameters:
     fig = plt.figure(figsize=(6, 10))
@@ -228,7 +232,9 @@ def figure2():
         parameter_labels="$\mathbf{x}$ (Range [km])",
         consolidate=True,
     )
-    fig.savefig(FIGURE_PATH / "optim_1D.png", dpi=DPI, facecolor="white", bbox_inches="tight")
+    fig.savefig(
+        FIGURE_PATH / "optim_1D.png", dpi=DPI, facecolor="white", bbox_inches="tight"
+    )
 
 
 def figure3():
@@ -346,10 +352,15 @@ def figure3():
 
 def figure4():
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement", "random"],
+        "acq_func": [
+            "ProbabilityOfImprovement",
+            "ExpectedImprovement",
+            "qExpectedImprovement",
+            "random",
+        ],
         "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
-        "rec_r": ["0.5", "3.0", "6.0", "10.0"]
+        "rec_r": ["0.5", "3.0", "6.0", "10.0"],
     }
     EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "range_estimation"
     df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
@@ -371,17 +382,27 @@ def figure4():
         xlabel="Evaluation",
         ylabel="$\hat{f}(\mathbf{x})$",
         xlim=[-2, 202],
-        ylim=[0, 1.05]
+        ylim=[0, 1.05],
     )
-    fig.savefig(FIGURE_PATH / "RangeEst_PerfHist.png", dpi=DPI, facecolor="white", bbox_inches="tight")
+    fig.savefig(
+        FIGURE_PATH / "RangeEst_PerfHist.png",
+        dpi=DPI,
+        facecolor="white",
+        bbox_inches="tight",
+    )
 
 
 def figure5():
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement", "random"],
+        "acq_func": [
+            "ProbabilityOfImprovement",
+            "ExpectedImprovement",
+            "qExpectedImprovement",
+            "random",
+        ],
         "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
-        "rec_r": ["0.5", "3.0", "6.0", "10.0"]
+        "rec_r": ["0.5", "3.0", "6.0", "10.0"],
     }
     EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "range_estimation"
     df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
@@ -402,33 +423,53 @@ def figure5():
         xlabel="Evaluation",
         ylabel="$\\vert\hat{r}_{src} - r_{src}\\vert$",
         xlim=[-2, 202],
-        ylim=[0, 10]
+        ylim=[0, 10],
     )
-    fig.savefig(FIGURE_PATH / "RangeEst_ErrHist.png", dpi=DPI, facecolor="white", bbox_inches="tight")
+    fig.savefig(
+        FIGURE_PATH / "RangeEst_ErrHist.png",
+        dpi=DPI,
+        facecolor="white",
+        bbox_inches="tight",
+    )
 
 
 def figure6():
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement", "random"],
+        "acq_func": [
+            "ProbabilityOfImprovement",
+            "ExpectedImprovement",
+            "qExpectedImprovement",
+            "random",
+        ],
         "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
-        "src_z": ["62"]
+        "src_z": ["62"],
     }
     EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "localization"
     df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
-    new_cols = df1["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols = (
+        df1["best_param"]
+        .str.strip("[ ")
+        .str.strip(" ]")
+        .str.split(" ", n=1, expand=True)
+    )
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
     df1 = pd.concat([df1, new_cols], axis=1).drop("best_param", axis=1)
 
     EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "localization"
     df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
-    new_cols = df2["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols = (
+        df2["best_param"]
+        .str.strip("[ ")
+        .str.strip(" ]")
+        .str.split(" ", n=1, expand=True)
+    )
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
     df2 = pd.concat([df2, new_cols], axis=1).drop("best_param", axis=1)
 
     df = pd.concat([df1, df2])
-        
+
     fig = plotting.plot_aggregated_data(
         df,
         evaluations,
@@ -439,28 +480,48 @@ def figure6():
         xlabel="Evaluation",
         ylabel="$\hat{f}(\mathbf{x})$",
         xlim=[-5, 1005],
-        ylim=[0, 1.05]
+        ylim=[0, 1.05],
     )
-    fig.savefig(FIGURE_PATH / "Localization_PerfHist.png", dpi=DPI, facecolor="white", bbox_inches="tight")
+    fig.savefig(
+        FIGURE_PATH / "Localization_PerfHist.png",
+        dpi=DPI,
+        facecolor="white",
+        bbox_inches="tight",
+    )
 
 
 def figure7():
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement", "random"],
+        "acq_func": [
+            "ProbabilityOfImprovement",
+            "ExpectedImprovement",
+            "qExpectedImprovement",
+            "random",
+        ],
         "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
-        "src_z": ["62"]
+        "src_z": ["62"],
     }
     EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "localization"
     df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
-    new_cols = df1["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols = (
+        df1["best_param"]
+        .str.strip("[ ")
+        .str.strip(" ]")
+        .str.split(" ", n=1, expand=True)
+    )
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
     df1 = pd.concat([df1, new_cols], axis=1).drop("best_param", axis=1)
 
     EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "localization"
     df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
-    new_cols = df2["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols = (
+        df2["best_param"]
+        .str.strip("[ ")
+        .str.strip(" ]")
+        .str.split(" ", n=1, expand=True)
+    )
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
     df2 = pd.concat([df2, new_cols], axis=1).drop("best_param", axis=1)
 
@@ -475,33 +536,53 @@ def figure7():
         xlabel="Evaluation",
         ylabel="$\\vert\hat{r}_{src} - r_{src}\\vert$",
         xlim=[-5, 1005],
-        ylim=[0, 10]
+        ylim=[0, 10],
     )
-    fig.savefig(FIGURE_PATH / "Localization_ErrHistRange.png", dpi=DPI, facecolor="white", bbox_inches="tight")
+    fig.savefig(
+        FIGURE_PATH / "Localization_ErrHistRange.png",
+        dpi=DPI,
+        facecolor="white",
+        bbox_inches="tight",
+    )
 
 
 def figure8():
     evaluations = {
-        "acq_func": ["ProbabilityOfImprovement", "ExpectedImprovement", "qExpectedImprovement", "random"],
+        "acq_func": [
+            "ProbabilityOfImprovement",
+            "ExpectedImprovement",
+            "qExpectedImprovement",
+            "random",
+        ],
         "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
         "snr": ["inf", "10"],
         "rec_r": ["0.5", "3.0", "6.0", "10.0"],
-        "src_z": ["62"]
+        "src_z": ["62"],
     }
     EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "localization"
     df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
-    new_cols = df1["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols = (
+        df1["best_param"]
+        .str.strip("[ ")
+        .str.strip(" ]")
+        .str.split(" ", n=1, expand=True)
+    )
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
     df1 = pd.concat([df1, new_cols], axis=1).drop("best_param", axis=1)
 
     EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "localization"
     df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
-    new_cols = df2["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols = (
+        df2["best_param"]
+        .str.strip("[ ")
+        .str.strip(" ]")
+        .str.split(" ", n=1, expand=True)
+    )
     new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
     df2 = pd.concat([df2, new_cols], axis=1).drop("best_param", axis=1)
 
     df = pd.concat([df1, df2])
-    
+
     fig = plotting.plot_aggregated_data(
         df,
         evaluations,
@@ -511,9 +592,306 @@ def figure8():
         xlabel="Evaluation",
         ylabel="$\\vert\hat{z}_{src} - z_{src}\\vert$",
         xlim=[-5, 1005],
-        ylim=[0, 100]
+        ylim=[0, 100],
     )
-    fig.savefig(FIGURE_PATH / "Localization_ErrHistDepth.png", dpi=DPI, facecolor="white", bbox_inches="tight")
+    fig.savefig(
+        FIGURE_PATH / "Localization_ErrHistDepth.png",
+        dpi=DPI,
+        facecolor="white",
+        bbox_inches="tight",
+    )
+
+
+def simulations_dashboard():
+    # folders = utils.folders_of_evaluations(evaluations)
+    EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "range_estimation"
+    df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
+    df1["best_param"] = df1["best_param"].str.strip("[").str.strip("]").astype(float)
+    df1 = df1[df1["snr"] == 10]
+
+    EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "range_estimation"
+    df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
+    df2["best_param"] = df2["best_param"].str.strip("[").str.strip("]").astype(float)
+    df2 = df2[df2["snr"] == 10]
+
+    dfr = pd.concat([df1, df2])
+    del df1, df2
+
+    EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "localization"
+    df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
+    new_cols = df1["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
+    df1 = pd.concat([df1, new_cols], axis=1).drop("best_param", axis=1)
+    df1 = df1[df1["snr"] == 10]
+
+    EXPERIMENT2 = ROOT / "Data" / "Simulations" / "random" / "localization"
+    df2 = pd.read_csv(EXPERIMENT2 / "aggregated.csv", index_col=0)
+    new_cols = df2["best_param"].str.strip("[ ").str.strip(" ]").str.split(" ", n=1, expand=True)
+    new_cols.columns = [f"best_param{col}" for col in new_cols.columns]
+    df2 = pd.concat([df2, new_cols], axis=1).drop("best_param", axis=1)
+    df2 = df2[df2["snr"] == 10]
+
+    dfl = pd.concat([df1, df2])
+    del df1, df2
+
+    fig, axs = plt.subplots(
+        nrows=4,
+        ncols=6,
+        figsize=(18, 6),
+        facecolor="white",
+        dpi=200,
+        gridspec_kw={"width_ratios": [2, 1, 1, 1, 1, 1], "wspace": 0.4},
+    )
+    # ranges = df["rec_r"].unique()
+
+    # Subplot letters
+    letters = "abcdef"
+    [
+        axs[0, i].text(
+            -0.25,
+            1.1,
+            letters[i] + ")",
+            transform=axs[0, i].transAxes,
+            fontsize="xx-large",
+        )
+        for i in range(len(letters))
+    ]
+
+    simulations = {
+        "acq_func": [
+            "ProbabilityOfImprovement",
+            "ExpectedImprovement",
+            "qExpectedImprovement",
+            "random",
+        ],
+        "acq_func_abbrev": ["PI", "EI", "qEI", "Rand"],
+        "snr": ["inf", "10"],
+        "rec_r": ["0.5", "3.0", "6.0", "10.0"],
+        "src_z": ["62"],
+    }
+    ranges = [float(i) for i in simulations["rec_r"]]
+
+    # ================================================================ #
+    # ======================= Ambiguity Surfaces ===================== #
+    # ================================================================ #
+
+    axcol = axs[:, 0]
+
+    XLIM = [0, 10]
+    YLIM = [200, 0]
+    XLABEL = "Range [km]"
+    YLABEL = "Depth [m]"
+
+    # Draw ranges
+    [
+        axcol[i].text(
+            -0.8,
+            0.5,
+            f"$r_\mathrm{{src}} = {r}$ km",
+            transform=axcol[i].transAxes,
+            fontsize="xx-large",
+        )
+        for i, r in enumerate(ranges)
+    ]
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i, _ in enumerate(ranges)]
+    axcol[-1].set_ylabel(YLABEL)
+
+    for i, r in enumerate(ranges):
+        data = np.load(
+            ROOT / "Data" / "SWELLEX96" / "ambiguity_surfaces" / f"201Hz_62m_{r}km.npz"
+        )
+        B = data["B"]
+        rvec = data["rvec"]
+        zvec = data["zvec"]
+        ax, im = plotting.plot_ambiguity_surface(B, rvec, zvec, axcol[i])
+
+    cax = inset_axes(
+        ax,
+        width="100%",
+        height="10%",
+        loc="center",
+        bbox_to_anchor=(0, -1.1, 1, 1),
+        bbox_transform=ax.transAxes,
+    )
+    fig.colorbar(
+        im, cax=cax, label="Normalized Correlation [dB]", orientation="horizontal"
+    )
+    # ================================================================ #
+    # ======================== Range Estimation ====================== #
+    # ================================================================ #
+
+    XLABEL = "Evaluations"
+    # ======================= Performance History ==================== #
+    axcol = axs[:, 1]
+    VALUE_TO_PLOT = "best_value"
+    XLIM = [-5, 205]
+    YLIM = [0, 1.05]
+    YLABEL = "$\hat{f}(\mathbf{x})$"
+    OPTIMUM = 1.0
+    LOWER_THRESHOLD = 0
+    UPPER_THRESHOLD = 1
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
+    axcol[-1].set_ylabel(YLABEL)
+
+    # Draw plots
+    plots = [
+        plotting.plot_agg_data(
+            dfr[dfr["rec_r"] == r],
+            simulations,
+            VALUE_TO_PLOT,
+            optimum=OPTIMUM,
+            lower_threshold=LOWER_THRESHOLD,
+            upper_threshold=UPPER_THRESHOLD,
+            ax=axcol[i],
+        )
+        for i, r in enumerate(ranges)
+    ]
+
+    # ====================== Range Error History ===================== #
+    axcol = axs[:, 2]
+    VALUE_TO_PLOT = "best_param"
+    YLIM = [0, 10]
+    YLABEL = "$\\vert\hat{r}_{src} - r_{src}\\vert$"
+    COMPUTE_ERROR_WITH = simulations["rec_r"]
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
+    axcol[-1].set_ylabel(YLABEL)
+
+    # Draw plots
+    plots = [
+        plotting.plot_agg_data(
+            dfr[dfr["rec_r"] == r],
+            simulations,
+            VALUE_TO_PLOT,
+            compute_error_with=float(COMPUTE_ERROR_WITH[i]),
+            ax=axcol[i],
+        )
+        for i, r in enumerate(ranges)
+    ]
+
+    # ================================================================ #
+    # ========================== Localization ======================== #
+    # ================================================================ #
+
+    # ======================= Performance History ==================== #
+    axcol = axs[:, 3]
+    VALUE_TO_PLOT = "best_value"
+    XLIM = [-5, 1005]
+    YLIM = [0, 1.05]
+    YLABEL = "$\hat{f}(\mathbf{x})$"
+    OPTIMUM = 1.0
+    LOWER_THRESHOLD = 0
+    UPPER_THRESHOLD = 1
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
+    axcol[-1].set_ylabel(YLABEL)
+
+    # Draw plots
+    lines = [
+        plotting.plot_agg_data(
+            dfl[dfl["rec_r"] == r],
+            simulations,
+            VALUE_TO_PLOT,
+            optimum=OPTIMUM,
+            lower_threshold=LOWER_THRESHOLD,
+            upper_threshold=UPPER_THRESHOLD,
+            ax=axcol[i],
+        )
+        for i, r in enumerate(ranges)
+    ]
+
+    axcol[-1].legend(
+        handles=lines[-1], ncol=5, loc="center", bbox_to_anchor=(0.5, -0.75)
+    )
+
+    # ====================== Range Error History ===================== #
+    axcol = axs[:, 4]
+    VALUE_TO_PLOT = "best_param0"
+    YLIM = [0, 10]
+    YLABEL = "$\\vert\hat{r}_{src} - r_{src}\\vert$"
+    COMPUTE_ERROR_WITH = simulations["rec_r"]
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
+    axcol[-1].set_ylabel(YLABEL)
+
+    # Draw plots
+    lines = [
+        plotting.plot_agg_data(
+            dfl[dfl["rec_r"] == r],
+            simulations,
+            VALUE_TO_PLOT,
+            compute_error_with=float(COMPUTE_ERROR_WITH[i]),
+            ax=axcol[i],
+        )
+        for i, r in enumerate(ranges)
+    ]
+
+    # ====================== Depth Error History ===================== #
+    axcol = axs[:, 5]
+    VALUE_TO_PLOT = "best_param1"
+    YLIM = [0, 100]
+    YLABEL = "$\\vert\hat{z}_{src} - z_{src}\\vert$"
+    COMPUTE_ERROR_WITH = [simulations["src_z"][0] for i in range(len(ranges))]
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
+    axcol[-1].set_ylabel(YLABEL)
+
+    # Draw plots
+    lines = [
+        plotting.plot_agg_data(
+            dfl[dfl["rec_r"] == r],
+            simulations,
+            VALUE_TO_PLOT,
+            compute_error_with=float(COMPUTE_ERROR_WITH[i]),
+            ax=axcol[i],
+        )
+        for i, r in enumerate(ranges)
+    ]
+
+    fig.savefig(
+        FIGURE_PATH / "sim_dashboard.png",
+        dpi=DPI,
+        facecolor="white",
+        bbox_inches="tight",
+    )
 
 
 if __name__ == "__main__":
