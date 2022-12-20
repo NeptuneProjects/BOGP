@@ -80,31 +80,47 @@ def plot_agg_data(
     return lines
 
 
-def plot_ambiguity_surface(B, rvec, zvec, ax):
-    
+def plot_ambiguity_surface(
+    B,
+    rvec,
+    zvec,
+    ax=None,
+    cmap="jet",
+    vmin=-10,
+    vmax=0,
+    interpolation="none",
+    marker="*",
+    color="w",
+    markersize=15,
+    markeredgewidth=1.5,
+    markeredgecolor="k",
+):
+
+    if ax is None:
+        ax = plt.gca()
+
     Bn = B
     logBn = 10 * np.log10(Bn)
-    src_z_ind, src_r_ind = np.unravel_index(
-        np.argmax(logBn), (len(zvec), len(rvec))
-    )
+    src_z_ind, src_r_ind = np.unravel_index(np.argmax(logBn), (len(zvec), len(rvec)))
 
     im = ax.imshow(
         logBn,
         aspect="auto",
         extent=[min(rvec), max(rvec), min(zvec), max(zvec)],
         origin="lower",
-        vmin=-10,
-        vmax=0,
-        interpolation="none",
-        cmap="jet",
+        vmin=vmin,
+        vmax=vmax,
+        interpolation=interpolation,
+        cmap=cmap,
     )
     ax.plot(
         rvec[src_r_ind],
         zvec[src_z_ind],
-        "w*",
-        markersize=15,
-        markeredgewidth=1.5,
-        markeredgecolor="k",
+        marker=marker,
+        color=color,
+        markersize=markersize,
+        markeredgewidth=markeredgewidth,
+        markeredgecolor=markeredgecolor,
     )
 
     return ax, im

@@ -9,6 +9,7 @@ import pickle
 import sys
 import warnings
 
+from matplotlib import colors
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -20,7 +21,7 @@ from tqdm import tqdm
 sys.path.insert(0, str(Path.cwd() / "Source"))
 from BOGP import utils
 from BOGP.optimization import plotting
-from BOGP.optimization.optimizer import import_from_str, Results
+from BOGP.optimization.optimizer import Results
 from tritonoa.kraken import run_kraken
 from tritonoa.io import read_ssp
 from tritonoa.sp import beamformer, snrdb_to_sigma, added_wng
@@ -604,7 +605,7 @@ def figure8():
 
 def simulations_dashboard():
     # folders = utils.folders_of_evaluations(evaluations)
-    print("Loading data...")
+    print("Loading data...", end="", flush=True)
     EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "range_estimation"
     df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
     df1["best_param"] = df1["best_param"].str.strip("[").str.strip("]").astype(float)
@@ -646,8 +647,29 @@ def simulations_dashboard():
     del df1, df2
     print("...complete.")
 
-    print("Drawing figure...")
+    print("Drawing figure...", end="", flush=True)
     plot_flag = True
+
+    LEGENDSIZE = 12
+
+    AMBSURFKWARGS = {"color": colors.CSS4_COLORS["fuchsia"], "markersize": 25}
+
+    CBAR_KWARGS = {"label": "Normalized Correlation [dB]", "size": LEGENDSIZE}
+
+    LETTERS_KW = {
+        "fontsize": "xx-large",
+        "fontfamily": "serif",
+    }
+
+    LEGEND_KW = {
+        "ncol": 5,
+        "loc": "center",
+        "bbox_to_anchor": (0.5, -0.75),
+        "prop": {"size": LEGENDSIZE},
+    }
+
+    TITLE_KW = {"ha": "left", "va": "top", "x": 0, "y": 1.4}
+
     fig, axs = plt.subplots(
         nrows=4,
         ncols=6,
@@ -662,11 +684,7 @@ def simulations_dashboard():
     letters = "abcdef"
     [
         axs[0, i].text(
-            -0.2,
-            1.3,
-            letters[i] + ")",
-            transform=axs[0, i].transAxes,
-            fontsize="xx-large",
+            -0.25, 1.3, f"({letters[i]})", transform=axs[0, i].transAxes, **LETTERS_KW
         )
         for i in range(len(letters))
     ]
@@ -684,8 +702,6 @@ def simulations_dashboard():
         "src_z": ["62"],
     }
     ranges = [float(i) for i in simulations["rec_r"]]
-
-    TITLE_KW = {"ha": "left", "va": "top", "x": 0, "y": 1.4}
 
     # ================================================================ #
     # ======================= Ambiguity Surfaces ===================== #
@@ -734,7 +750,9 @@ def simulations_dashboard():
             B = data["B"]
             rvec = data["rvec"]
             zvec = data["zvec"]
-            ax, im = plotting.plot_ambiguity_surface(B, rvec, zvec, axcol[i])
+            ax, im = plotting.plot_ambiguity_surface(
+                B, rvec, zvec, ax=axcol[i], **AMBSURFKWARGS
+            )
     else:
         ax = axcol[-1]
 
@@ -746,10 +764,12 @@ def simulations_dashboard():
         bbox_to_anchor=(0, -1.1, 1, 1),
         bbox_transform=ax.transAxes,
     )
+
     if plot_flag:
-        fig.colorbar(
-            im, cax=cax, label="Normalized Correlation [dB]", orientation="horizontal"
+        cbar = fig.colorbar(im, cax=cax, orientation="horizontal").set_label(
+            **CBAR_KWARGS
         )
+
     # ================================================================ #
     # ======================== Range Estimation ====================== #
     # ================================================================ #
@@ -876,9 +896,7 @@ def simulations_dashboard():
             )
         ]
 
-    axcol[-1].legend(
-        handles=lines[-1], ncol=5, loc="center", bbox_to_anchor=(0.5, -0.75)
-    )
+    axcol[-1].legend(handles=lines[-1], **LEGEND_KW)
 
     # ====================== Range Error History ===================== #
     axcol = axs[:, 4]
