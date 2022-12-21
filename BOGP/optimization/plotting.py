@@ -31,7 +31,8 @@ def plot_agg_data(
     optimum=None,
     upper_threshold=None,
     lower_threshold=None,
-    ax=None
+    ax=None,
+    additional_values=None
 ):
     if ax is None:
         ax = plt.gca()
@@ -71,6 +72,11 @@ def plot_agg_data(
         )
         lines.append(line)
 
+    if additional_values is not None:
+        for value_kwargs in additional_values:
+            line = ax.axhline(**value_kwargs)
+            lines.append(line)
+    
     if optimum is not None:
         optimum = ax.axhline(
             1.0, c="k", ls="--", lw=1, alpha=0.5, label="Global Optimum"
