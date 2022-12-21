@@ -604,7 +604,9 @@ def figure8():
 
 
 def simulations_dashboard():
-    # folders = utils.folders_of_evaluations(evaluations)
+    # ================================================================ #
+    # =========================== Load Data ========================== #
+    # ================================================================ #
     print("Loading data...", end="", flush=True)
     EXPERIMENT1 = ROOT / "Data" / "Simulations" / "bogp" / "range_estimation"
     df1 = pd.read_csv(EXPERIMENT1 / "aggregated.csv", index_col=0)
@@ -646,8 +648,10 @@ def simulations_dashboard():
     dfl = pd.concat([df1, df2])
     del df1, df2
     print("...complete.")
-
     print("Drawing figure...", end="", flush=True)
+    # ================================================================ #
+    # ========================== Set Values ========================== #
+    # ================================================================ #
     plot_flag = True
 
     LEGENDSIZE = 12
@@ -667,6 +671,8 @@ def simulations_dashboard():
         "bbox_to_anchor": (0.5, -0.75),
         "prop": {"size": LEGENDSIZE},
     }
+
+    MFP_KW = {"color": colors.CSS4_COLORS["fuchsia"], "label": "MFP"}
 
     TITLE_KW = {"ha": "left", "va": "top", "x": 0, "y": 1.4}
 
@@ -702,6 +708,12 @@ def simulations_dashboard():
         "src_z": ["62"],
     }
     ranges = [float(i) for i in simulations["rec_r"]]
+
+    XLIM_R = [-5, 205]
+    XLIM_L = [-5, 1005]
+    YLIM_PERF = [0, 1.05]
+    YLIM_RERR = [-0.5, 10]
+    YLIM_ZERR = [-5, 100]
 
     # ================================================================ #
     # ======================= Ambiguity Surfaces ===================== #
@@ -773,13 +785,28 @@ def simulations_dashboard():
     # ================================================================ #
     # ======================== Range Estimation ====================== #
     # ================================================================ #
+    # Get values from pre-computed MFP results
+    mfp_max = []
+    mfp_r = []
+    for i, r in enumerate(ranges):
+        data = np.load(
+            ROOT
+            / "Data"
+            / "Simulations"
+            / "working"
+            / "mfp"
+            / f"range_201Hz_62m_{r}km.npz"
+        )
+        B = data["B"]
+        rvec = data["rvec"]
+        src_r_ind = np.argmax(B)
+        mfp_max.append(B.max())
+        mfp_r.append(np.abs(rvec[src_r_ind] - r))
 
     XLABEL = "Evaluation"
     # ======================= Performance History ==================== #
     axcol = axs[:, 1]
     VALUE_TO_PLOT = "best_value"
-    XLIM = [-5, 205]
-    YLIM = [0, 1.05]
     YLABEL = "$\hat{f}(\mathbf{x})$"
     OPTIMUM = 1.0
     LOWER_THRESHOLD = 0
@@ -789,57 +816,63 @@ def simulations_dashboard():
     axcol[0].set_title(f"Range Estimation:\n{YLABEL}", **TITLE_KW)
 
     # Set x axis
-    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xlim(XLIM_R) for i in range(len(ranges))]
     [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
     [axcol[-1].set_xlabel(XLABEL)]
 
     # Set y axis
-    [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
+    [axcol[i].set_ylim(YLIM_PERF) for i in range(len(ranges))]
     # axcol[-1].set_ylabel(YLABEL)
 
     # Draw plots
     if plot_flag:
-        plots = [
-            plotting.plot_agg_data(
-                dfr[dfr["rec_r"] == r],
-                simulations,
-                VALUE_TO_PLOT,
-                optimum=OPTIMUM,
-                lower_threshold=LOWER_THRESHOLD,
-                upper_threshold=UPPER_THRESHOLD,
-                ax=axcol[i],
-            )
+        lines = [
+                plotting.plot_agg_data(
+                    dfr[dfr["rec_r"] == r],
+                    simulations,
+                    VALUE_TO_PLOT,
+                    optimum=OPTIMUM,
+                    lower_threshold=LOWER_THRESHOLD,
+                    upper_threshold=UPPER_THRESHOLD,
+                    ax=axcol[i],
+                    additional_values=[{"y": mfp_max[i]+1} | MFP_KW]
+                )
+            
             for i, r in enumerate(ranges)
         ]
+
+    # [axcol[i].axhline(mfp_max[i], **MFP_KW) for i in range(len(ranges))]
 
     # ====================== Range Error History ===================== #
     axcol = axs[:, 2]
     VALUE_TO_PLOT = "best_param"
-    YLIM = [0, 10]
-    YLABEL = "$\\vert\hat{r}_{src} - r_{src}\\vert$"
+    
+    YLABEL = "$\\vert\hat{R}_{src} - R_{src}\\vert$"
     COMPUTE_ERROR_WITH = simulations["rec_r"]
 
     # Set title
     axcol[0].set_title(f"Range Estimation:\n{YLABEL} [km]", **TITLE_KW)
 
     # Set x axis
-    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xlim(XLIM_R) for i in range(len(ranges))]
     [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
     [axcol[-1].set_xlabel(XLABEL)]
 
     # Set y axis
-    [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
+    [axcol[i].set_ylim(YLIM_RERR) for i in range(len(ranges))]
     # axcol[-1].set_ylabel(YLABEL)
 
     # Draw plots
     if plot_flag:
-        plots = [
+        lines = [
             plotting.plot_agg_data(
                 dfr[dfr["rec_r"] == r],
                 simulations,
                 VALUE_TO_PLOT,
+                lower_threshold=LOWER_THRESHOLD,
                 compute_error_with=float(COMPUTE_ERROR_WITH[i]),
                 ax=axcol[i],
+                additional_values=[{"y": mfp_r[i]} | MFP_KW]
             )
             for i, r in enumerate(ranges)
         ]
@@ -847,12 +880,33 @@ def simulations_dashboard():
     # ================================================================ #
     # ========================== Localization ======================== #
     # ================================================================ #
+    # Get values from pre-computed MFP results
+    mfp_max = []
+    mfp_r = []
+    mfp_z = []
+
+    for i, r in enumerate(ranges):
+        data = np.load(
+            ROOT
+            / "Data"
+            / "Simulations"
+            / "working"
+            / "mfp"
+            / f"local_201Hz_62m_{r}km.npz"
+        )
+        B = data["B"]
+        rvec = data["rvec"]
+        zvec = data["zvec"]
+        src_z_ind, src_r_ind = np.unravel_index(np.argmax(B), (len(zvec), len(rvec)))
+
+        mfp_max.append(B.max())
+        # mfp_z.append(zvec[src_z_ind])
+        mfp_z.append(np.abs(zvec[src_z_ind] - float(simulations["src_z"][0])))
+        mfp_r.append(np.abs(rvec[src_r_ind] - r))
 
     # ======================= Performance History ==================== #
     axcol = axs[:, 3]
     VALUE_TO_PLOT = "best_value"
-    XLIM = [-5, 1005]
-    YLIM = [0, 1.05]
     YLABEL = "$\hat{f}(\mathbf{x})$"
     OPTIMUM = 1.0
     LOWER_THRESHOLD = 0
@@ -861,12 +915,12 @@ def simulations_dashboard():
     axcol[0].set_title(f"Localization:\n{YLABEL}", **TITLE_KW)
 
     # Set x axis
-    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xlim(XLIM_L) for i in range(len(ranges))]
     [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
     [axcol[-1].set_xlabel(XLABEL)]
 
     # Set y axis
-    [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
+    [axcol[i].set_ylim(YLIM_PERF) for i in range(len(ranges))]
     # axcol[-1].set_ylabel(YLABEL)
 
     # Draw plots
@@ -880,6 +934,7 @@ def simulations_dashboard():
                 lower_threshold=LOWER_THRESHOLD,
                 upper_threshold=UPPER_THRESHOLD,
                 ax=axcol[i],
+                additional_values=[{"y": mfp_max[i]+1} | MFP_KW],
             )
             for i, r in enumerate(ranges)
         ]
@@ -893,6 +948,7 @@ def simulations_dashboard():
                 lower_threshold=LOWER_THRESHOLD,
                 upper_threshold=UPPER_THRESHOLD,
                 ax=axcol[0],
+                additional_values=[{"y": mfp_max[0]+1} | MFP_KW],
             )
         ]
 
@@ -901,20 +957,20 @@ def simulations_dashboard():
     # ====================== Range Error History ===================== #
     axcol = axs[:, 4]
     VALUE_TO_PLOT = "best_param0"
-    YLIM = [0, 10]
-    YLABEL = "$\\vert\hat{r}_{src} - r_{src}\\vert$"
+    YLIM = [-0.2, 10]
+    YLABEL = "$\\vert\hat{R}_{src} - R_{src}\\vert$"
     COMPUTE_ERROR_WITH = simulations["rec_r"]
 
     # Set title
     axcol[0].set_title(f"Localization:\n{YLABEL} [km]", **TITLE_KW)
 
     # Set x axis
-    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xlim(XLIM_L) for i in range(len(ranges))]
     [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
     [axcol[-1].set_xlabel(XLABEL)]
 
     # Set y axis
-    [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
+    [axcol[i].set_ylim(YLIM_RERR) for i in range(len(ranges))]
     # axcol[-1].set_ylabel(YLABEL)
 
     # Draw plots
@@ -924,8 +980,10 @@ def simulations_dashboard():
                 dfl[dfl["rec_r"] == r],
                 simulations,
                 VALUE_TO_PLOT,
+                lower_threshold=LOWER_THRESHOLD,
                 compute_error_with=float(COMPUTE_ERROR_WITH[i]),
                 ax=axcol[i],
+                additional_values=[{"y": mfp_r[i]} | MFP_KW]
             )
             for i, r in enumerate(ranges)
         ]
@@ -933,7 +991,7 @@ def simulations_dashboard():
     # ====================== Depth Error History ===================== #
     axcol = axs[:, 5]
     VALUE_TO_PLOT = "best_param1"
-    YLIM = [0, 100]
+    
     YLABEL = "$\\vert\hat{z}_{src} - z_{src}\\vert$"
     COMPUTE_ERROR_WITH = [simulations["src_z"][0] for i in range(len(ranges))]
 
@@ -941,12 +999,12 @@ def simulations_dashboard():
     axcol[0].set_title(f"Localization:\n{YLABEL} [m]", **TITLE_KW)
 
     # Set x axis
-    [axcol[i].set_xlim(XLIM) for i in range(len(ranges))]
+    [axcol[i].set_xlim(XLIM_L) for i in range(len(ranges))]
     [axcol[i].set_xticklabels([]) for i in range(len(ranges) - 1)]
     [axcol[-1].set_xlabel(XLABEL)]
 
     # Set y axis
-    [axcol[i].set_ylim(YLIM) for i in range(len(ranges))]
+    [axcol[i].set_ylim(YLIM_ZERR) for i in range(len(ranges))]
     # axcol[-1].set_ylabel(YLABEL)
 
     # Draw plots
@@ -956,8 +1014,10 @@ def simulations_dashboard():
                 dfl[dfl["rec_r"] == r],
                 simulations,
                 VALUE_TO_PLOT,
+                lower_threshold=LOWER_THRESHOLD,
                 compute_error_with=float(COMPUTE_ERROR_WITH[i]),
                 ax=axcol[i],
+                additional_values=[{"y": mfp_z[i]} | MFP_KW]
             )
             for i, r in enumerate(ranges)
         ]
