@@ -32,8 +32,9 @@ class MatchedFieldProcessor:
         return self.__class__.__name__
 
 
-def run_mfp(parameters, dr=None, dz=None, nr=None, nz=None):
-
+def run_mfp(parameters, mode, dr=None, dz=None, nr=None, nz=None):
+    # dr [km]
+    # dz [m]
     fixed_parameters = parameters["fixed_parameters"]
     search_parameters = parameters["search_parameters"]
 
@@ -44,10 +45,6 @@ def run_mfp(parameters, dr=None, dz=None, nr=None, nz=None):
     p_rec += noise
     K = p_rec.dot(p_rec.conj().T)
 
-    [fixed_parameters.pop(item) for item in ["rec_r", "src_z"]]
-
-    # dr [km]
-    # dz [m]
     if nr is None:
         if dr is None:
             dr = 5 / 1e3
@@ -61,37 +58,51 @@ def run_mfp(parameters, dr=None, dz=None, nr=None, nz=None):
             search_parameters[0]["bounds"][0], search_parameters[0]["bounds"][1], nr
         )
 
-    if nz is None:
-        if dz is None:
-            dz = 2
-        zvec = np.arange(
-            search_parameters[1]["bounds"][0], search_parameters[1]["bounds"][1], dz
-        )
-    else:
-        zvec = np.linspace(
-            search_parameters[1]["bounds"][0], search_parameters[1]["bounds"][1], nz
-        )
-
-    p_rep = np.zeros((len(zvec), len(rvec), len(fixed_parameters["rec_z"])))
-    B = np.zeros((len(zvec), len(rvec)))
-
-    pbar = tqdm(
-        zvec,
-        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
-        desc="  MFP",
-        leave=True,
-        position=0,
-        unit=" step",
-    )
-
-    for zz, z in enumerate(pbar):
-        p_rep = run_kraken(fixed_parameters | {"src_z": z, "rec_r": rvec})
+    if mode == "r":
+        fixed_parameters.pop("rec_r")
+        p_rep = run_kraken(fixed_parameters | {"rec_r": rvec})
+        B = np.zeros((1, len(rvec)))
         for rr, r in enumerate(rvec):
-            B[zz, rr] = beamformer(K, p_rep[:, rr], atype="cbf").item()
+            B[0, rr] = beamformer(K, p_rep[:, rr], atype="cbf").item()
 
-    clean_up_kraken_files(".")
+        B /= np.max(np.abs(B))
+        clean_up_kraken_files(".")
+        return B, rvec
 
-    return B, rvec, zvec
+    elif mode == "l":
+        [fixed_parameters.pop(item) for item in ["rec_r", "src_z"]]
+
+        if nz is None:
+            if dz is None:
+                dz = 2
+            zvec = np.arange(
+                search_parameters[1]["bounds"][0], search_parameters[1]["bounds"][1], dz
+            )
+        else:
+            zvec = np.linspace(
+                search_parameters[1]["bounds"][0], search_parameters[1]["bounds"][1], nz
+            )
+
+        # p_rep = np.zeros((len(zvec), len(rvec), len(fixed_parameters["rec_z"])))
+        B = np.zeros((len(zvec), len(rvec)))
+
+        pbar = tqdm(
+            zvec,
+            bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
+            desc="  MFP",
+            leave=True,
+            position=0,
+            unit=" step",
+        )
+
+        for zz, z in enumerate(pbar):
+            p_rep = run_kraken(fixed_parameters | {"src_z": z, "rec_r": rvec})
+            for rr, r in enumerate(rvec):
+                B[zz, rr] = beamformer(K, p_rep[:, rr], atype="cbf").item()
+
+        B /= np.max(np.abs(B))
+        clean_up_kraken_files(".")
+        return B, rvec, zvec
 
 
 # Load CTD data
