@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 
+from argparse import ArgumentParser
 from pathlib import Path
 import sys
 
@@ -15,7 +16,8 @@ ranges = [0.5, 3.0, 6.0, 10.0]
 depth_true = 62
 freq = 201
 
-def main():
+
+def main(path, dr, dz, nr, nz):
     # Load CTD data
     z_data, c_data, _ = read_ssp(
         ROOT / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None
@@ -56,15 +58,33 @@ def main():
         {"name": "src_z", "bounds": [0.5, 200.0]},
     ]
 
-    for i, r in enumerate(ranges):
+    for r in ranges:
         fixed_parameters["rec_r"] = r
         fixed_parameters["src_z"] = depth_true
         parameters = {
             "fixed_parameters": fixed_parameters,
-            "search_parameters": search_parameters
+            "search_parameters": search_parameters,
         }
-        B, rvec, zvec = acoustics.ambiguity_surface(parameters)
-        np.savez(ROOT / "Data" / "SWELLEX96" / "ambiguity_surfaces" / f"{freq}Hz_{depth_true}m_{r}km", B=B, rvec=rvec, zvec=zvec)
+        B, rvec, zvec = acoustics.run_mfp(parameters, dr=dr, dz=dz, nr=nr, nz=nz)
+        np.savez(
+            Path(path) / f"{freq}Hz_{depth_true}m_{r}km",
+            # ROOT
+            # / "Data"
+            # / "SWELLEX96"
+            # / "ambiguity_surfaces"
+            # / f"{freq}Hz_{depth_true}m_{r}km",
+            B=B,
+            rvec=rvec,
+            zvec=zvec,
+        )
+
 
 if __name__ == "__main__":
-    main()
+    parser = ArgumentParser()
+    parser.add_argument("path", type=str)
+    parser.add_argument("--dr", type=float)
+    parser.add_argument("--dz", type=float)
+    parser.add_argument("--nr", type=int)
+    parser.add_argument("--nz", type=int)
+    args = parser.parse_args()
+    main(**vars(args))

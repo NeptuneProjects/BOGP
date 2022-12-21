@@ -32,7 +32,8 @@ class MatchedFieldProcessor:
         return self.__class__.__name__
 
 
-def ambiguity_surface(parameters):
+def run_mfp(parameters, dr=None, dz=None, nr=None, nz=None):
+
     fixed_parameters = parameters["fixed_parameters"]
     search_parameters = parameters["search_parameters"]
 
@@ -45,28 +46,43 @@ def ambiguity_surface(parameters):
 
     [fixed_parameters.pop(item) for item in ["rec_r", "src_z"]]
 
-    dr = 5 / 1e3  # [km]
-    dz = 2  # [m]
-    rvec = np.arange(
-        search_parameters[0]["bounds"][0],
-        search_parameters[0]["bounds"][1] + dr,
-        dr,
-    )
-    zvec = np.arange(
-        search_parameters[1]["bounds"][0], search_parameters[1]["bounds"][1], dz
-    )
+    # dr [km]
+    # dz [m]
+    if nr is None:
+        if dr is None:
+            dr = 5 / 1e3
+        rvec = np.arange(
+            search_parameters[0]["bounds"][0],
+            search_parameters[0]["bounds"][1] + dr,
+            dr,
+        )
+    else:
+        rvec = np.linspace(
+            search_parameters[0]["bounds"][0], search_parameters[0]["bounds"][1], nr
+        )
+
+    if nz is None:
+        if dz is None:
+            dz = 2
+        zvec = np.arange(
+            search_parameters[1]["bounds"][0], search_parameters[1]["bounds"][1], dz
+        )
+    else:
+        zvec = np.linspace(
+            search_parameters[1]["bounds"][0], search_parameters[1]["bounds"][1], nz
+        )
 
     p_rep = np.zeros((len(zvec), len(rvec), len(fixed_parameters["rec_z"])))
     B = np.zeros((len(zvec), len(rvec)))
 
     pbar = tqdm(
-            zvec,
-            bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
-            desc="  MFP",
-            leave=True,
-            position=0,
-            unit=" step",
-        )
+        zvec,
+        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
+        desc="  MFP",
+        leave=True,
+        position=0,
+        unit=" step",
+    )
 
     for zz, z in enumerate(pbar):
         p_rep = run_kraken(fixed_parameters | {"src_z": z, "rec_r": rvec})
