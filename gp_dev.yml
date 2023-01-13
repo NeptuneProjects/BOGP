@@ -1,27 +1,24 @@
 name: gp310
 channels:
   - pytorch
-  - gpytorch
   - conda-forge
   - defaults
 dependencies:
-  - python=3.11
+  - python=3.10
   - botorch
   - cmocean
   # - cudatoolkit=11.3
   - feather-format
-  - gpytorch
   - jupyterlab
   - matplotlib
   - numpy
   - pandas
   - pip
   - pytorch
-  - scikit-optimize
+  # - scikit-optimize
   - scipy
   - tqdm
   - pip:
     - git+https://github.com/NeptuneProjects/TritonOA.git
-    - gpytorch
-    - pyram
-    - pyro-ppl
+    - ax-platform
+  
