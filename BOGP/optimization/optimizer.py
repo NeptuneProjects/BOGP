@@ -15,7 +15,7 @@ from botorch.exceptions import BadInitialCandidatesWarning
 from botorch.models import SingleTaskGP
 from botorch.models.model import Model
 from botorch.optim import optimize_acqf
-from botorch.sampling.samplers import MCSampler
+from botorch.sampling.base import MCSampler
 from botorch.test_functions import base
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from gpytorch.module import Module
