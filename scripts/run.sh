@@ -31,12 +31,12 @@ MODEPATH=$MODEDESC
 echo "Running $OPTIMDESC ($MODEDESC) on $DEVICE with $JOBS jobs."
 if [[ $DEVICE == "CPU" ]]
     then
-        find ./Data/workflow2/$OPTIMPATH/$MODEPATH/$SERIAL/queue/*.json \
+        find ./Data/$OPTIMPATH/$MODEPATH/$SERIAL/queue/*.json \
         | parallel -j$JOBS --progress \
-        'python3 ./Source/workflow2/runner.py {}'
+        'python3 ./Source/BOGP/runner.py {}'
 elif [[ $DEVICE == "CUDA" ]]
     then
-        find ./Data/workflow2/$OPTIMPATH/$MODEPATH/$SERIAL/queue/*.json \
+        find ./Data/$OPTIMPATH/$MODEPATH/$SERIAL/queue/*.json \
         | parallel -j$JOBS --progress \
-        'CUDA_VISIBLE_DEVICES="$(({%}-1+'$OFFSET'))" python3 ./Source/workflow2/runner.py {} --device cuda'
+        'CUDA_VISIBLE_DEVICES="$(({%}-1+'$OFFSET'))" python3 ./Source/BOGP/runner.py {} --device cuda'
 fi
