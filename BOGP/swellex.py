@@ -9,7 +9,7 @@ from tritonoa.io import read_ssp
 
 # Load CTD data
 z_data, c_data, _ = read_ssp(
-    Path.cwd().parent / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None
+    Path.cwd() / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None
 )
 z_data = np.append(z_data, 217).tolist()
 c_data = np.append(c_data, c_data[-1]).tolist()

@@ -11,7 +11,12 @@ from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrateg
 from ax.modelbridge.registry import Models
 from ax.models.torch.botorch_modular.surrogate import Surrogate
 from ax.service.ax_client import ObjectiveProperties
-from botorch.acquisition import qUpperConfidenceBound, qExpectedImprovement, qProbabilityOfImprovement, ProbabilityOfImprovement
+from botorch.acquisition import (
+    qUpperConfidenceBound,
+    qExpectedImprovement,
+    qProbabilityOfImprovement,
+    ProbabilityOfImprovement,
+)
 from botorch.models.gp_regression import SingleTaskGP
 from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
 import numpy as np
@@ -28,7 +33,7 @@ NUM_SAMPLES = 1024
 NUM_TRIALS = 100
 NUM_WARMUP = 10
 Q = 5
-ROOT = Path.cwd().parent / "Data" / "workflow2"
+ROOT = Path.cwd() / "Data" / "workflow2"
 SEED = 2009
 SERIAL = datetime.now().strftime("serial_%Y%m%dT%H%M%S")
 
@@ -76,11 +81,29 @@ def create_config_files(config: dict):
                 for strategy in mode["strategies"]:
 
                     if strategy["loop_type"] not in UNINFORMED_STRATEGIES:
-                        if strategy["generation_strategy"]._steps[1].model_kwargs["botorch_acqf_class"].__name__ == "qExpectedImprovement":
+                        if (
+                            strategy["generation_strategy"]
+                            ._steps[1]
+                            .model_kwargs["botorch_acqf_class"]
+                            .__name__
+                            == "qExpectedImprovement"
+                        ):
                             acqf = "_qei"
-                        elif strategy["generation_strategy"]._steps[1].model_kwargs["botorch_acqf_class"].__name__ == "qProbabilityOfImprovement":
+                        elif (
+                            strategy["generation_strategy"]
+                            ._steps[1]
+                            .model_kwargs["botorch_acqf_class"]
+                            .__name__
+                            == "qProbabilityOfImprovement"
+                        ):
                             acqf = "_qpi"
-                        elif strategy["generation_strategy"]._steps[1].model_kwargs["botorch_acqf_class"].__name__ == "qUpperConfidenceBound":
+                        elif (
+                            strategy["generation_strategy"]
+                            ._steps[1]
+                            .model_kwargs["botorch_acqf_class"]
+                            .__name__
+                            == "qUpperConfidenceBound"
+                        ):
                             acqf = "_qucb"
                     else:
                         acqf = ""
