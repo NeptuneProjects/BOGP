@@ -7,9 +7,16 @@ from pathlib import Path
 import random
 from typing import Union
 
+from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
+from ax.modelbridge.registry import Models
+from ax.models.torch.botorch_modular.surrogate import Surrogate
 from ax.service.ax_client import ObjectiveProperties
+from botorch.acquisition import qUpperConfidenceBound, qExpectedImprovement, qProbabilityOfImprovement, ProbabilityOfImprovement
+from botorch.models.gp_regression import SingleTaskGP
+from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
 import numpy as np
 
+from oao.common import UNINFORMED_STRATEGIES
 from oao.utilities import save_config
 import swellex
 from tritonoa.kraken import run_kraken
@@ -20,6 +27,7 @@ NUM_RESTARTS = 40
 NUM_SAMPLES = 1024
 NUM_TRIALS = 100
 NUM_WARMUP = 10
+Q = 5
 ROOT = Path.cwd().parent / "Data" / "workflow2"
 SEED = 2009
 SERIAL = datetime.now().strftime("serial_%Y%m%dT%H%M%S")
@@ -43,30 +51,55 @@ def create_config_files(config: dict):
             scenarios = get_scenario_dict(**mode["scenarios"])
             for scenario in scenarios:
                 scenario_name = get_scenario_path(scenario)
+                scenario_folder = mode_folder / scenario_name
 
                 if mode["mode"] == "simulation":
-                    data_folder = mode_folder / scenario_name / "data"
+
+                    data_folder = scenario_folder / "data"
                     os.makedirs(data_folder)
+
                     K = simulate_measurement_covariance(
-                        mode["obj_func_parameters"]["env_parameters"] | scenario
+                        mode["obj_func_parameters"]["env_parameters"]
+                        | scenario
+                        | {"tmpdir": data_folder}
                     )
                     np.save(data_folder / "measurement_covariance.npy", K)
 
+                param_names = [
+                    d["name"] for d in mode["experiment_kwargs"]["parameters"]
+                ]
+                for k in scenario.keys():
+                    if k not in param_names:
+                        mode["obj_func_parameters"]["env_parameters"][k] = scenario[k]
+
                 # rand/sobol/grid/bo/etc.
                 for strategy in mode["strategies"]:
+
+                    if strategy["loop_type"] not in UNINFORMED_STRATEGIES:
+                        if strategy["generation_strategy"]._steps[1].model_kwargs["botorch_acqf_class"].__name__ == "qExpectedImprovement":
+                            acqf = "_qei"
+                        elif strategy["generation_strategy"]._steps[1].model_kwargs["botorch_acqf_class"].__name__ == "qProbabilityOfImprovement":
+                            acqf = "_qpi"
+                        elif strategy["generation_strategy"]._steps[1].model_kwargs["botorch_acqf_class"].__name__ == "qUpperConfidenceBound":
+                            acqf = "_qucb"
+                    else:
+                        acqf = ""
 
                     # trial seed
                     for seed in mc_seeds:
 
                         run_config = {
                             "experiment_kwargs": mode["experiment_kwargs"],
+                            "seed": seed,
+                            "strategy": strategy,
                             "obj_func_parameters": mode["obj_func_parameters"],
-                            "num_trials": mode["num_trials"],
+                            "evaluation_config": mode["evaluation_config"],
+                            "destination": str(
+                                scenario_folder.relative_to(mode_folder)
+                            ),
                         }
 
-                        config_name = (
-                            f"config_{scenario_name}_{strategy}_{seed:010d}.json"
-                        )
+                        config_name = f"config__{scenario_name}__{strategy['loop_type'] + acqf}__{seed:010d}.json"
                         save_config(q_folder / config_name, run_config)
 
 
@@ -78,7 +111,6 @@ def simulate_measurement_covariance(env_parameters: dict) -> np.array:
     noise = added_wng(p.shape, sigma=sigma, cmplx=True)
     p += noise
     K = p.dot(p.conj().T)
-    clean_up_kraken_files(Path.cwd())
     return K
 
 
@@ -116,15 +148,51 @@ if __name__ == "__main__":
                     "serial": SERIAL,
                     "scenarios": {
                         "rec_r": [1.0, 3.0, 5.0, 7.0],
-                        "src_z": [56.0, 62.0],
+                        "src_z": [62.0],
                         "snr": [20],
                     },
-                    "strategies": {
-                        "grid": {"num_trials": [10, 10]},
-                        "lhs": {"num_trials": NUM_TRIALS},
-                        "random": {"num_trials": NUM_TRIALS},
-                        "sobol": {"num_trials": NUM_TRIALS},
-                    },
+                    "strategies": [
+                        {"loop_type": "grid", "num_trials": 10},
+                        {"loop_type": "lhs", "num_trials": NUM_TRIALS},
+                        {"loop_type": "random", "num_trials": NUM_TRIALS},
+                        {"loop_type": "sobol", "num_trials": NUM_TRIALS},
+                        {
+                            "loop_type": "greedy_batch",  # <--- This is where to specify loop,
+                            "num_trials": NUM_TRIALS,
+                            "batch_size": Q,
+                            "generation_strategy": GenerationStrategy(
+                                [
+                                    GenerationStep(
+                                        model=Models.SOBOL,
+                                        num_trials=NUM_WARMUP,
+                                        max_parallelism=NUM_WARMUP,
+                                        model_kwargs={"seed": SEED},
+                                    ),
+                                    GenerationStep(
+                                        model=Models.BOTORCH_MODULAR,
+                                        num_trials=NUM_TRIALS - NUM_WARMUP,
+                                        max_parallelism=None,
+                                        model_kwargs={
+                                            "surrogate": Surrogate(
+                                                botorch_model_class=SingleTaskGP,
+                                                mll_class=ExactMarginalLogLikelihood,
+                                            ),
+                                            "botorch_acqf_class": qExpectedImprovement,
+                                            # "torch_device": DEVICE,
+                                        },
+                                        model_gen_kwargs={
+                                            "model_gen_options": {
+                                                "optimizer_kwargs": {
+                                                    "num_restarts": NUM_RESTARTS,
+                                                    "raw_samples": NUM_SAMPLES,
+                                                }
+                                            }
+                                        },
+                                    ),
+                                ]
+                            ),
+                        },
+                    ],
                     "experiment_kwargs": {
                         "name": "mfp_test",
                         "parameters": [
@@ -141,7 +209,6 @@ if __name__ == "__main__":
                     "obj_func_parameters": {"env_parameters": swellex.environment},
                     "main_seed": SEED,
                     "num_runs": NUM_MC_RUNS,
-                    "num_trials": NUM_TRIALS,
                     "evaluation_config": None,
                 },
                 # {"mode": "experimental", "serial": serial},
