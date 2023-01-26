@@ -1,7 +1,7 @@
 #!/bin/bash
 # 
 # Usage:
-# bash ./Source/workflow2/run.sh r s serial_20230125T222401 cpu 8
+# bash ./Source/scripts/run.sh r s serial_20230125T222401 cpu 8
 
 OPTIM="$1" # [(r)ange estimation, (l)ocalization]
 MODE="$2"  # [(s)imulation, (e)xperimental]
