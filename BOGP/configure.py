@@ -28,28 +28,25 @@ from tritonoa.kraken import run_kraken
 from tritonoa.sp import added_wng, snrdb_to_sigma
 
 NUM_MC_RUNS = 1
-NUM_RESTARTS = 40
-NUM_SAMPLES = 1024
-NUM_TRIALS = 100
+NUM_RESTARTS = 20
+NUM_SAMPLES = 512
+NUM_TRIALS = 200
 NUM_WARMUP = 10
 Q = 5
-ROOT = Path.cwd() / "Data" / "workflow2"
+ROOT = Path.cwd() / "Data"
 SEED = 2009
 SERIAL = datetime.now().strftime("serial_%Y%m%dT%H%M%S")
 
 
 def create_config_files(config: dict):
-
     # range estimation or localization
     for optim in config:
-
         # simulation or experimental
         for mode in optim["modes"]:
             mode_folder = ROOT / optim["type"] / mode["mode"] / mode["serial"]
             q_folder = mode_folder / "queue"
             os.makedirs(mode_folder)
             os.mkdir(q_folder)
-
             mc_seeds = get_mc_seeds(mode["main_seed"], mode["num_runs"])
 
             # range/depth/snr/etc.
