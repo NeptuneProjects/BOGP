@@ -12,13 +12,7 @@ from oao.common import UNINFORMED_STRATEGIES
 from oao.handler import Handler
 from oao.utilities import load_config, set_device
 from objective import objective_function
-
-
-def clean_up_kraken_files(path: Union[Path, str]):
-    if isinstance(path, str):
-        path = Path(path)
-    extensions = ["env", "mod", "prt"]
-    [[f.unlink() for f in path.glob(f"*.{ext}")] for ext in extensions]
+from tritonoa.kraken import clean_up_kraken_files
 
 
 def config_destination_path(config, path):
