@@ -51,10 +51,10 @@ def create_config_files(config: dict):
                 scenario_name = get_scenario_path(scenario)
                 scenario_folder = mode_folder / scenario_name
 
-                if mode["mode"] == "simulation":
+                data_folder = scenario_folder / "data"
+                os.makedirs(data_folder)
 
-                    data_folder = scenario_folder / "data"
-                    os.makedirs(data_folder)
+                if mode["mode"] == "simulation":
 
                     K = simulate_measurement_covariance(
                         mode["obj_func_parameters"]["env_parameters"]
@@ -62,6 +62,11 @@ def create_config_files(config: dict):
                         | {"tmpdir": data_folder}
                     )
                     np.save(data_folder / "measurement_covariance.npy", K)
+                
+                elif mode["mode"] == "experimental":
+                    
+
+                    pass
 
                 param_names = [
                     d["name"] for d in mode["experiment_kwargs"]["parameters"]
@@ -165,7 +170,7 @@ def main(path, optim, serial=None):
                 "modes": [
                     {
                         "mode": "simulation",
-                        "serial": serial if not None else config["range_estimation"]["SERIAL"],
+                        "serial": serial or config["range_estimation"]["SERIAL"],
                         "scenarios": {
                             "rec_r": [1.0, 3.0, 5.0, 7.0],
                             "src_z": [62.0],
@@ -374,7 +379,7 @@ def main(path, optim, serial=None):
                 "modes": [
                     {
                         "mode": "simulation",
-                        "serial": serial if not None else config["range_estimation"]["SERIAL"],
+                        "serial": serial or config["localization"]["SERIAL"],
                         "scenarios": {
                             "rec_r": [1.0, 3.0, 5.0, 7.0],
                             "src_z": [62.0],
@@ -582,5 +587,4 @@ if __name__ == "__main__":
     parser.add_argument("optim", type=str, help="Type of optimization")
     parser.add_argument("--serial", type=str, help="Specify serial name [optional]")
     args = parser.parse_args()
-    serial = args.serial if not None else "hello!"
     main(args.path, args.optim, serial=args.serial)
