@@ -1,25 +1,25 @@
 [range_estimation]
-NUM_MC_RUNS = 100
+NUM_MC_RUNS = 2
 NUM_RESTARTS = 20
 NUM_SAMPLES = 512
-NUM_TRIALS = 200
+NUM_TRIALS = 20
 NUM_WARMUP = 10
 Q = 5
 ROOT = "Data"
 SEED = 2009
-SERIAL = "serial_20230126T105934"
+SERIAL = "test_range_est"
 
 [localization]
-NUM_MC_RUNS = 100
+NUM_MC_RUNS = 2
 NUM_RESTARTS = 40
 NUM_SAMPLES = 1024
-NUM_TRIALS = 800
+NUM_TRIALS = 20
 NUM_GRID_TRIALS = [
-    20,
-    40,
+    2,
+    10,
 ]
-NUM_WARMUP = 20
+NUM_WARMUP = 10
 Q = 5
 ROOT = "Data"
 SEED = 2009
-SERIAL = "serial_20230126T105934"
+SERIAL = "test_localization"
