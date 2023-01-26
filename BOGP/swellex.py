@@ -39,5 +39,5 @@ environment = {
     # 7. Source parameters
     # "rec_r": RANGE_TRUE,
     # "src_z": DEPTH_TRUE,
-    # "freq": FREQ,
+    "freq": 232.0,
 }
