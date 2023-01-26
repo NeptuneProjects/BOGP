@@ -1,9 +1,8 @@
-
+#!/usr/bin/env python3
 
 from datetime import datetime
 from pathlib import Path
 
-import tomli
 import tomli_w
 
 ROOT = str((Path.cwd() / "Data").relative_to(Path.cwd()))
@@ -26,7 +25,8 @@ config = {
         "NUM_MC_RUNS": 100,
         "NUM_RESTARTS": 40,
         "NUM_SAMPLES": 1024,
-        "NUM_TRIALS": 500,
+        "NUM_TRIALS": 800,
+        "NUM_GRID_TRIALS": [20, 40],
         "NUM_WARMUP": 20,
         "Q": 5,
         "ROOT": ROOT,
@@ -35,9 +35,7 @@ config = {
     }
 }
 
-config_path = (Path.cwd() / "Source" / "scripts" / "config.toml").relative_to(Path.cwd())
-with open(config_path, "wb") as fp:
-    tomli_w.dump(config, fp)
-
-with open(config_path, "rb") as fp:
-    config_ = tomli.load(fp)
+if __name__ == "__main__":
+    config_path = (Path.cwd() / "Source" / "scripts" / "config.toml").relative_to(Path.cwd())
+    with open(config_path, "wb") as fp:
+        tomli_w.dump(config, fp)
