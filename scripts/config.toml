@@ -1,9 +1,9 @@
 [range_estimation.simulation]
-num_mc_runs = 100
+num_mc_runs = 2
 num_restarts = 20
 num_samples = 512
-num_trials = 200
-num_warmup = 10
+num_trials = 20
+num_warmup = 5
 q = 5
 root = "Data"
 main_seed = 2009
