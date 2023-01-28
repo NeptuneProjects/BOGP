@@ -100,7 +100,7 @@ class SimulationConfig:
                             model=Models.SOBOL,
                             num_trials=self.num_warmup,
                             max_parallelism=self.num_warmup,
-                            model_kwargs={"seed": self.main_seed},
+                            # model_kwargs={"seed": self.main_seed},
                         ),
                         GenerationStep(
                             model=Models.BOTORCH_MODULAR,
@@ -112,7 +112,6 @@ class SimulationConfig:
                                     mll_class=ExactMarginalLogLikelihood,
                                 ),
                                 "botorch_acqf_class": qExpectedImprovement,
-                                "seed": self.main_seed,
                             },
                             model_gen_kwargs={
                                 "model_gen_options": {
@@ -136,7 +135,7 @@ class SimulationConfig:
                             model=Models.SOBOL,
                             num_trials=self.num_warmup,
                             max_parallelism=self.num_warmup,
-                            model_kwargs={"seed": self.main_seed},
+                            # model_kwargs={"seed": self.main_seed},
                         ),
                         GenerationStep(
                             model=Models.BOTORCH_MODULAR,
@@ -148,7 +147,6 @@ class SimulationConfig:
                                     mll_class=ExactMarginalLogLikelihood,
                                 ),
                                 "botorch_acqf_class": qProbabilityOfImprovement,
-                                "seed": self.main_seed,
                             },
                             model_gen_kwargs={
                                 "model_gen_options": {
@@ -172,7 +170,7 @@ class SimulationConfig:
                             model=Models.SOBOL,
                             num_trials=self.num_warmup,
                             max_parallelism=self.num_warmup,
-                            model_kwargs={"seed": self.main_seed},
+                            # model_kwargs={"seed": self.main_seed},
                         ),
                         GenerationStep(
                             model=Models.BOTORCH_MODULAR,
@@ -184,7 +182,6 @@ class SimulationConfig:
                                     mll_class=ExactMarginalLogLikelihood,
                                 ),
                                 "botorch_acqf_class": qExpectedImprovement,
-                                "seed": self.main_seed,
                             },
                             model_gen_kwargs={
                                 "model_gen_options": {
@@ -329,12 +326,6 @@ class Initializer:
                             scenario_folder.relative_to(self.mode_folder)
                         ),
                     }
-                    # Update random seed for MC runs:
-                    if strategy["loop_type"] not in UNINFORMED_STRATEGIES:
-                        for step in run_config["strategy"][
-                            "generation_strategy"
-                        ]._steps:
-                            step.model_kwargs["seed"] = seed
 
                     config_name = f"config__{scenario_folder.name}__{strategy['loop_type'] + acqf}__{seed:010d}.json"
                     save_config(self.q_folder / config_name, run_config)
