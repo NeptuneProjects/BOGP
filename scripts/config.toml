@@ -1,25 +1,51 @@
-[range_estimation]
-NUM_MC_RUNS = 2
-NUM_RESTARTS = 20
-NUM_SAMPLES = 512
-NUM_TRIALS = 20
-NUM_WARMUP = 10
-Q = 5
-ROOT = "Data"
-SEED = 2009
-SERIAL = "test_range_est"
+[range_estimation.simulation]
+num_mc_runs = 100
+num_restarts = 20
+num_samples = 512
+num_trials = 200
+num_warmup = 10
+q = 5
+root = "Data"
+main_seed = 2009
+serial = "serial_20230127T161146"
 
-[localization]
-NUM_MC_RUNS = 2
-NUM_RESTARTS = 40
-NUM_SAMPLES = 1024
-NUM_TRIALS = 20
-NUM_GRID_TRIALS = [
-    2,
-    10,
+[range_estimation.experimental]
+num_mc_runs = 100
+num_restarts = 20
+num_samples = 512
+num_trials = 200
+num_warmup = 10
+q = 5
+root = "Data"
+main_seed = 2009
+serial = "serial_20230127T161146"
+
+[localization.simulation]
+num_mc_runs = 100
+num_restarts = 20
+num_samples = 512
+num_grid_trials = [
+    20,
+    40,
 ]
-NUM_WARMUP = 10
-Q = 5
-ROOT = "Data"
-SEED = 2009
-SERIAL = "test_localization"
+num_trials = 200
+num_warmup = 20
+q = 5
+root = "Data"
+main_seed = 2009
+serial = "serial_20230127T161146"
+
+[localization.experimental]
+num_mc_runs = 100
+num_restarts = 20
+num_samples = 512
+num_grid_trials = [
+    20,
+    40,
+]
+num_trials = 200
+num_warmup = 20
+q = 5
+root = "Data"
+main_seed = 2009
+serial = "serial_20230127T161146"

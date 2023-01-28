@@ -6,11 +6,12 @@
 
 CONFIGPATH=$1
 OPTIMS=$2
-SERIAL=${3:-}
+MODES=$3
+SERIAL=${4:-}
 
-if [ -z "$3" ]
+if [ -z "$4" ]
     then
-        python3 ./Source/BOGP/configure.py $CONFIGPATH $OPTIMS
+        python3 ./Source/BOGP/configure.py $CONFIGPATH $OPTIMS $MODES
     else
-        python3 ./Source/BOGP/configure.py $CONFIGPATH $OPTIMS --serial $SERIAL
+        python3 ./Source/BOGP/configure.py $CONFIGPATH $OPTIMS $MODES --serial $SERIAL
 fi
