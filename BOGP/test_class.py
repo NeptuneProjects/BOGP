@@ -240,32 +240,32 @@ class LocalizationExperimental(Experimental):
         self.experiment_kwargs["parameters"] = LOCALIZATION_PARAMETERS
     
 
+if __name__ == "__main__":
+    with open(
+        "/Users/williamjenkins/Research/Projects/BOGP/Source/scripts/config.toml", "rb"
+    ) as fp:
+        config = tomli.load(fp)
 
-with open(
-    "/Users/williamjenkins/Research/Projects/BOGP/Source/scripts/config.toml", "rb"
-) as fp:
-    config = tomli.load(fp)
 
+    optim = "rl"
+    mode = "se"
 
-optim = "rl"
-mode = "se"
-
-optimizations = []
-if "r" in optim:
-    if "s" in mode:
-        optimizations.append(
-            RangeEstimationSimulation(**config["range_estimation"]["simulation"])
-        )
-    if "e" in mode:
-        optimizations.append(
-            RangeEstimationExperimental(**config["range_estimation"]["experimental"])
-        )
-if "l" in optim:
-    if "s" in mode:
-        optimizations.append(
-            LocalizationSimulation(**config["localization"]["simulation"])
-        )
-    if "e" in mode:
-        optimizations.append(
-            LocalizationExperimental(**config["localization"]["experimental"])
-        )
+    optimizations = []
+    if "r" in optim:
+        if "s" in mode:
+            optimizations.append(
+                RangeEstimationSimulation(**config["range_estimation"]["simulation"])
+            )
+        if "e" in mode:
+            optimizations.append(
+                RangeEstimationExperimental(**config["range_estimation"]["experimental"])
+            )
+    if "l" in optim:
+        if "s" in mode:
+            optimizations.append(
+                LocalizationSimulation(**config["localization"]["simulation"])
+            )
+        if "e" in mode:
+            optimizations.append(
+                LocalizationExperimental(**config["localization"]["experimental"])
+            )
