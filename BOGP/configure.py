@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser
+from dataclasses import dataclass
 from datetime import datetime
 from itertools import product
 import os
@@ -17,6 +18,7 @@ from botorch.models.gp_regression import SingleTaskGP
 from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
 import numpy as np
 
+from acoustics import covariance
 from oao.common import UNINFORMED_STRATEGIES
 from oao.utilities import save_config
 import swellex
@@ -47,7 +49,10 @@ def create_config_files(config: dict):
 
             # range/depth/snr/etc.
             scenarios = get_scenario_dict(**mode["scenarios"])
-            for scenario in scenarios:
+            if mode["mode"] == "experimental":
+                p = np.load(mode["datadir"])
+
+            for i, scenario in enumerate(scenarios):
                 scenario_name = get_scenario_path(scenario)
                 scenario_folder = mode_folder / scenario_name
 
@@ -55,18 +60,16 @@ def create_config_files(config: dict):
                 os.makedirs(data_folder)
 
                 if mode["mode"] == "simulation":
-
                     K = simulate_measurement_covariance(
                         mode["obj_func_parameters"]["env_parameters"]
                         | scenario
                         | {"tmpdir": data_folder}
                     )
-                    np.save(data_folder / "measurement_covariance.npy", K)
                 
                 elif mode["mode"] == "experimental":
-                    
+                    K = covariance(p[i])
 
-                    pass
+                np.save(data_folder / "measurement_covariance.npy", K)
 
                 param_names = [
                     d["name"] for d in mode["experiment_kwargs"]["parameters"]
@@ -158,9 +161,8 @@ def load_toml(path) -> dict:
         return tomli.load(fp)
 
 
-def main(path, optim, serial=None):
+def main(path, optim, modes, serial=None):
     config = load_toml(path)
-
     optimizations = []
     # Range Estimation Configuration
     if "r" in optim:
@@ -170,7 +172,7 @@ def main(path, optim, serial=None):
                 "modes": [
                     {
                         "mode": "simulation",
-                        "serial": serial or config["range_estimation"]["SERIAL"],
+                        "serial": serial or config["range_estimation"]["simulation"]["SERIAL"],
                         "scenarios": {
                             "rec_r": [1.0, 3.0, 5.0, 7.0],
                             "src_z": [62.0],
@@ -179,46 +181,46 @@ def main(path, optim, serial=None):
                         "strategies": [
                             {
                                 "loop_type": "grid",
-                                "num_trials": config["range_estimation"]["NUM_TRIALS"],
+                                "num_trials": config["range_estimation"]["simulation"]["NUM_TRIALS"],
                             },
                             {
                                 "loop_type": "lhs",
-                                "num_trials": config["range_estimation"]["NUM_TRIALS"],
+                                "num_trials": config["range_estimation"]["simulation"]["NUM_TRIALS"],
                             },
                             {
                                 "loop_type": "random",
-                                "num_trials": config["range_estimation"]["NUM_TRIALS"],
+                                "num_trials": config["range_estimation"]["simulation"]["NUM_TRIALS"],
                             },
                             {
                                 "loop_type": "sobol",
-                                "num_trials": config["range_estimation"]["NUM_TRIALS"],
+                                "num_trials": config["range_estimation"]["simulation"]["NUM_TRIALS"],
                             },
                             {
                                 "loop_type": "sequential",  # <--- This is where to specify loop,
-                                "num_trials": config["range_estimation"]["NUM_TRIALS"],
+                                "num_trials": config["range_estimation"]["simulation"]["NUM_TRIALS"],
                                 "batch_size": 1,
                                 "generation_strategy": GenerationStrategy(
                                     [
                                         GenerationStep(
                                             model=Models.SOBOL,
-                                            num_trials=config["range_estimation"][
+                                            num_trials=config["range_estimation"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
-                                            max_parallelism=config["range_estimation"][
+                                            max_parallelism=config["range_estimation"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
                                             model_kwargs={
-                                                "seed": config["range_estimation"][
+                                                "seed": config["range_estimation"]["simulation"][
                                                     "SEED"
                                                 ]
                                             },
                                         ),
                                         GenerationStep(
                                             model=Models.BOTORCH_MODULAR,
-                                            num_trials=config["range_estimation"][
+                                            num_trials=config["range_estimation"]["simulation"][
                                                 "NUM_TRIALS"
                                             ]
-                                            - config["range_estimation"]["NUM_WARMUP"],
+                                            - config["range_estimation"]["simulation"]["NUM_WARMUP"],
                                             max_parallelism=None,
                                             model_kwargs={
                                                 "surrogate": Surrogate(
@@ -232,10 +234,10 @@ def main(path, optim, serial=None):
                                                     "optimizer_kwargs": {
                                                         "num_restarts": config[
                                                             "range_estimation"
-                                                        ]["NUM_RESTARTS"],
+                                                        ]["simulation"]["NUM_RESTARTS"],
                                                         "raw_samples": config[
                                                             "range_estimation"
-                                                        ]["NUM_SAMPLES"],
+                                                        ]["simulation"]["NUM_SAMPLES"],
                                                     }
                                                 }
                                             },
@@ -245,30 +247,30 @@ def main(path, optim, serial=None):
                             },
                             {
                                 "loop_type": "sequential",  # <--- This is where to specify loop,
-                                "num_trials": config["range_estimation"]["NUM_TRIALS"],
+                                "num_trials": config["range_estimation"]["simulation"]["NUM_TRIALS"],
                                 "batch_size": 1,
                                 "generation_strategy": GenerationStrategy(
                                     [
                                         GenerationStep(
                                             model=Models.SOBOL,
-                                            num_trials=config["range_estimation"][
+                                            num_trials=config["range_estimation"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
-                                            max_parallelism=config["range_estimation"][
+                                            max_parallelism=config["range_estimation"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
                                             model_kwargs={
-                                                "seed": config["range_estimation"][
+                                                "seed": config["range_estimation"]["simulation"][
                                                     "SEED"
                                                 ]
                                             },
                                         ),
                                         GenerationStep(
                                             model=Models.BOTORCH_MODULAR,
-                                            num_trials=config["range_estimation"][
+                                            num_trials=config["range_estimation"]["simulation"][
                                                 "NUM_TRIALS"
                                             ]
-                                            - config["range_estimation"]["NUM_WARMUP"],
+                                            - config["range_estimation"]["simulation"]["NUM_WARMUP"],
                                             max_parallelism=None,
                                             model_kwargs={
                                                 "surrogate": Surrogate(
@@ -282,10 +284,10 @@ def main(path, optim, serial=None):
                                                     "optimizer_kwargs": {
                                                         "num_restarts": config[
                                                             "range_estimation"
-                                                        ]["NUM_RESTARTS"],
+                                                        ]["simulation"]["NUM_RESTARTS"],
                                                         "raw_samples": config[
                                                             "range_estimation"
-                                                        ]["NUM_SAMPLES"],
+                                                        ]["simulation"]["NUM_SAMPLES"],
                                                     }
                                                 }
                                             },
@@ -295,31 +297,31 @@ def main(path, optim, serial=None):
                             },
                             {
                                 "loop_type": "greedy_batch",  # <--- This is where to specify loop,
-                                "num_trials": config["range_estimation"]["NUM_TRIALS"],
-                                "batch_size": config["range_estimation"]["Q"],
+                                "num_trials": config["range_estimation"]["simulation"]["NUM_TRIALS"],
+                                "batch_size": config["range_estimation"]["simulation"]["Q"],
                                 "generation_strategy": GenerationStrategy(
                                     [
                                         GenerationStep(
                                             model=Models.SOBOL,
-                                            num_trials=config["range_estimation"][
+                                            num_trials=config["range_estimation"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
-                                            max_parallelism=config["range_estimation"][
+                                            max_parallelism=config["range_estimation"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
                                             model_kwargs={
-                                                "seed": config["range_estimation"][
+                                                "seed": config["range_estimation"]["simulation"][
                                                     "SEED"
                                                 ]
                                             },
                                         ),
                                         GenerationStep(
                                             model=Models.BOTORCH_MODULAR,
-                                            num_trials=config["range_estimation"][
+                                            num_trials=config["range_estimation"]["simulation"][
                                                 "NUM_TRIALS"
                                             ]
-                                            - config["range_estimation"]["NUM_WARMUP"],
-                                            max_parallelism=config["range_estimation"][
+                                            - config["range_estimation"]["simulation"]["NUM_WARMUP"],
+                                            max_parallelism=config["range_estimation"]["simulation"][
                                                 "Q"
                                             ],
                                             model_kwargs={
@@ -334,10 +336,10 @@ def main(path, optim, serial=None):
                                                     "optimizer_kwargs": {
                                                         "num_restarts": config[
                                                             "range_estimation"
-                                                        ]["NUM_RESTARTS"],
+                                                        ]["simulation"]["NUM_RESTARTS"],
                                                         "raw_samples": config[
                                                             "range_estimation"
-                                                        ]["NUM_SAMPLES"],
+                                                        ]["simulation"]["NUM_SAMPLES"],
                                                     }
                                                 }
                                             },
@@ -362,11 +364,207 @@ def main(path, optim, serial=None):
                             },
                         },
                         "obj_func_parameters": {"env_parameters": swellex.environment},
-                        "main_seed": config["range_estimation"]["SEED"],
-                        "num_runs": config["range_estimation"]["NUM_MC_RUNS"],
+                        "main_seed": config["range_estimation"]["simulation"]["SEED"],
+                        "num_runs": config["range_estimation"]["simulation"]["NUM_MC_RUNS"],
                         "evaluation_config": None,
                     },
-                    # {"mode": "experimental", "serial": serial},
+                    {
+                        "mode": "experimental",
+                        "serial": serial or config["range_estimation"]["experimental"]["SERIAL"],
+                        "scenarios": {
+                            "timestep": range(350)
+                        },
+                        "datadir": ROOT / "SWELLEX96" / "VLA" / "selected" / "data.npy",
+                        "strategies": [
+                            {
+                                "loop_type": "grid",
+                                "num_trials": config["range_estimation"]["experimental"]["NUM_TRIALS"],
+                            },
+                            {
+                                "loop_type": "lhs",
+                                "num_trials": config["range_estimation"]["experimental"]["NUM_TRIALS"],
+                            },
+                            {
+                                "loop_type": "random",
+                                "num_trials": config["range_estimation"]["experimental"]["NUM_TRIALS"],
+                            },
+                            {
+                                "loop_type": "sobol",
+                                "num_trials": config["range_estimation"]["experimental"]["NUM_TRIALS"],
+                            },
+                            {
+                                "loop_type": "sequential",  # <--- This is where to specify loop,
+                                "num_trials": config["range_estimation"]["experimental"]["NUM_TRIALS"],
+                                "batch_size": 1,
+                                "generation_strategy": GenerationStrategy(
+                                    [
+                                        GenerationStep(
+                                            model=Models.SOBOL,
+                                            num_trials=config["range_estimation"]["experimental"][
+                                                "NUM_WARMUP"
+                                            ],
+                                            max_parallelism=config["range_estimation"]["experimental"][
+                                                "NUM_WARMUP"
+                                            ],
+                                            model_kwargs={
+                                                "seed": config["range_estimation"]["experimental"][
+                                                    "SEED"
+                                                ]
+                                            },
+                                        ),
+                                        GenerationStep(
+                                            model=Models.BOTORCH_MODULAR,
+                                            num_trials=config["range_estimation"]["experimental"][
+                                                "NUM_TRIALS"
+                                            ]
+                                            - config["range_estimation"]["experimental"]["NUM_WARMUP"],
+                                            max_parallelism=None,
+                                            model_kwargs={
+                                                "surrogate": Surrogate(
+                                                    botorch_model_class=SingleTaskGP,
+                                                    mll_class=ExactMarginalLogLikelihood,
+                                                ),
+                                                "botorch_acqf_class": qExpectedImprovement,
+                                            },
+                                            model_gen_kwargs={
+                                                "model_gen_options": {
+                                                    "optimizer_kwargs": {
+                                                        "num_restarts": config[
+                                                            "range_estimation"
+                                                        ]["experimental"]["NUM_RESTARTS"],
+                                                        "raw_samples": config[
+                                                            "range_estimation"
+                                                        ]["experimental"]["NUM_SAMPLES"],
+                                                    }
+                                                }
+                                            },
+                                        ),
+                                    ]
+                                ),
+                            },
+                            {
+                                "loop_type": "sequential",  # <--- This is where to specify loop,
+                                "num_trials": config["range_estimation"]["experimental"]["NUM_TRIALS"],
+                                "batch_size": 1,
+                                "generation_strategy": GenerationStrategy(
+                                    [
+                                        GenerationStep(
+                                            model=Models.SOBOL,
+                                            num_trials=config["range_estimation"]["experimental"][
+                                                "NUM_WARMUP"
+                                            ],
+                                            max_parallelism=config["range_estimation"]["experimental"][
+                                                "NUM_WARMUP"
+                                            ],
+                                            model_kwargs={
+                                                "seed": config["range_estimation"]["experimental"][
+                                                    "SEED"
+                                                ]
+                                            },
+                                        ),
+                                        GenerationStep(
+                                            model=Models.BOTORCH_MODULAR,
+                                            num_trials=config["range_estimation"]["experimental"][
+                                                "NUM_TRIALS"
+                                            ]
+                                            - config["range_estimation"]["experimental"]["NUM_WARMUP"],
+                                            max_parallelism=None,
+                                            model_kwargs={
+                                                "surrogate": Surrogate(
+                                                    botorch_model_class=SingleTaskGP,
+                                                    mll_class=ExactMarginalLogLikelihood,
+                                                ),
+                                                "botorch_acqf_class": qProbabilityOfImprovement,
+                                            },
+                                            model_gen_kwargs={
+                                                "model_gen_options": {
+                                                    "optimizer_kwargs": {
+                                                        "num_restarts": config[
+                                                            "range_estimation"
+                                                        ]["experimental"]["NUM_RESTARTS"],
+                                                        "raw_samples": config[
+                                                            "range_estimation"
+                                                        ]["experimental"]["NUM_SAMPLES"],
+                                                    }
+                                                }
+                                            },
+                                        ),
+                                    ]
+                                ),
+                            },
+                            {
+                                "loop_type": "greedy_batch",  # <--- This is where to specify loop,
+                                "num_trials": config["range_estimation"]["experimental"]["NUM_TRIALS"],
+                                "batch_size": config["range_estimation"]["experimental"]["Q"],
+                                "generation_strategy": GenerationStrategy(
+                                    [
+                                        GenerationStep(
+                                            model=Models.SOBOL,
+                                            num_trials=config["range_estimation"]["experimental"][
+                                                "NUM_WARMUP"
+                                            ],
+                                            max_parallelism=config["range_estimation"]["experimental"][
+                                                "NUM_WARMUP"
+                                            ],
+                                            model_kwargs={
+                                                "seed": config["range_estimation"]["experimental"][
+                                                    "SEED"
+                                                ]
+                                            },
+                                        ),
+                                        GenerationStep(
+                                            model=Models.BOTORCH_MODULAR,
+                                            num_trials=config["range_estimation"]["experimental"][
+                                                "NUM_TRIALS"
+                                            ]
+                                            - config["range_estimation"]["NUM_WARMUP"],
+                                            max_parallelism=config["range_estimation"]["experimental"][
+                                                "Q"
+                                            ],
+                                            model_kwargs={
+                                                "surrogate": Surrogate(
+                                                    botorch_model_class=SingleTaskGP,
+                                                    mll_class=ExactMarginalLogLikelihood,
+                                                ),
+                                                "botorch_acqf_class": qExpectedImprovement,
+                                            },
+                                            model_gen_kwargs={
+                                                "model_gen_options": {
+                                                    "optimizer_kwargs": {
+                                                        "num_restarts": config[
+                                                            "range_estimation"
+                                                        ]["experimental"]["NUM_RESTARTS"],
+                                                        "raw_samples": config[
+                                                            "range_estimation"
+                                                        ]["experimental"]["NUM_SAMPLES"],
+                                                    }
+                                                }
+                                            },
+                                        ),
+                                    ]
+                                ),
+                            },
+                        ],
+                        "experiment_kwargs": {
+                            "name": "mfp_test",
+                            "parameters": [
+                                {
+                                    "name": "rec_r",
+                                    "type": "range",
+                                    "bounds": [0.1, 10.0],
+                                    "value_type": "float",
+                                    "log_scale": False,
+                                },
+                            ],
+                            "objectives": {
+                                "bartlett": ObjectiveProperties(minimize=False)
+                            },
+                        },
+                        "obj_func_parameters": {"env_parameters": swellex.environment},
+                        "main_seed": config["range_estimation"]["experimental"]["SEED"],
+                        "num_runs": config["range_estimation"]["experimental"]["NUM_MC_RUNS"],
+                        "evaluation_config": None,
+                    },
                 ],
             },
         )
@@ -379,7 +577,7 @@ def main(path, optim, serial=None):
                 "modes": [
                     {
                         "mode": "simulation",
-                        "serial": serial or config["localization"]["SERIAL"],
+                        "serial": serial or config["localization"]["simulation"]["SERIAL"],
                         "scenarios": {
                             "rec_r": [1.0, 3.0, 5.0, 7.0],
                             "src_z": [62.0],
@@ -388,44 +586,44 @@ def main(path, optim, serial=None):
                         "strategies": [
                             {
                                 "loop_type": "grid",
-                                "num_trials": config["localization"]["NUM_TRIALS"],
+                                "num_trials": config["localization"]["simulation"]["NUM_TRIALS"],
                             },
                             {
                                 "loop_type": "lhs",
-                                "num_trials": config["localization"]["NUM_TRIALS"],
+                                "num_trials": config["localization"]["simulation"]["NUM_TRIALS"],
                             },
                             {
                                 "loop_type": "random",
-                                "num_trials": config["localization"]["NUM_TRIALS"],
+                                "num_trials": config["localization"]["simulation"]["NUM_TRIALS"],
                             },
                             {
                                 "loop_type": "sobol",
-                                "num_trials": config["localization"]["NUM_TRIALS"],
+                                "num_trials": config["localization"]["simulation"]["NUM_TRIALS"],
                             },
                             {
                                 "loop_type": "sequential",  # <--- This is where to specify loop,
-                                "num_trials": config["localization"]["NUM_TRIALS"],
+                                "num_trials": config["localization"]["simulation"]["NUM_TRIALS"],
                                 "batch_size": 1,
                                 "generation_strategy": GenerationStrategy(
                                     [
                                         GenerationStep(
                                             model=Models.SOBOL,
-                                            num_trials=config["localization"][
+                                            num_trials=config["localization"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
-                                            max_parallelism=config["localization"][
+                                            max_parallelism=config["localization"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
                                             model_kwargs={
-                                                "seed": config["localization"]["SEED"]
+                                                "seed": config["localization"]["simulation"]["SEED"]
                                             },
                                         ),
                                         GenerationStep(
                                             model=Models.BOTORCH_MODULAR,
-                                            num_trials=config["localization"][
+                                            num_trials=config["localization"]["simulation"][
                                                 "NUM_TRIALS"
                                             ]
-                                            - config["localization"]["NUM_WARMUP"],
+                                            - config["localization"]["simulation"]["NUM_WARMUP"],
                                             max_parallelism=None,
                                             model_kwargs={
                                                 "surrogate": Surrogate(
@@ -439,10 +637,10 @@ def main(path, optim, serial=None):
                                                     "optimizer_kwargs": {
                                                         "num_restarts": config[
                                                             "localization"
-                                                        ]["NUM_RESTARTS"],
+                                                        ]["simulation"]["NUM_RESTARTS"],
                                                         "raw_samples": config[
                                                             "localization"
-                                                        ]["NUM_SAMPLES"],
+                                                        ]["simulation"]["NUM_SAMPLES"],
                                                     }
                                                 }
                                             },
@@ -452,28 +650,28 @@ def main(path, optim, serial=None):
                             },
                             {
                                 "loop_type": "sequential",  # <--- This is where to specify loop,
-                                "num_trials": config["localization"]["NUM_TRIALS"],
+                                "num_trials": config["localization"]["simulation"]["NUM_TRIALS"],
                                 "batch_size": 1,
                                 "generation_strategy": GenerationStrategy(
                                     [
                                         GenerationStep(
                                             model=Models.SOBOL,
-                                            num_trials=config["localization"][
+                                            num_trials=config["localization"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
-                                            max_parallelism=config["localization"][
+                                            max_parallelism=config["localization"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
                                             model_kwargs={
-                                                "seed": config["localization"]["SEED"]
+                                                "seed": config["localization"]["simulation"]["SEED"]
                                             },
                                         ),
                                         GenerationStep(
                                             model=Models.BOTORCH_MODULAR,
-                                            num_trials=config["localization"][
+                                            num_trials=config["localization"]["simulation"][
                                                 "NUM_TRIALS"
                                             ]
-                                            - config["localization"]["NUM_WARMUP"],
+                                            - config["localization"]["simulation"]["NUM_WARMUP"],
                                             max_parallelism=None,
                                             model_kwargs={
                                                 "surrogate": Surrogate(
@@ -487,10 +685,10 @@ def main(path, optim, serial=None):
                                                     "optimizer_kwargs": {
                                                         "num_restarts": config[
                                                             "localization"
-                                                        ]["NUM_RESTARTS"],
+                                                        ]["simulation"]["NUM_RESTARTS"],
                                                         "raw_samples": config[
                                                             "localization"
-                                                        ]["NUM_SAMPLES"],
+                                                        ]["simulation"]["NUM_SAMPLES"],
                                                     }
                                                 }
                                             },
@@ -500,29 +698,29 @@ def main(path, optim, serial=None):
                             },
                             {
                                 "loop_type": "greedy_batch",  # <--- This is where to specify loop,
-                                "num_trials": config["localization"]["NUM_TRIALS"],
-                                "batch_size": config["localization"]["Q"],
+                                "num_trials": config["localization"]["simulation"]["NUM_TRIALS"],
+                                "batch_size": config["localization"]["simulation"]["Q"],
                                 "generation_strategy": GenerationStrategy(
                                     [
                                         GenerationStep(
                                             model=Models.SOBOL,
-                                            num_trials=config["localization"][
+                                            num_trials=config["localization"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
-                                            max_parallelism=config["localization"][
+                                            max_parallelism=config["localization"]["simulation"][
                                                 "NUM_WARMUP"
                                             ],
                                             model_kwargs={
-                                                "seed": config["localization"]["SEED"]
+                                                "seed": config["localization"]["simulation"]["SEED"]
                                             },
                                         ),
                                         GenerationStep(
                                             model=Models.BOTORCH_MODULAR,
-                                            num_trials=config["localization"][
+                                            num_trials=config["localization"]["simulation"][
                                                 "NUM_TRIALS"
                                             ]
-                                            - config["localization"]["NUM_WARMUP"],
-                                            max_parallelism=config["localization"]["Q"],
+                                            - config["localization"]["simulation"]["NUM_WARMUP"],
+                                            max_parallelism=config["localization"]["simulation"]["Q"],
                                             model_kwargs={
                                                 "surrogate": Surrogate(
                                                     botorch_model_class=SingleTaskGP,
@@ -535,10 +733,10 @@ def main(path, optim, serial=None):
                                                     "optimizer_kwargs": {
                                                         "num_restarts": config[
                                                             "localization"
-                                                        ]["NUM_RESTARTS"],
+                                                        ]["simulation"]["NUM_RESTARTS"],
                                                         "raw_samples": config[
                                                             "localization"
-                                                        ]["NUM_SAMPLES"],
+                                                        ]["simulation"]["NUM_SAMPLES"],
                                                     }
                                                 }
                                             },
@@ -570,21 +768,22 @@ def main(path, optim, serial=None):
                             },
                         },
                         "obj_func_parameters": {"env_parameters": swellex.environment},
-                        "main_seed": config["localization"]["SEED"],
-                        "num_runs": config["localization"]["NUM_MC_RUNS"],
+                        "main_seed": config["localization"]["simulation"]["SEED"],
+                        "num_runs": config["localization"]["simulation"]["NUM_MC_RUNS"],
                         "evaluation_config": None,
                     },
                     # {"mode": "experimental", "serial": serial},
                 ],
             },
         )
-    create_config_files(optimizations)
+    # create_config_files(optimizations)
 
 
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("path", type=str, help="Path to config.toml")
-    parser.add_argument("optim", type=str, help="Type of optimization")
+    parser.add_argument("optim", type=str, help="Type of optimization problem")
+    parser.add_argument("modes", type=str, help="Simulation or experimental")
     parser.add_argument("--serial", type=str, help="Specify serial name [optional]")
     args = parser.parse_args()
-    main(args.path, args.optim, serial=args.serial)
+    main(args.path, args.optim, args.modes, serial=args.serial)
