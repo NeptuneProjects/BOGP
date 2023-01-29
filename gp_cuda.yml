@@ -6,12 +6,12 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - jupyterlab
-  - matplotlib
+  - jupyterlab=3.5
+  - matplotlib=3.6
   - pip
-  - pytorch
+  - pytorch=1.13
   - pytorch-cuda=11.7
-  - tqdm
+  - tqdm=4.64
   - pip:
     - ax-platform
     - tomli-w
