@@ -9,6 +9,7 @@ dependencies:
   - cmocean=2
   - jupyterlab=3.5
   - matplotlib=3.6
+  - parallel
   - pip
   - pytorch=1.13
   - pytorch-cuda=11.7
