@@ -14,5 +14,6 @@ dependencies:
   - tqdm
   - pip:
     - ax-platform
+    - tomli-w
     - git+https://github.com/NeptuneProjects/OAOptimization.git
     - git+https://github.com/NeptuneProjects/TritonOA.git
