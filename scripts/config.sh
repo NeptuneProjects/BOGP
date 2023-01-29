@@ -1,8 +1,7 @@
 #!/bin/bash
 # 
 # Usage:
-# bash ./Source/scripts/config.sh ./Source/scripts/config.toml rl
-# bash ./Source/scripts/config.sh ./Source/scripts/config.toml rl YYMMDD_DESC
+# bash ./Source/scripts/config.sh ./Source/scripts/config.toml rl se
 
 CONFIGPATH=$1
 OPTIMS=$2
