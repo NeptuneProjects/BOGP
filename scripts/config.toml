@@ -1,5 +1,5 @@
 [range_estimation.simulation]
-num_mc_runs = 2
+num_mc_runs = 100
 num_restarts = 20
 num_samples = 512
 num_trials = 20
@@ -7,7 +7,7 @@ num_warmup = 5
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_20230128T005404"
+serial = "serial_20230129T104000"
 
 [range_estimation.experimental]
 num_mc_runs = 1
@@ -18,7 +18,7 @@ num_warmup = 10
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_20230128T005404"
+serial = "serial_20230129T104000"
 
 [localization.simulation]
 num_mc_runs = 100
@@ -33,7 +33,7 @@ num_warmup = 50
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_20230128T005404"
+serial = "serial_20230129T104000"
 
 [localization.experimental]
 num_mc_runs = 1
@@ -44,8 +44,8 @@ num_grid_trials = [
     20,
     40,
 ]
-num_warmup = 50
+num_warmup = 40
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_20230128T005404"
+serial = "serial_20230129T104000"
