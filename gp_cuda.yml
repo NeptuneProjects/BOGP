@@ -1,19 +1,22 @@
-name: gp
+name: gp310
 channels:
   - pytorch
-  - gpytorch
+  - nvidia
   - conda-forge
   - defaults
 dependencies:
   - python=3.10
   - botorch
-  - cudatoolkit=11.6
   - jupyterlab
   - matplotlib
   - numpy
+  - pandas
   - pip
   - pytorch
+  - pytorch-cuda=11.7
   - scipy
   - tqdm
   - pip:
+    - ax-platform
+    - git+https://github.com/NeptuneProjects/OAOptimization.git
     - git+https://github.com/NeptuneProjects/TritonOA.git
