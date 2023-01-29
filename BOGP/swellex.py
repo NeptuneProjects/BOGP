@@ -38,6 +38,6 @@ environment = {
     "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
     # 7. Source parameters
     # "rec_r": RANGE_TRUE,
-    # "src_z": DEPTH_TRUE,
+    "src_z": 62.0,
     "freq": 232.0,
 }
