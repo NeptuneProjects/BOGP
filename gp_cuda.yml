@@ -6,15 +6,11 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - botorch
   - jupyterlab
   - matplotlib
-  - numpy
-  - pandas
   - pip
   - pytorch
   - pytorch-cuda=11.7
-  - scipy
   - tqdm
   - pip:
     - ax-platform
