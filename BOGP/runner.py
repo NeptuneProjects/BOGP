@@ -4,7 +4,6 @@ import argparse
 import os
 from pathlib import Path
 import shutil
-from typing import Union
 
 import numpy as np
 
