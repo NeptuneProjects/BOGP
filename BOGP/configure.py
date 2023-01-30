@@ -258,7 +258,7 @@ class Initializer:
         self.optim = self.get_optimization_problem(self.Config)
         self.mode = self.get_optimization_mode(self.Config)
         self.seeds = self.get_mc_seeds(self.Config.main_seed, self.Config.num_mc_runs)
-    
+
     def configure(self):
         self.make_folders()
         scenarios = self.get_scenario_dict(**self.Config.scenarios)
@@ -316,6 +316,9 @@ class Initializer:
                     acqf = ""
 
                 for seed in self.seeds:
+                    self.Config.experiment_kwargs[
+                        "name"
+                    ] = f"{self.optim};{self.mode};{self.Config.serial};{scenario};{strategy['loop_type']};{seed}"
                     run_config = {
                         "experiment_kwargs": self.Config.experiment_kwargs,
                         "seed": seed,
@@ -365,7 +368,7 @@ class Initializer:
     @staticmethod
     def get_scenario_path(scenario: dict) -> str:
         return "__".join([f"{k}={v}" for k, v in scenario.items()])
-    
+
     def make_folders(self):
         self.mode_folder = (
             self.Config.root / self.optim / self.mode / self.Config.serial
