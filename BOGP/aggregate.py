@@ -37,7 +37,7 @@ class Aggregator:
             df.to_csv(
                 self.savename,
                 mode="a",
-                header=not self.savepath.exists(),
+                header=not self.savename.exists(),
             )
 
     @staticmethod
