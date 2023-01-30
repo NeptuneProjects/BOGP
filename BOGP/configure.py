@@ -64,7 +64,7 @@ class SimulationConfig:
     num_samples: int = 1024
     num_trials: int = 200
     num_warmup: int = 10
-    q: int = 1
+    q: int = 5
     root: str = "Data"
     main_seed: int = 2009
     serial: str = "serial"
@@ -316,9 +316,13 @@ class Initializer:
                     acqf = ""
 
                 for seed in self.seeds:
-                    self.Config.experiment_kwargs[
-                        "name"
-                    ] = f"{self.optim};{self.mode};{self.Config.serial};{scenario};{strategy['loop_type']};{seed}"
+                    self.Config.experiment_kwargs["name"] = (
+                        f"{self.optim};"
+                        f"{self.mode};{self.Config.serial};{scenario};"
+                        f"{strategy['loop_type']}{acqf}"
+                        f"{(str(strategy['batch_size']) if 'batch_size' in strategy.keys() else '')};"
+                        f"{seed}"
+                    )
                     run_config = {
                         "experiment_kwargs": self.Config.experiment_kwargs,
                         "seed": seed,
@@ -330,7 +334,10 @@ class Initializer:
                         ),
                     }
 
-                    config_name = f"config__{scenario_folder.name}__{strategy['loop_type'] + acqf}__{seed:010d}.json"
+                    config_name = (
+                        f"config__{scenario_folder.name}__"
+                        f"{strategy['loop_type'] + acqf}__{seed:010d}.json"
+                    )
                     save_config(self.q_folder / config_name, run_config)
 
     @staticmethod
