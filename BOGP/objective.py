@@ -9,4 +9,4 @@ def objective_function(parameters):
     p_rep = run_kraken(env_parameters | parameters)
     
     objective = beamformer(K, p_rep, atype="cbf").item()
-    return {"bartlett": (objective, 0.0)}
+    return {"bartlett": (objective, None)}
