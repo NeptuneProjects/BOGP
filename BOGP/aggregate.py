@@ -34,22 +34,40 @@ class Aggregator:
             self.files, total=len(self.files), disable=not verbose, **self.pbar_kwargs
         ):
             df = self.extract_results(fname)
-            df.to_csv(
-                self.savename,
-                mode="a",
-                header=not self.savename.exists(),
-            )
+            # df.to_csv(
+            #     self.savename,
+            #     mode="a",
+            #     header=not self.savename.exists(),
+            # )
+        return df
 
-    @staticmethod
-    def extract_results(fname):
+    def extract_results(self, fname):
         client = AxClient.load_from_json_file(fname, verbose_logging=False)
         values_to_append = client.experiment.name.split(";")
         df = client.get_trials_data_frame()
+        df = self.get_best_results(df, client)
         for k, v in zip(COLUMNS, values_to_append):
             df[k] = v
         cols = df.columns.to_list()
         cols = cols[-6:] + cols[:-6]
         return df[cols]
+    
+    @staticmethod
+    def get_best_results(df, client):
+        best_value = 0
+        best_values = []
+        best_params = []
+        for i, row in df.iterrows():
+            value = row[client.objective_name]
+            if value > best_value:
+                best_value = value
+                best_param = client.get_trial_parameters(i)
+            best_params.append(best_param)
+            best_values.append(best_value)
+        
+        df["best_parameters"] = best_params
+        df["best_values"] = best_values
+        return df    
 
 
 if __name__ == "__main__":
