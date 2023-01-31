@@ -23,21 +23,21 @@ environment = {
     # 3. Layered media
     "layerdata": [
         {"z": z_data, "c_p": c_data, "rho": 1},
-        {"z": [217, 240], "c_p": [1572.37, 1593.02], "rho": 1.8, "a_p": 0.3},
-        {"z": [240, 1040], "c_p": [1881, 3245.8], "rho": 2.1, "a_p": 0.09},
+        {"z": [217, 240], "c_p": [1572.3, 1593.0], "rho": 1.76, "a_p": 0.2},
+        {"z": [240, 1040], "c_p": [1881, 3245], "rho": 2.06, "a_p": 0.06},
     ],
     # 4. Bottom medium
     "bot_opt": "A",
     "bot_c_p": 5200,
-    "bot_rho": 2.7,
-    "bot_a_p": 0.03,
+    "bot_rho": 2.66,
+    "bot_a_p": 0.02,
     # 5. Speed constraints
     "clow": 0,
-    "chigh": 1600,
+    "chigh": 1650,
     # 6. Receiver parameters
     "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
     # 7. Source parameters
     # "rec_r": RANGE_TRUE,
-    "src_z": 62.0,
+    "src_z": 9.0,
     "freq": 232.0,
 }
