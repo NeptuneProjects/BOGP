@@ -25,7 +25,8 @@ class Aggregator:
     def __init__(self, path):
         self.path = Path(path) if isinstance(path, str) else path
         self.savepath = self.path / "results"
-        self.savename = self.savepath / "aggregated_results.csv"
+        self.savename_agg = self.savepath / "aggregated_results.csv"
+        self.savename_best = self.savepath / "best_results.csv"
         self.files = list(self.path.glob("*/*/*/results.json"))
 
     def run(self, verbose=True):
@@ -33,13 +34,19 @@ class Aggregator:
         for fname in tqdm(
             self.files, total=len(self.files), disable=not verbose, **self.pbar_kwargs
         ):
-            df = self.extract_results(fname)
-            # df.to_csv(
-            #     self.savename,
-            #     mode="a",
-            #     header=not self.savename.exists(),
-            # )
-        return df
+            df, df_best = self.extract_results(fname)
+            # break
+            df.to_csv(
+                self.savename_agg,
+                mode="a",
+                header=not self.savename_agg.exists(),
+            )
+            df_best.to_csv(
+                self.savename_best,
+                mode="a",
+                header=not self.savename_best.exists(),
+            )
+        return df, df_best
 
     def extract_results(self, fname):
         client = AxClient.load_from_json_file(fname, verbose_logging=False)
@@ -50,7 +57,12 @@ class Aggregator:
             df[k] = v
         cols = df.columns.to_list()
         cols = cols[-6:] + cols[:-6]
-        return df[cols]
+        df = df[cols]
+
+        best_index, _, _ = client.get_best_trial()
+        df_best = df.loc[[best_index]]
+
+        return df, df_best
     
     @staticmethod
     def get_best_results(df, client):
@@ -67,7 +79,7 @@ class Aggregator:
         
         df["best_parameters"] = best_params
         df["best_values"] = best_values
-        return df    
+        return df
 
 
 if __name__ == "__main__":
