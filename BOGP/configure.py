@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from itertools import product
 import os
 from pathlib import Path
@@ -31,7 +31,7 @@ RANGE_ESTIMATION_PARAMETERS = [
     {
         "name": "rec_r",
         "type": "range",
-        "bounds": [0.1, 10.0],
+        "bounds": [0.01, 10.0],
         "value_type": "float",
         "log_scale": False,
     },
@@ -40,22 +40,22 @@ LOCALIZATION_PARAMETERS = [
     {
         "name": "rec_r",
         "type": "range",
-        "bounds": [0.1, 10.0],
+        "bounds": [0.01, 10.0],
         "value_type": "float",
         "log_scale": False,
     },
     {
         "name": "src_z",
         "type": "range",
-        "bounds": [0.0, 200.0],
+        "bounds": [1.0, 200.0],
         "value_type": "float",
         "log_scale": False,
     },
 ]
-EXP_DATADIR = (
-    Path.cwd() / "Data" / "SWELLEX96" / "VLA" / "selected" / "data.npy"
-    # Path.cwd() / "Data" / "SWELLEX96" / "VLA" / "selected"
-).relative_to(Path.cwd())
+FREQUENCIES = swellex.HIGH_SIGNAL_TONALS[6:]
+EXP_DATADIR = (Path.cwd() / "Data" / "SWELLEX96" / "VLA" / "selected").relative_to(
+    Path.cwd()
+)
 
 
 @dataclass(kw_only=True)
@@ -70,6 +70,7 @@ class SimulationConfig:
     main_seed: int = 2009
     serial: str = "serial"
     evaluation_config = None
+    frequencies: list = field(default_factory=list)
 
     def __post_init__(self):
         self.root = Path(self.root)
@@ -201,7 +202,10 @@ class SimulationConfig:
             "name": "test_mfp",
             "objectives": {"bartlett": ObjectiveProperties(minimize=False)},
         }
-        self.obj_func_parameters = {"env_parameters": swellex.environment}
+        self.obj_func_parameters = {
+            "env_parameters": swellex.environment,
+            "frequencies": self.frequencies,
+        }
 
 
 @dataclass(kw_only=True)
@@ -265,18 +269,31 @@ class Initializer:
         scenarios = self.get_scenario_dict(**self.Config.scenarios)
 
         if self.mode == "experimental":
-            p = np.load(self.Config.datadir) # TODO: Make this multi-frequency capable
+            p = []
+            for f in self.Config.frequencies:
+                p.append(np.load(self.Config.datadir / f"{f:.1f}Hz" / "data.npy"))
+            p = np.array(p)
 
-        for i, scenario in enumerate(scenarios):
+        for j, scenario in enumerate(scenarios):
             scenario_folder, data_folder = self.make_scenario_folder(scenario)
-            if self.mode == "simulation":
-                K = self.simulate_measurement_covariance(
-                    self.Config.obj_func_parameters["env_parameters"]
-                    | scenario
-                    | {"tmpdir": data_folder}
-                )
-            elif self.mode == "experimental":
-                K = covariance(p[i])
+
+            K = []
+            for i, f in enumerate(self.Config.frequencies):
+
+                if self.mode == "simulation":
+                    K.append(
+                        self.simulate_measurement_covariance(
+                            self.Config.obj_func_parameters["env_parameters"]
+                            | scenario
+                            | {"freq": f, "tmpdir": data_folder, "title": f"{f:.1f}Hz"}
+                        )
+                    )
+                elif self.mode == "experimental":
+                    K.append(covariance(p[i, j, ...]))
+
+            K = np.array(K)
+            if len(K.shape) == 2:
+                K = K[np.newaxis, ...]
             np.save(data_folder / "measurement_covariance.npy", K)
 
             param_names = [

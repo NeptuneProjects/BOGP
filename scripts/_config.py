@@ -8,6 +8,7 @@ import tomli_w
 ROOT = str((Path.cwd() / "Data").relative_to(Path.cwd()))
 SEED = 2009
 SERIAL = datetime.now().strftime("serial_%Y%m%dT%H%M%S")
+FREQUENCIES = [148, 166, 201, 235, 283, 338, 388]
 
 config = {
     "range_estimation": {
@@ -20,7 +21,8 @@ config = {
             "q": 5,
             "root": ROOT,
             "main_seed": SEED,
-            "serial": SERIAL
+            "serial": SERIAL,
+            "frequencies": FREQUENCIES
         },
         "experimental": {
             "num_mc_runs": 1,
@@ -31,7 +33,8 @@ config = {
             "q": 5,
             "root": ROOT,
             "main_seed": SEED,
-            "serial": SERIAL
+            "serial": SERIAL,
+            "frequencies": FREQUENCIES
         },
     },
     "localization": {
@@ -45,7 +48,8 @@ config = {
             "q": 5,
             "root": ROOT,
             "main_seed": SEED,
-            "serial": SERIAL
+            "serial": SERIAL,
+            "frequencies": FREQUENCIES
         },
         "experimental": {
             "num_mc_runs": 1,
@@ -57,7 +61,8 @@ config = {
             "q": 5,
             "root": ROOT,
             "main_seed": SEED,
-            "serial": SERIAL
+            "serial": SERIAL,
+            "frequencies": FREQUENCIES
         }
     }
 }

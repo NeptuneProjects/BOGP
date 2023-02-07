@@ -54,6 +54,6 @@ environment = {
     # "tilt": -1
     # 7. Source parameters
     # "rec_r": RANGE_TRUE,
-    # "src_z": 9.0,
+    "src_z": 60.0,
     # "freq": 232.0,
 }
