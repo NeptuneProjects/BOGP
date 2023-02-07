@@ -54,6 +54,7 @@ LOCALIZATION_PARAMETERS = [
 ]
 EXP_DATADIR = (
     Path.cwd() / "Data" / "SWELLEX96" / "VLA" / "selected" / "data.npy"
+    # Path.cwd() / "Data" / "SWELLEX96" / "VLA" / "selected"
 ).relative_to(Path.cwd())
 
 
@@ -264,7 +265,7 @@ class Initializer:
         scenarios = self.get_scenario_dict(**self.Config.scenarios)
 
         if self.mode == "experimental":
-            p = np.load(self.Config.datadir)
+            p = np.load(self.Config.datadir) # TODO: Make this multi-frequency capable
 
         for i, scenario in enumerate(scenarios):
             scenario_folder, data_folder = self.make_scenario_folder(scenario)
