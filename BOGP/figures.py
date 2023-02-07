@@ -17,6 +17,7 @@ ROOT = Path.cwd()
 FIGURE_PATH = ROOT / "Reports" / "JASA" / "figures"
 DPI = 200
 
+
 def main(figures: list):
     for figure in figures:
         print(f"Producing Figure {figure:02d} " + 60 * "-")
@@ -189,38 +190,37 @@ def plot_environment():
     ax.spines.left.set_linestyle((0, (5, 10)))
     ax.spines.left.set_linewidth(0.5)
     ax.spines.top.set_visible(False)
-        
+
     return fig
 
 
-
-
 def plot_range():
-    df = pd.read_csv(ROOT / "Data" / "range_estimation" / "experimental" / "serial_test" / "results" / "aggregated_results.csv")
-    
+    df = pd.read_csv(
+        ROOT
+        / "Data"
+        / "range_estimation"
+        / "experimental"
+        / "serial_test"
+        / "results"
+        / "aggregated_results.csv"
+    )
+
     scenarios = [f"{{'timestep': {v}}}" for v in range(200, 210)]
-    
+
     df_to_plot = pd.DataFrame(columns=["Time Step", "Range [km]", "Strategy"])
 
     for scenario in scenarios:
         df1 = df[df["scenario"] == scenario]
         df1["strategy"]
 
-        
-
-        
-        
-    
-    
     # fig = plt.figure()
-    
 
     return
-
 
 
 def simulations_dashboard():
     return
+
 
 if __name__ == "__main__":
     parser = ArgumentParser()

@@ -19,6 +19,7 @@ import swellex
 
 DATADIR = Path.cwd() / "Data" / "SWELLEX96" / "VLA" / "selected"
 
+
 def covariance(p):
     d = np.expand_dims(p, 1)
     d /= np.linalg.norm(d)
@@ -117,7 +118,13 @@ def generate_ambiguity_surfaces(datadir, freqs):
             for zz, z in enumerate(zvec):
                 p_rep = run_kraken(
                     environment
-                    | {"src_z": z, "rec_r": rvec, "freq": f, "tilt": -1 if NT >= 249 else None, "tmpdir": "."}
+                    | {
+                        "src_z": z,
+                        "rec_r": rvec,
+                        "freq": f,
+                        "tilt": -1 if NT >= 249 else None,
+                        "tmpdir": ".",
+                    }
                 )
 
                 for rr, r in enumerate(rvec):
