@@ -26,7 +26,14 @@ from tritonoa.sp import added_wng, snrdb_to_sigma
 
 
 SIM_SCENARIOS = {"rec_r": [1.0, 3.0, 5.0, 7.0], "src_z": [62.0], "snr": [20]}
-EXP_SCENARIOS = {"timestep": range(200, 210)}
+SKIP_TIMESTEPS = (
+    list(range(73, 85))
+    + list(range(95, 103))
+    + list(range(187, 199))
+    + list(range(287, 294))
+    + list(range(302, 309))
+)
+EXP_SCENARIOS = {"timestep": [i for i in range(350) if i not in SKIP_TIMESTEPS]}
 RANGE_ESTIMATION_PARAMETERS = [
     {
         "name": "rec_r",
