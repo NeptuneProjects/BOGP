@@ -17,6 +17,7 @@ from tritonoa.kraken import run_kraken
 from tritonoa.sp import beamformer
 import swellex
 
+DATADIR = Path.cwd() / "Data" / "SWELLEX96" / "VLA" / "selected"
 
 def covariance(p):
     d = np.expand_dims(p, 1)
@@ -157,7 +158,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--destination",
         type=str,
-        default="/Users/williamjenkins/Research/Projects/BOGP/Data/SWELLEX96/VLA/selected",
+        default=DATADIR,
     )
     parser.add_argument("--freqs", type=str, default="all")
     args = parser.parse_args()
@@ -167,10 +168,8 @@ if __name__ == "__main__":
         freqs = swellex.HIGH_SIGNAL_TONALS
 
     if args.operation == "process":
-        datadir = "/Users/williamjenkins/Research/Projects/BOGP/Data/SWELLEX96/VLA/selected/merged.npz"
+        datadir = DATADIR / "merged.npz"
         process_data(datadir, args.destination, freqs)
     elif args.operation == "ambsurf":
-        datadir = (
-            "/Users/williamjenkins/Research/Projects/BOGP/Data/SWELLEX96/VLA/selected"
-        )
+        datadir = DATADIR
         generate_ambiguity_surfaces(datadir, freqs)
