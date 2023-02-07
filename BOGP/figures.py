@@ -38,6 +38,50 @@ def figure10():
     plot_range()
 
 
+def plot_ambiguity_surface(
+    B,
+    rvec,
+    zvec,
+    ax=None,
+    cmap="jet",
+    vmin=-10,
+    vmax=0,
+    interpolation="none",
+    marker="*",
+    color="w",
+    markersize=15,
+    markeredgewidth=1.5,
+    markeredgecolor="k",
+):
+
+    if ax is None:
+        ax = plt.gca()
+
+    src_z_ind, src_r_ind = np.unravel_index(np.argmax(B), (len(zvec), len(rvec)))
+
+    im = ax.imshow(
+        B,
+        aspect="auto",
+        extent=[min(rvec), max(rvec), min(zvec), max(zvec)],
+        origin="lower",
+        vmin=vmin,
+        vmax=vmax,
+        interpolation=interpolation,
+        cmap=cmap,
+    )
+    ax.plot(
+        rvec[src_r_ind],
+        zvec[src_z_ind],
+        marker=marker,
+        color=color,
+        markersize=markersize,
+        markeredgewidth=markeredgewidth,
+        markeredgecolor=markeredgecolor,
+    )
+    ax.invert_yaxis()
+    return ax, im
+
+
 def plot_environment():
     zw, cw, _ = read_ssp(
         ROOT / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None

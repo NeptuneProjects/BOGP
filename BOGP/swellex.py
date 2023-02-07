@@ -6,6 +6,21 @@ import numpy as np
 
 from tritonoa.io import read_ssp
 
+HIGH_SIGNAL_TONALS = [
+    49.0,
+    64.0,
+    79.0,
+    94.0,
+    112.0,
+    130.0,
+    148.0,
+    166.0,
+    201.0,
+    235.0,
+    283.0,
+    338.0,
+    388.0,
+]
 
 # Load CTD data
 z_data, c_data, _ = read_ssp(
@@ -36,8 +51,9 @@ environment = {
     "chigh": 1650,
     # 6. Receiver parameters
     "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
+    # "tilt": -1
     # 7. Source parameters
     # "rec_r": RANGE_TRUE,
-    "src_z": 9.0,
-    "freq": 232.0,
+    # "src_z": 9.0,
+    # "freq": 232.0,
 }

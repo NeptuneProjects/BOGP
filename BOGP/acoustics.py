@@ -3,32 +3,19 @@
 from argparse import ArgumentParser
 import os
 from pathlib import Path
-from typing import List
 
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from scipy.fft import fft
+from scipy.io import savemat
 from tqdm.auto import tqdm
 
+from figures import plot_ambiguity_surface
 from tritonoa.io import SIODataHandler
 from tritonoa.kraken import run_kraken
 from tritonoa.sp import beamformer
 import swellex
-
-HIGH_SIGNAL_TONALS = [
-    49.0,
-    64.0,
-    79.0,
-    94.0,
-    112.0,
-    130.0,
-    148.0,
-    166.0,
-    201.0,
-    235.0,
-    283.0,
-    338.0,
-    388.0,
-]
 
 
 def covariance(p):
@@ -65,31 +52,47 @@ def process_data(datadir, destination, freqs):
         x[:, 42] = x[:, [41, 43]].mean(axis=1)
 
         p = np.zeros((NT, M), dtype=complex)
+        f_hist = np.zeros(NT)
         for i in range(NT):
             idx_start = i * N_snap
-            idx_end = (i + 1) * N_snap
+            # idx_end = (i + 1) * N_snap
+            idx_end = idx_start + NFFT
 
             X = fft(x[idx_start:idx_end], n=NFFT, axis=0)
-            # X = fftshift(X)
             fbin = find_freq_bin(fvec, X, freq)
-            # print(fvec[fbin])
+            f_hist[i] = fvec[fbin]
             p[i] = X[fbin]
 
         savepath = destination / f"{freq:.1f}Hz"
         os.makedirs(savepath, exist_ok=True)
         np.save(savepath / "data.npy", p)
+        np.save(savepath / "f_hist.npy", f_hist)
+        savemat(savepath / f"data_{freq}Hz.mat", {"p": p, "f": freq})
 
 
 def generate_ambiguity_surfaces(datadir, freqs):
 
+    CBAR_KWARGS = {"location": "right", "pad": 0, "shrink": 1.0}
+
     datadir = Path(datadir) if isinstance(datadir, str) else datadir
     environment = swellex.environment
-    NT = 350
-    zvec = np.linspace(0, 200, 101)
-    rvec = np.linspace(1e-3, 10 + 1e-3, 1001)
+    ranges = pd.read_csv(datadir / "gps_range.csv")["Range [km]"].values
 
+    NT = 350
+    zvec = np.linspace(1, 200, 100)
+    # zvec = np.arange(0.5, 200.5, 0.5)
+    rvec = np.linspace(1e-3, 10, 500)
+
+    skip_timesteps = (
+        list(range(73, 85))
+        + list(range(95, 103))
+        + list(range(187, 199))
+        + list(range(287, 294))
+        + list(range(302, 309))
+    )
     for f in freqs:
         p = np.load(datadir / f"{f:.1f}Hz" / "data.npy")
+        p = np.fliplr(p)
 
         for t in tqdm(
             range(NT),
@@ -97,32 +100,60 @@ def generate_ambiguity_surfaces(datadir, freqs):
             bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
             unit="time step",
         ):
+            if t in skip_timesteps:
+                continue
+
             savepath = datadir / f"{f:.1f}Hz" / f"ambsurf_t={t + 1:03d}.npy"
             if savepath.exists():
                 continue
 
             d = np.expand_dims(p[t], 1)
+
             d /= np.linalg.norm(d)
             K = d.dot(d.conj().T)
-            
+
             amb_surf = np.zeros((len(zvec), len(rvec)))
             for zz, z in enumerate(zvec):
-                p_rep = run_kraken(environment | {"src_z": z, "rec_r": rvec, "freq": f})
+                p_rep = run_kraken(
+                    environment
+                    | {"src_z": z, "rec_r": rvec, "freq": f, "tilt": -1 if NT >= 249 else None, "tmpdir": "."}
+                )
+
                 for rr, r in enumerate(rvec):
                     amb_surf[zz, rr] = beamformer(K, p_rep[:, rr], atype="cbf").item()
-                    
-            
+
+            # break
             np.save(savepath, amb_surf)
+
+            # B = np.abs(amb_surf) / np.max(np.abs(amb_surf))
+            # B = 10 * np.log10(B)
+            B = amb_surf
+
+            figpath = savepath.parent / "figures"
+            os.makedirs(figpath, exist_ok=True)
+
+            fig = plt.figure(figsize=(8, 6), facecolor="w", dpi=200)
+            ax, im = plot_ambiguity_surface(
+                B, rvec, zvec, cmap="viridis", vmin=0, vmax=1
+            )
+            ax.axvline(ranges[t], color="r")
+            cbar = plt.colorbar(im, ax=ax, **CBAR_KWARGS)
+            cbar.set_label("Normalized Correlation")
+            ax.set_xlabel("Range [km]")
+            ax.set_ylabel("Depth [m]")
+            ax.set_title(f"Time Step = {t + 1:03d}, GPS Range = {ranges[t]:.2f} km")
+            fig.savefig(figpath / f"ambsurf_t={t + 1:03d}.png")
+            plt.close()
 
 
 if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("operation", type=str)
-    parser.add_argument(
-        "--datadir",
-        type=str,
-        default="/Users/williamjenkins/Research/Projects/BOGP/Data/SWELLEX96/VLA/selected/merged.npz",
-    )
+    # parser.add_argument(
+    #     "--datadir",
+    #     type=str,
+    #     default="/Users/williamjenkins/Research/Projects/BOGP/Data/SWELLEX96/VLA/selected/merged.npz",
+    # )
     parser.add_argument(
         "--destination",
         type=str,
@@ -133,9 +164,13 @@ if __name__ == "__main__":
     if args.freqs != "all":
         freqs = list(map(lambda i: float(i.strip()), args.freqs.split(",")))
     else:
-        freqs = HIGH_SIGNAL_TONALS
+        freqs = swellex.HIGH_SIGNAL_TONALS
 
     if args.operation == "process":
-        process_data(args.datadir, args.destination, freqs)
+        datadir = "/Users/williamjenkins/Research/Projects/BOGP/Data/SWELLEX96/VLA/selected/merged.npz"
+        process_data(datadir, args.destination, freqs)
     elif args.operation == "ambsurf":
-        generate_ambiguity_surfaces(args.datadir, freqs)
+        datadir = (
+            "/Users/williamjenkins/Research/Projects/BOGP/Data/SWELLEX96/VLA/selected"
+        )
+        generate_ambiguity_surfaces(datadir, freqs)
