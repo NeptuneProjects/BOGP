@@ -33,7 +33,7 @@ SKIP_TIMESTEPS = (
     + list(range(287, 294))
     + list(range(302, 309))
 )
-EXP_SCENARIOS = {"timestep": [i for i in range(350) if i not in SKIP_TIMESTEPS]}
+EXP_SCENARIOS = {"timestep": [i for i in range(250, 350) if i not in SKIP_TIMESTEPS]}
 RANGE_ESTIMATION_PARAMETERS = [
     {
         "name": "rec_r",
@@ -256,7 +256,6 @@ class LocalizationExperimentalConfig(ExperimentalConfig):
 
     def __post_init__(self):
         super().__post_init__()
-        super().__post_init__()
         i = next(
             i for i, item in enumerate(self.strategies) if item["loop_type"] == "grid"
         )
@@ -281,7 +280,7 @@ class Initializer:
                 p.append(np.load(self.Config.datadir / f"{f:.1f}Hz" / "data.npy"))
             p = np.array(p)
 
-        for j, scenario in enumerate(scenarios):
+        for scenario in scenarios:
             scenario_folder, data_folder = self.make_scenario_folder(scenario)
 
             K = []
@@ -296,6 +295,7 @@ class Initializer:
                         )
                     )
                 elif self.mode == "experimental":
+                    j = scenario["timestep"]
                     K.append(covariance(p[i, j, ...]))
 
             K = np.array(K)
@@ -310,6 +310,9 @@ class Initializer:
             for k in scenario.keys():
                 if k not in param_names:
                     self.Config.obj_func_parameters["env_parameters"][k] = scenario[k]
+
+            if self.mode == "experimental":
+                self.Config.obj_func_parameters["env_parameters"]["tilt"] = -1
 
             for strategy in self.Config.strategies:
                 if strategy["loop_type"] not in UNINFORMED_STRATEGIES:

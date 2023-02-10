@@ -7,7 +7,7 @@ num_warmup = 10
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_20230207T001700"
+serial = "serial_002"
 frequencies = [148, 166, 201, 235, 283, 338, 388]
 
 [range_estimation.experimental]
@@ -19,7 +19,7 @@ num_warmup = 10
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_20230207T001700"
+serial = "serial_002"
 frequencies = [148, 166, 201, 235, 283, 338, 388]
 
 [localization.simulation]
@@ -27,12 +27,12 @@ num_mc_runs = 100
 num_restarts = 40
 num_samples = 1024
 num_trials = 800
-num_grid_trials = [20, 40]
+num_grid_trials = [40, 20]
 num_warmup = 50
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_20230207T001700"
+serial = "serial_002"
 frequencies = [148, 166, 201, 235, 283, 338, 388]
 
 [localization.experimental]
@@ -40,10 +40,10 @@ num_mc_runs = 1
 num_restarts = 40
 num_samples = 1024
 num_trials = 800
-num_grid_trials = [20, 40]
+num_grid_trials = [40, 20]
 num_warmup = 50
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_20230207T001700"
+serial = "serial_002"
 frequencies = [148, 166, 201, 235, 283, 338, 388]
