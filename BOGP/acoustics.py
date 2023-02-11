@@ -21,6 +21,14 @@ CBAR_KWARGS = {"location": "right", "pad": 0, "shrink": 1.0}
 DATADIR = Path.cwd() / "Data" / "SWELLEX96" / "VLA" / "selected"
 zvec = np.linspace(1, 200, 100)
 rvec = np.linspace(10e-3, 10, 500)
+NT = 350
+SKIP_T = (
+    list(range(73, 85))
+    + list(range(95, 103))
+    + list(range(187, 199))
+    + list(range(287, 294))
+    + list(range(302, 309))
+)
 
 
 def covariance(p):
@@ -80,28 +88,19 @@ def generate_ambiguity_surfaces(datadir, freqs, overwrite=False):
     environment = swellex.environment
     ranges = pd.read_csv(datadir / "gps_range.csv")["Range [km]"].values
 
-    NT = 350
-
-    skip_timesteps = (
-        list(range(73, 85))
-        + list(range(95, 103))
-        + list(range(187, 199))
-        + list(range(287, 294))
-        + list(range(302, 309))
-    )
     for f in freqs:
         p = np.load(datadir / f"{f:.1f}Hz" / "data.npy")
         # p = np.fliplr(p)
 
         for t in tqdm(
-            # range(NT),
-            range(250, 350),
+            range(NT),
+            # range(250, 350),
             # [249],
             desc=f"Processing {f} Hz",
             bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
             unit="time step",
         ):
-            if t in skip_timesteps:
+            if t in SKIP_T:
                 continue
 
             savepath = datadir / f"{f:.1f}Hz" / f"ambsurf_t={t + 1:03d}.npy"
@@ -156,7 +155,7 @@ def multifreq(datadir, freqs):
 
     ranges = pd.read_csv(datadir / "gps_range.csv")["Range [km]"].values
 
-    for t in range(250, 350):
+    for t in range(NT):
         surfs = np.zeros((len(freqs), len(zvec), len(rvec)))
         savepath = datadir / "multifreq" / "".join([f"{f}-" for f in freqs])[:-1]
         os.makedirs(savepath, exist_ok=True)
