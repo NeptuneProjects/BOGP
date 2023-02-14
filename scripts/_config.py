@@ -16,13 +16,14 @@ config = {
             "num_mc_runs": 100,
             "num_restarts": 20,
             "num_samples": 512,
-            "num_trials": 200,
-            "num_warmup": 10,
+            "num_trials": 100,
+            "num_warmup": 5,
             "q": 5,
             "root": ROOT,
             "main_seed": SEED,
-            "serial": SERIAL,
-            "frequencies": FREQUENCIES
+            "serial": "serial_example",
+            "evaluation_config": {"num_test_points": 100},
+            "frequencies": [201]
         },
         "experimental": {
             "num_mc_runs": 1,

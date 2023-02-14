@@ -1,14 +1,18 @@
 [range_estimation.simulation]
-num_mc_runs = 100
+num_mc_runs = 1
 num_restarts = 20
 num_samples = 512
-num_trials = 200
+num_trials = 100
+# num_grid_trials = [10, 20]
 num_warmup = 10
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_002"
+serial = "serial_example"
 frequencies = [148, 166, 201, 235, 283, 338, 388]
+
+[range_estimation.simulation.evaluation_config]
+num_test_points = 1000
 
 [range_estimation.experimental]
 num_mc_runs = 1
@@ -19,7 +23,7 @@ num_warmup = 10
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_002"
+serial = "serial_20230211T174812"
 frequencies = [148, 166, 201, 235, 283, 338, 388]
 
 [localization.simulation]
@@ -32,18 +36,18 @@ num_warmup = 50
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_002"
+serial = "serial_20230211T174812"
 frequencies = [148, 166, 201, 235, 283, 338, 388]
 
 [localization.experimental]
 num_mc_runs = 1
 num_restarts = 40
 num_samples = 1024
-num_trials = 800
-num_grid_trials = [40, 20]
-num_warmup = 50
+num_trials = 200
+num_grid_trials = [40, 5]
+num_warmup = 10
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_002"
+serial = "serial_constrained_localization"
 frequencies = [148, 166, 201, 235, 283, 338, 388]
