@@ -48,11 +48,12 @@ class Aggregator:
             )
         return df, df_best
 
-    def extract_results(self, fname):
+    @classmethod
+    def extract_results(cls, fname):
         client = AxClient.load_from_json_file(fname, verbose_logging=False)
         values_to_append = client.experiment.name.split(";")
         df = client.get_trials_data_frame()
-        df = self.get_best_results(df, client)
+        df = cls.get_best_results(df, client)
         for k, v in zip(COLUMNS, values_to_append):
             df[k] = v
         cols = df.columns.to_list()
