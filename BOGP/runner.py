@@ -66,10 +66,12 @@ def main(config_path, device):
     K = np.load(scenario_path / "data" / "measurement_covariance.npy")
     config["obj_func_parameters"]["K"] = K
 
-    Handler(config, destination, objective_function).run()
-    clean_up_kraken_files(destination)
-    shutil.move(config_path.absolute(), (destination / config_path.name).absolute())
-
+    try:
+        Handler(config, destination, objective_function).run()
+        clean_up_kraken_files(destination)
+        shutil.move(config_path.absolute(), (destination / config_path.name).absolute())
+    except:
+        print(f"Problem encountered in '{str(destination)}'; check log.")
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
