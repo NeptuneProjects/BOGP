@@ -13,7 +13,7 @@ from ax.modelbridge.registry import Models
 from ax.models.torch.botorch_modular.surrogate import Surrogate
 from ax.service.ax_client import ObjectiveProperties
 from botorch.acquisition import qExpectedImprovement, qProbabilityOfImprovement
-from botorch.models.gp_regression import SingleTaskGP
+from botorch.models.gp_regression import FixedNoiseGP
 from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
 import numpy as np
 
@@ -25,7 +25,7 @@ from tritonoa.kraken import run_kraken
 from tritonoa.sp import added_wng, snrdb_to_sigma
 
 
-SIM_SCENARIOS = {"rec_r": [1.0, 3.0, 5.0, 7.0], "src_z": [62.0], "snr": [20]}
+SIM_SCENARIOS = {"rec_r": [3.0], "src_z": [62.0], "snr": [20]}
 SKIP_TIMESTEPS = (
     list(range(73, 85))
     + list(range(95, 103))
@@ -33,7 +33,7 @@ SKIP_TIMESTEPS = (
     + list(range(287, 294))
     + list(range(302, 309))
 )
-EXP_SCENARIOS = {"timestep": [i for i in range(250, 350) if i not in SKIP_TIMESTEPS]}
+EXP_SCENARIOS = {"timestep": [i for i in range(350) if i not in SKIP_TIMESTEPS]}
 RANGE_ESTIMATION_PARAMETERS = [
     {
         "name": "rec_r",
@@ -43,6 +43,26 @@ RANGE_ESTIMATION_PARAMETERS = [
         "log_scale": False,
     },
 ]
+
+# Full localization:
+# LOCALIZATION_PARAMETERS = [
+#     {
+#         "name": "rec_r",
+#         "type": "range",
+#         "bounds": [0.01, 10.0],
+#         "value_type": "float",
+#         "log_scale": False,
+#     },
+#     {
+#         "name": "src_z",
+#         "type": "range",
+#         "bounds": [1.0, 200.0],
+#         "value_type": "float",
+#         "log_scale": False,
+#     },
+# ]
+
+# Depth-constrained localization (to improve range estimation accuracy):
 LOCALIZATION_PARAMETERS = [
     {
         "name": "rec_r",
@@ -54,11 +74,12 @@ LOCALIZATION_PARAMETERS = [
     {
         "name": "src_z",
         "type": "range",
-        "bounds": [1.0, 200.0],
+        "bounds": [50.0, 70.0],
         "value_type": "float",
         "log_scale": False,
     },
 ]
+
 FREQUENCIES = swellex.HIGH_SIGNAL_TONALS[6:]
 EXP_DATADIR = (Path.cwd() / "Data" / "SWELLEX96" / "VLA" / "selected").relative_to(
     Path.cwd()
@@ -76,7 +97,7 @@ class SimulationConfig:
     root: str = "Data"
     main_seed: int = 2009
     serial: str = "serial"
-    evaluation_config = None
+    evaluation_config: dict = None
     frequencies: list = field(default_factory=list)
 
     def __post_init__(self):
@@ -117,7 +138,7 @@ class SimulationConfig:
                             max_parallelism=None,
                             model_kwargs={
                                 "surrogate": Surrogate(
-                                    botorch_model_class=SingleTaskGP,
+                                    botorch_model_class=FixedNoiseGP,
                                     mll_class=ExactMarginalLogLikelihood,
                                 ),
                                 "botorch_acqf_class": qExpectedImprovement,
@@ -152,7 +173,7 @@ class SimulationConfig:
                             max_parallelism=None,
                             model_kwargs={
                                 "surrogate": Surrogate(
-                                    botorch_model_class=SingleTaskGP,
+                                    botorch_model_class=FixedNoiseGP,
                                     mll_class=ExactMarginalLogLikelihood,
                                 ),
                                 "botorch_acqf_class": qProbabilityOfImprovement,
@@ -187,7 +208,7 @@ class SimulationConfig:
                             max_parallelism=self.q,
                             model_kwargs={
                                 "surrogate": Surrogate(
-                                    botorch_model_class=SingleTaskGP,
+                                    botorch_model_class=FixedNoiseGP,
                                     mll_class=ExactMarginalLogLikelihood,
                                 ),
                                 "botorch_acqf_class": qExpectedImprovement,
