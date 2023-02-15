@@ -45,24 +45,6 @@ RANGE_ESTIMATION_PARAMETERS = [
 ]
 
 # Full localization:
-# LOCALIZATION_PARAMETERS = [
-#     {
-#         "name": "rec_r",
-#         "type": "range",
-#         "bounds": [0.01, 10.0],
-#         "value_type": "float",
-#         "log_scale": False,
-#     },
-#     {
-#         "name": "src_z",
-#         "type": "range",
-#         "bounds": [1.0, 200.0],
-#         "value_type": "float",
-#         "log_scale": False,
-#     },
-# ]
-
-# Depth-constrained localization (to improve range estimation accuracy):
 LOCALIZATION_PARAMETERS = [
     {
         "name": "rec_r",
@@ -74,11 +56,29 @@ LOCALIZATION_PARAMETERS = [
     {
         "name": "src_z",
         "type": "range",
-        "bounds": [50.0, 75.0],
+        "bounds": [1.0, 200.0],
         "value_type": "float",
         "log_scale": False,
     },
 ]
+
+# Depth-constrained localization (to improve range estimation accuracy):
+# LOCALIZATION_PARAMETERS = [
+#     {
+#         "name": "rec_r",
+#         "type": "range",
+#         "bounds": [0.01, 10.0],
+#         "value_type": "float",
+#         "log_scale": False,
+#     },
+#     {
+#         "name": "src_z",
+#         "type": "range",
+#         "bounds": [50.0, 75.0],
+#         "value_type": "float",
+#         "log_scale": False,
+#     },
+# ]
 
 FREQUENCIES = swellex.HIGH_SIGNAL_TONALS[6:]
 EXP_DATADIR = (Path.cwd() / "Data" / "SWELLEX96" / "VLA" / "selected").relative_to(
