@@ -49,5 +49,5 @@ num_warmup = 10
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_constrained_localization"
+serial = "serial_constrained_50-75"
 frequencies = [148, 166, 201, 235, 283, 338, 388]
