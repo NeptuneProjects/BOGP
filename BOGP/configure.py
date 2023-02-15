@@ -74,7 +74,7 @@ LOCALIZATION_PARAMETERS = [
     {
         "name": "src_z",
         "type": "range",
-        "bounds": [50.0, 70.0],
+        "bounds": [50.0, 75.0],
         "value_type": "float",
         "log_scale": False,
     },
