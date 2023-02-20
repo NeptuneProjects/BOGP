@@ -35,7 +35,6 @@ class Aggregator:
             self.files, total=len(self.files), disable=not verbose, **self.pbar_kwargs
         ):
             df, df_best = self.extract_results(fname)
-            # break
             df.to_csv(
                 self.savename_agg,
                 mode="a",
@@ -65,7 +64,7 @@ class Aggregator:
         df_best = df_best.drop(columns=["best_trial", "best_parameters", "best_values"])
 
         return df, df_best
-    
+
     @staticmethod
     def get_best_results(df, client):
         best_value = 0
@@ -75,7 +74,7 @@ class Aggregator:
         best_params = []
         for i, row in df.iterrows():
             value = row[client.objective_name]
-            
+
             if value > best_value:
                 best_i = i
                 best_value = value
@@ -84,7 +83,7 @@ class Aggregator:
             best_trial.append(best_i)
             best_params.append(best_param)
             best_values.append(best_value)
-        
+
         df["best_trial"] = best_i
         df["best_parameters"] = best_params
         df["best_values"] = best_values
