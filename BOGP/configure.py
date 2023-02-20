@@ -25,7 +25,7 @@ from tritonoa.kraken import run_kraken
 from tritonoa.sp import added_wng, snrdb_to_sigma
 
 
-SIM_SCENARIOS = {"rec_r": [3.0], "src_z": [62.0], "snr": [20]}
+SIM_SCENARIOS = {"rec_r": [1.0, 3.0, 5.0, 7.0], "src_z": [60.0], "snr": [20]}
 SKIP_TIMESTEPS = (
     list(range(73, 85))
     + list(range(95, 103))
