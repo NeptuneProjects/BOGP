@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser
+import ast
 from pathlib import Path
 import warnings
 
+from ax.service.ax_client import AxClient
 from matplotlib import colors
 from matplotlib.gridspec import GridSpec
 import matplotlib.pyplot as plt
@@ -15,29 +17,47 @@ from tritonoa.io import read_ssp
 
 ROOT = Path.cwd()
 FIGURE_PATH = ROOT / "Reports" / "JASA" / "figures"
-DPI = 200
+SAVEFIG_KWARGS = {"dpi": 200, "facecolor": "white", "bbox_inches": "tight"}
 
 
 def main(figures: list):
     for figure in figures:
         print(f"Producing Figure {figure:02d} " + 60 * "-")
         try:
-            eval(f"figure{figure}()")
+            fig = eval(f"figure{figure}()")
+            fig.savefig(FIGURE_PATH / f"figure{figure}.pdf", **SAVEFIG_KWARGS)
         except NameError:
             warnings.warn(f"Figure {figure} is not implemented yet.")
-            continue
+            raise NotImplementedError(f"Figure {figure} is not implemented yet.")
+            # continue
+
+
+def figure1():
+    return plot_training_1D()
 
 
 def figure2():
-    fig = plot_environment()
-    fig.savefig(
-        FIGURE_PATH / "figure2.pdf", dpi=DPI, facecolor="white", bbox_inches="tight"
-    )
+    return plot_training_2D()
 
 
-def figure10():
-    plot_range()
+def figure3():
+    return plot_environment()
 
+
+def figure4():
+    return range_est_simulations()
+
+
+def figure5():
+    return localization_simulations()
+
+
+def figure6():
+    return
+
+
+def figure7():
+    return
 
 def plot_ambiguity_surface(
     B,
@@ -218,8 +238,366 @@ def plot_range():
     return
 
 
-def simulations_dashboard():
+def plot_training_1D():
     return
+
+
+def plot_training_2D():
+    return
+
+
+def localization_simulations():
+
+    sim_dir = ROOT / "Data" / "localization" / "simulation"
+    serial = "serial_230218"
+
+    df = pd.read_csv(sim_dir / serial / "results" / "aggregated_results.csv")
+    df = df.loc[:, ~df.columns.str.match("Unnamed")]
+    df["scenario"] = (
+        df["scenario"]
+        .apply(lambda x: ast.literal_eval(x))
+        .apply(lambda x: list(x.values())[0])
+    )
+    df["best_range"] = (
+        df["best_parameters"]
+        .apply(lambda x: ast.literal_eval(x))
+        .apply(lambda x: list(x.values())[0])
+    )
+    df = df.rename(columns={"scenario": "range"})
+    df["best_range_error"] = np.abs(df["best_range"] - df["range"])
+    df = df.replace({"strategy": "sequential_qpi1"}, "PI")
+    df = df.replace({"strategy": "sequential_qei1"}, "EI")
+    df = df.replace({"strategy": "greedy_batch_qei5"}, "qEI")
+    df = df.replace({"strategy": "lhs"}, "LHS")
+    df = df.replace({"strategy": "random"}, "Rand")
+    df = df.replace({"strategy": "sobol"}, "Sobol")
+    df = df.replace({"strategy": "grid"}, "Grid")
+    df["trial_index"] = df["trial_index"] + 1
+
+    RANGES = [1.0, 3.0, 5.0, 7.0]
+    TITLE_KW = {"ha": "left", "va": "top", "x": 0}
+
+    fig, axs = plt.subplots(figsize=(16, 6), nrows=4, ncols=4, gridspec_kw={"wspace": 0.15})
+
+    # Column 1 - Objective Function ============================================
+    TITLE = "Ambiguity surface: $f(\mathbf{x})$"
+    XLIM = [0, 10]
+    XLABEL = "Range [km]"
+    YLIM = [0, 1.2]
+    YLABEL = "Depth [km]"
+
+    axcol = axs[:, 0]
+    # Set ranges
+    [
+        axcol[i].text(
+            -0.6,
+            0.75,
+            f"$R_\mathrm{{src}} = {r}$ km",
+            transform=axcol[i].transAxes,
+            fontsize="x-large",
+        )
+        for i, r in enumerate(RANGES)
+    ]
+
+    for ax, r in zip(axcol, RANGES):
+        # TODO: Change from 1-D to 2-D ambiguity surface
+        # fname = (
+        #     ROOT
+        #     / "Data"
+        #     / "range_estimation"
+        #     / "simulation"
+        #     / "serial_230217"
+        #     / f"rec_r={r:.1f}__src_z=60.0__snr=20"
+        #     / "grid"
+        #     / "seed_0002406475"
+        #     / "results.json"
+        # )
+        
+        selection = (
+            (df["seed"] == int("0002406475"))
+            & (df["strategy"] == "Grid")
+            & (df["range"] == r)
+        )
+        df_obj = df[selection].sort_values("rec_r")
+        g = sns.lineplot(data=df_obj, x="rec_r", y="bartlett", ax=ax)
+        g.set(xlabel=None, ylabel=None)
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
+    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+    # [axcol[-1].set_xlabel(None) for i in range(len(RANGES) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i, _ in enumerate(RANGES)]
+    axcol[-1].set_ylabel(YLABEL)
+
+    # Set title
+    axcol[0].set_title(TITLE, **TITLE_KW)
+    
+    # TODO: Indicate maximum with star
+
+    # Column 2 - Performance History ===========================================
+    TITLE = "Best observed: $\hat{f}(\mathbf{x})$"
+    XLIM = [0, 801]
+    XLABEL = "Evaluation"
+    YLIM = [0, 1.2]
+
+    axcol = axs[:, 1]
+
+    
+    for ax, r in zip(axcol, RANGES):
+        selection = df["range"] == r
+        g = sns.lineplot(
+            data=df[selection],
+            x="trial_index",
+            y="best_values",
+            hue="strategy",
+            ax=ax,
+            legend=None,
+        )
+        g.set(xlabel=None, ylabel=None)
+        
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
+    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
+
+    # Set title
+    axcol[0].set_title(TITLE, **TITLE_KW)
+
+    # Column 3 - Range Error History ===========================================
+    TITLE = "Range error history: $\\vert\hat{R}_{src} - R_{src}\\vert$ [km]"
+    YLIM = [0, 8] # TODO: Validate this limit
+
+    axcol = axs[:, 2]
+
+    count = 0
+    for ax, r in zip(axcol, RANGES):
+        selection = df["range"] == r
+        g = sns.lineplot(
+            data=df[selection],
+            x="trial_index",
+            y="best_range_error",
+            hue="strategy",
+            ax=ax,
+            legend="auto" if count == 3 else None,
+        )
+        g.set(xlabel=None, ylabel=None)
+        if count == 3:
+            sns.move_legend(
+                ax, "upper center", bbox_to_anchor=(0.5, -0.5), ncol=4, title="Strategy"
+            )
+        count += 1
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
+    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
+
+    # Set title
+    axcol[0].set_title(TITLE, **TITLE_KW)
+
+    # Column 4 - Depth Error History ===========================================
+    TITLE = "Depth error history: $\\vert\hat{R}_{src} - R_{src}\\vert$ [m]"
+    YLIM = [0, 8] # TODO: Validate this limit
+
+    axcol = axs[:, 3]
+
+    for ax, r in zip(axcol, RANGES):
+        selection = df["range"] == r
+        g = sns.lineplot(
+            data=df[selection],
+            x="trial_index",
+            y="best_depth_error",
+            hue="strategy",
+            ax=ax,
+            legend=None,
+        )
+        g.set(xlabel=None, ylabel=None)
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
+    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
+
+    # Set title
+    axcol[0].set_title(TITLE, **TITLE_KW)
+
+    return fig
+
+
+
+def range_est_simulations():
+    SMOKE_TEST = False
+
+    sim_dir = ROOT / "Data" / "range_estimation" / "simulation"
+    serial = "serial_230217"
+
+    if not SMOKE_TEST:
+        df = pd.read_csv(sim_dir / serial / "results" / "aggregated_results.csv")
+        df = df.loc[:, ~df.columns.str.match("Unnamed")]
+        df["scenario"] = (
+            df["scenario"]
+            .apply(lambda x: ast.literal_eval(x))
+            .apply(lambda x: list(x.values())[0])
+        )
+        df["best_range"] = (
+            df["best_parameters"]
+            .apply(lambda x: ast.literal_eval(x))
+            .apply(lambda x: list(x.values())[0])
+        )
+        df = df.rename(columns={"scenario": "range"})
+        df["best_range_error"] = np.abs(df["best_range"] - df["range"])
+        df = df.replace({"strategy": "sequential_qpi1"}, "PI")
+        df = df.replace({"strategy": "sequential_qei1"}, "EI")
+        df = df.replace({"strategy": "greedy_batch_qei5"}, "qEI")
+        df = df.replace({"strategy": "lhs"}, "LHS")
+        df = df.replace({"strategy": "random"}, "Rand")
+        df = df.replace({"strategy": "sobol"}, "Sobol")
+        df = df.replace({"strategy": "grid"}, "Grid")
+        df["trial_index"] = df["trial_index"] + 1
+
+    RANGES = [1.0, 3.0, 5.0, 7.0]
+    TITLE_KW = {"ha": "left", "va": "top", "x": 0}
+
+    fig, axs = plt.subplots(figsize=(12, 6), nrows=4, ncols=3, gridspec_kw={"wspace": 0.15})
+
+    # Column 1 - Objective Function ============================================
+    TITLE = "Ambiguity surface: $f(\mathbf{x})$"
+    XLIM = [0, 10]
+    XLABEL = "Range [km]"
+    YLIM = [0, 1.2]
+
+    axcol = axs[:, 0]
+    # Set ranges
+    [
+        axcol[i].text(
+            -0.52,
+            0.5,
+            f"$R_\mathrm{{src}} = {r}$ km",
+            transform=axcol[i].transAxes,
+            fontsize="large",
+            ha="left"
+        )
+        for i, r in enumerate(RANGES)
+    ]
+
+    for ax, r in zip(axcol, RANGES):
+        # fname = (
+        #     ROOT
+        #     / "Data"
+        #     / "range_estimation"
+        #     / "simulation"
+        #     / "serial_230217"
+        #     / f"rec_r={r:.1f}__src_z=60.0__snr=20"
+        #     / "grid"
+        #     / "seed_0002406475"
+        #     / "results.json"
+        # )
+        
+        if not SMOKE_TEST:
+            selection = (
+                (df["seed"] == int("0002406475"))
+                & (df["strategy"] == "Grid")
+                & (df["range"] == r)
+            )
+            df_obj = df[selection].sort_values("rec_r")
+            g = sns.lineplot(data=df_obj, x="rec_r", y="bartlett", ax=ax)
+            g.set(xlabel=None, ylabel=None)
+            ax.axvline(r, color="r")
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
+    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+    # [axcol[-1].set_xlabel(None) for i in range(len(RANGES) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i, _ in enumerate(RANGES)]
+
+    # Set title
+    axcol[0].set_title(TITLE, **TITLE_KW)
+
+    # Column 2 - Performance History ===========================================
+    TITLE = "Best observed: $\hat{f}(\mathbf{x})$"
+    XLIM = [0, 201]
+    XLABEL = "Evaluation"
+    YLIM = [0, 1.2]
+
+    axcol = axs[:, 1]
+
+    count = 0
+    for ax, r in zip(axcol, RANGES):
+        if not SMOKE_TEST:
+            selection = df["range"] == r
+            g = sns.lineplot(
+                data=df[selection],
+                x="trial_index",
+                y="best_values",
+                hue="strategy",
+                ax=ax,
+                legend="auto" if count == 3 else None,
+            )
+            g.set(xlabel=None, ylabel=None)
+            if count == 3:
+                sns.move_legend(
+                    ax, "upper center", bbox_to_anchor=(0.5, -0.5), ncol=4, title="Strategy"
+                )
+            count += 1
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
+    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
+
+    # Set title
+    axcol[0].set_title(TITLE, **TITLE_KW)
+
+    # Column 3 - Error History =================================================
+    TITLE = "Error history: $\\vert\hat{R}_{src} - R_{src}\\vert$ [km]"
+    YLIM = [0, 8]
+
+    axcol = axs[:, 2]
+
+    for ax, r in zip(axcol, RANGES):
+        if not SMOKE_TEST:
+            selection = df["range"] == r
+            g = sns.lineplot(
+                data=df[selection],
+                x="trial_index",
+                y="best_range_error",
+                hue="strategy",
+                ax=ax,
+                legend=None,
+            )
+            g.set(xlabel=None, ylabel=None)
+
+    # Set x axis
+    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
+    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+    [axcol[-1].set_xlabel(XLABEL)]
+
+    # Set y axis
+    [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
+
+    # Set title
+    axcol[0].set_title(TITLE, **TITLE_KW)
+
+    return fig
 
 
 if __name__ == "__main__":
@@ -228,5 +606,3 @@ if __name__ == "__main__":
     args = parser.parse_args()
     figures = list(map(lambda i: int(i.strip()), args.figures.split(",")))
     main(figures)
-
-    print(sns.load_dataset("fmri"))
