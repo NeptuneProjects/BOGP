@@ -7,12 +7,14 @@ import warnings
 
 from ax.service.ax_client import AxClient
 from matplotlib import colors
-from matplotlib.gridspec import GridSpec
+from matplotlib import ticker
+import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 
+from collate import get_error, load_mfp_results
 from tritonoa.io import read_ssp
 
 ROOT = Path.cwd()
@@ -32,12 +34,12 @@ def main(figures: list):
             # continue
 
 
-def figure1():
-    return plot_training_1D()
+# def figure1():
+#     return plot_training_1D()
 
 
-def figure2():
-    return plot_training_2D()
+# def figure2():
+#     return plot_training_2D()
 
 
 def figure3():
@@ -45,19 +47,280 @@ def figure3():
 
 
 def figure4():
-    return range_est_simulations()
+    return simulations_range_est()
 
 
-def figure5():
-    return localization_simulations()
+# def figure5():
+#     return simulations_localization()
 
 
 def figure6():
-    return
+    return experimental_range_est()
 
 
-def figure7():
-    return
+# def figure7():
+#     return experimental_localization()
+
+
+def adjust_subplotticklabels(ax, low=None, high=None):
+    ticklabels = ax.get_yticklabels()
+    if low is not None:
+        ticklabels[low].set_va("bottom")
+    if high is not None:
+        ticklabels[high].set_va("top")
+
+
+def experimental_range_est():
+    AMBSURF_PATH = (
+        ROOT
+        / "Data"
+        / "SWELLEX96"
+        / "VLA"
+        / "selected"
+        / "multifreq"
+        / "148.0-166.0-201.0-235.0-283.0-338.0-388.0"
+    )
+    # Load high-res MFP
+    timesteps, ranges, depths = load_mfp_results(AMBSURF_PATH)
+
+    # GPS Range
+    gps_fname = ROOT / "Data" / "SWELLEX96" / "VLA" / "selected" / "gps_range.csv"
+    df_gps = pd.read_csv(gps_fname, index_col=0)
+    
+    serial = "serial_constrained_50-75"
+    fname = ROOT / "Data" / "localization" / "experimental" / serial / "results" / "collated.csv"
+    df = pd.read_csv(fname, index_col=0)
+    return plot_experimental_results(df, df_gps, timesteps, ranges, depths)
+
+
+def plot_experimental_results(df, df_gps, timesteps, ranges, depths):
+    STRATEGY_KEY = [
+        "High-res MFP",
+        "Grid",
+        "SBL",
+        "LHS",
+        "Rand",
+        "Sobol",
+        "PI",
+        "EI",
+        "qEI",
+    ]
+    no_data = [
+        list(range(73, 85)),
+        list(range(95, 103)),
+        list(range(187, 199)),
+        list(range(287, 294)),
+        list(range(302, 309))
+    ]
+    XLIM = [0, 351]
+    XTICKS = list(range(0, 351, 50))
+    YLIM_R = [0, 10]
+    YTICKS_R = [0, 5, 10]
+    YLIM_R_ERR = [1, 10000]
+    YTICKS_R_ERR = [1, 100, 10000]
+    YLIM_Z = [80, 40]
+    YTICKS_Z = [40, 60, 80]
+    YLIM_Z_ERR = [1e-2, 1e2]
+    YTICKS_Z_ERR = [0.01, 1, 100]
+    GPS_KW = {"color": "k", "label": "GPS Range", "legend": None, "zorder": 15}
+    RANGE_KW = {
+        "x": "Time Step",
+        "y": "rec_r",
+        "s": 10,
+        "label": "Strategy",
+        "legend": None,
+        "alpha": 1.0,
+        "linewidth": 0,
+        "zorder": 20,
+    }
+    DEPTH_KW = {
+        "x": "Time Step",
+        "y": "src_z",
+        "s": 10,
+        "color": "green",
+        "label": "Strategy",
+        "legend": None,
+        "linewidth": 0,
+        "zorder": 20,
+    }
+    ERROR_KW = {
+        "color": "tab:red",
+        # "legend": None,
+        "linewidth": 0.75,
+        "alpha": 0.5,
+        "zorder": 5,
+    }
+    NO_DATA_KW = {"color": "black", "alpha": 0.25, "linewidth": 0, "label": None}
+
+    fig = plt.figure(figsize=(12, 8), facecolor="white")
+    sns.set_theme(style="darkgrid")
+
+    gs = gridspec.GridSpec(3, 3, figure=fig, hspace=0.3, wspace=0.25)
+
+    k = 0
+    for i in range(3):
+        for j in range(3):
+            strategy = STRATEGY_KEY[k]
+
+            # Range ====================================================
+
+            sgs = gridspec.GridSpecFromSubplotSpec(
+                2, 1, subplot_spec=gs[i, j], hspace=0.05
+            )
+
+            # Range Error
+            if k > 0:
+                ax2 = fig.add_subplot(sgs[0])
+                # ax2.grid(False)
+
+                error, est_timesteps = get_error(
+                    df[df["strategy"] == strategy], "rec_r", timesteps, ranges
+                )
+                error = np.abs(error)
+                error_plot = format_error(error, est_timesteps)
+                ax2.plot(list(range(350)), error_plot * 1000, **ERROR_KW)
+
+                ax = ax2.twinx()
+            else:
+                ax = fig.add_subplot(sgs[0])
+
+            [ax.axvspan(l[0] - 1, l[-1] + 1, zorder=5, **NO_DATA_KW) for l in no_data]
+            sns.lineplot(data=df_gps, x=df_gps.index, y="Range [km]", ax=ax, **GPS_KW)
+            sns.scatterplot(data=df[df["strategy"] == strategy], ax=ax, **RANGE_KW)
+            ax.set_xlim(XLIM)
+            ax.set_xticks(XTICKS)
+            ax.set_xticklabels([])
+            ax.set_xlabel(None)
+            ax.set_ylim(YLIM_R)
+            ax.set_title(strategy)
+
+            # Switch twin y-axes
+            if k > 0:
+                primary_ticks = len(ax.yaxis.get_major_ticks())
+                ax2.yaxis.set_major_locator(ticker.LinearLocator(primary_ticks))
+
+                ax2.yaxis.tick_right()
+                ax2.yaxis.set_label_position("right")
+
+                ax.yaxis.tick_left()
+                ax.yaxis.set_label_position("left")
+
+                ax.grid(True)
+                ax2.set_xlabel(None)
+                ax2.set_yscale("log")
+                ax2.set_ylim(YLIM_R_ERR)
+                ax2.set_yticks(YTICKS_R_ERR)
+                ax2.tick_params(
+                    axis="y", which="both", length=0, colors=ERROR_KW["color"]
+                )
+                adjust_subplotticklabels(ax2, low=0)
+
+            ax.set_yticks(YTICKS_R)
+            ax.tick_params(axis="both", which="both", length=0)
+            adjust_subplotticklabels(ax, 0, -1)
+
+            if k == 6:
+                ax.set_ylabel("Range [km]")
+                if k > 0:
+                    ax2.set_ylabel(
+                        "Error [m]",
+                        color=ERROR_KW["color"],
+                        rotation=0,
+                        va="bottom",
+                        ha="right",
+                        # y=1.08,
+                        labelpad=0,
+                    )
+                    ax2.yaxis.set_label_coords(1.05, 1.08)
+            else:
+                ax.set_ylabel(None)
+                if k > 0:
+                    ax2.set_ylabel(None)
+
+            # Depth ====================================================
+
+            # Depth Error
+            if k > 0:
+                ax2 = fig.add_subplot(sgs[1])
+                # ax2.grid(False)
+
+                error, est_timesteps = get_error(
+                    df[df["strategy"] == strategy], "src_z", timesteps, depths
+                )
+                error = np.abs(error)
+                error_plot = format_error(error, est_timesteps)
+                ax2.plot(list(range(350)), error_plot, **ERROR_KW)
+
+                ax = ax2.twinx()
+            else:
+                ax = fig.add_subplot(sgs[1])
+
+            [ax.axvspan(l[0] - 1, l[-1] + 1, zorder=1, **NO_DATA_KW) for l in no_data]
+            sns.scatterplot(data=df[df["strategy"] == strategy], ax=ax, **DEPTH_KW)
+            ax.set_xlabel(None)
+            ax.set_xlim(XLIM)
+            ax.set_ylim(YLIM_Z)
+
+            # Switch twin y-axes
+            if k > 0:
+                primary_ticks = len(ax.yaxis.get_major_ticks())
+                ax2.yaxis.set_major_locator(ticker.LinearLocator(primary_ticks))
+
+                ax2.yaxis.tick_right()
+                ax2.yaxis.set_label_position("right")
+
+                ax.yaxis.tick_left()
+                ax.yaxis.set_label_position("left")
+
+                # ax.grid(True)
+                ax2.set_yscale("log")
+                ax2.set_ylim(YLIM_Z_ERR)
+                ax2.set_yticks(YTICKS_Z_ERR)
+                ax2.tick_params(axis="x", which="both", length=0)
+                ax2.tick_params(
+                    axis="y", which="both", length=0, colors=ERROR_KW["color"]
+                )
+                adjust_subplotticklabels(ax2, low=0)
+
+            ax.set_xticks(XTICKS)
+            ax.set_yticks(YTICKS_Z)
+            ax.tick_params(axis="both", which="both", length=0)
+            adjust_subplotticklabels(ax, -1, 0)
+
+            if k == 6:
+                ax2.set_xlabel("Time Step")
+                ax.set_ylabel("Depth [m]")
+                if k > 0:
+                    pass
+                    # ax2.set_ylabel(
+                    #     "Error [m]",
+                    #     color=ERROR_KW["color"],
+                    #     rotation=0,
+                    #     va="top",
+                    #     # ha="right",
+                    #     x=-0.1,
+                    #     y=-0.05,
+                    #     labelpad=0,
+                    # )
+            else:
+                ax.set_ylabel(None)
+                if k > 0:
+                    ax2.set_xlabel(None)
+                    ax2.set_ylabel(None)
+
+            # if k == 1:
+            #     return fig
+            k += 1
+
+    return fig
+
+
+def format_error(error, est_timesteps):
+    error_plot = np.empty(350)
+    error_plot[:] = np.nan
+    error_plot[est_timesteps] = error
+    return error_plot
+
 
 def plot_ambiguity_surface(
     B,
@@ -246,34 +509,12 @@ def plot_training_2D():
     return
 
 
-def localization_simulations():
+def simulations_localization():
 
     sim_dir = ROOT / "Data" / "localization" / "simulation"
     serial = "serial_230218"
-
-    df = pd.read_csv(sim_dir / serial / "results" / "aggregated_results.csv")
-    df = df.loc[:, ~df.columns.str.match("Unnamed")]
-    df["scenario"] = (
-        df["scenario"]
-        .apply(lambda x: ast.literal_eval(x))
-        .apply(lambda x: list(x.values())[0])
-    )
-    df["best_range"] = (
-        df["best_parameters"]
-        .apply(lambda x: ast.literal_eval(x))
-        .apply(lambda x: list(x.values())[0])
-    )
-    df = df.rename(columns={"scenario": "range"})
-    df["best_range_error"] = np.abs(df["best_range"] - df["range"])
-    df = df.replace({"strategy": "sequential_qpi1"}, "PI")
-    df = df.replace({"strategy": "sequential_qei1"}, "EI")
-    df = df.replace({"strategy": "greedy_batch_qei5"}, "qEI")
-    df = df.replace({"strategy": "lhs"}, "LHS")
-    df = df.replace({"strategy": "random"}, "Rand")
-    df = df.replace({"strategy": "sobol"}, "Sobol")
-    df = df.replace({"strategy": "grid"}, "Grid")
-    df["trial_index"] = df["trial_index"] + 1
-
+    df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
+    
     RANGES = [1.0, 3.0, 5.0, 7.0]
     TITLE_KW = {"ha": "left", "va": "top", "x": 0}
 
@@ -438,35 +679,14 @@ def localization_simulations():
 
 
 
-def range_est_simulations():
+def simulations_range_est():
     SMOKE_TEST = False
 
     sim_dir = ROOT / "Data" / "range_estimation" / "simulation"
     serial = "serial_230217"
-
     if not SMOKE_TEST:
-        df = pd.read_csv(sim_dir / serial / "results" / "aggregated_results.csv")
-        df = df.loc[:, ~df.columns.str.match("Unnamed")]
-        df["scenario"] = (
-            df["scenario"]
-            .apply(lambda x: ast.literal_eval(x))
-            .apply(lambda x: list(x.values())[0])
-        )
-        df["best_range"] = (
-            df["best_parameters"]
-            .apply(lambda x: ast.literal_eval(x))
-            .apply(lambda x: list(x.values())[0])
-        )
-        df = df.rename(columns={"scenario": "range"})
-        df["best_range_error"] = np.abs(df["best_range"] - df["range"])
-        df = df.replace({"strategy": "sequential_qpi1"}, "PI")
-        df = df.replace({"strategy": "sequential_qei1"}, "EI")
-        df = df.replace({"strategy": "greedy_batch_qei5"}, "qEI")
-        df = df.replace({"strategy": "lhs"}, "LHS")
-        df = df.replace({"strategy": "random"}, "Rand")
-        df = df.replace({"strategy": "sobol"}, "Sobol")
-        df = df.replace({"strategy": "grid"}, "Grid")
-        df["trial_index"] = df["trial_index"] + 1
+        df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
+
 
     RANGES = [1.0, 3.0, 5.0, 7.0]
     TITLE_KW = {"ha": "left", "va": "top", "x": 0}
@@ -474,6 +694,7 @@ def range_est_simulations():
     fig, axs = plt.subplots(figsize=(12, 6), nrows=4, ncols=3, gridspec_kw={"wspace": 0.15})
 
     # Column 1 - Objective Function ============================================
+    # TODO: Read in high-res objective function
     TITLE = "Ambiguity surface: $f(\mathbf{x})$"
     XLIM = [0, 10]
     XLABEL = "Range [km]"
