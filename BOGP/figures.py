@@ -3,7 +3,9 @@
 from argparse import ArgumentParser
 import ast
 from pathlib import Path
+import sys
 import warnings
+sys.path.insert(0, Path.cwd() / "Source")
 
 from ax.service.ax_client import AxClient
 from matplotlib import colors
@@ -14,7 +16,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from collate import get_error, load_mfp_results
+from BOGP.collate import get_error, load_mfp_results
 from tritonoa.io import read_ssp
 
 ROOT = Path.cwd()

@@ -13,6 +13,8 @@ directory for convenient analysis and plotting.
 import argparse
 import ast
 from pathlib import Path
+import sys
+sys.path.insert(0, Path.cwd() / "Source")
 
 import numpy as np
 import pandas as pd
@@ -128,6 +130,7 @@ def collate_experimental(path):
     df = df.replace({"strategy": "sobol"}, "Sobol")
     df = df.replace({"strategy": "grid"}, "Grid")
     df["trial_index"] = df["trial_index"] + 1
+    df["trial_index"] = df["trial_index"].astype(int)
     selection = df["Time Step"].isin(SKIP_T)
     df = df.drop(df[selection].index)
 
