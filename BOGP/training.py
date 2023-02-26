@@ -95,6 +95,21 @@ def optimize_acqf_and_get_observation(X, acq_func):
     return X_new, y_new, alpha
 
 
+def get_candidates(alpha, alpha_prev=None):
+    if alpha is None:
+        max_alpha = None
+    else:
+        max_alpha = np.argmax(alpha)
+        alpha /= alpha.max()
+
+    if alpha_prev is None:
+        max_alpha_prev = None
+    else:
+        max_alpha_prev = np.argmax(alpha_prev)
+        alpha_prev /= alpha_prev.max()
+    return max_alpha, max_alpha_prev
+
+
 def plot_training(
     X_test,
     y_actual,
@@ -107,20 +122,48 @@ def plot_training(
     alpha_prev=None,
     title=None,
 ):
-    max_alpha = np.argmax(alpha)
-    alpha /= alpha.max()
-    if alpha_prev is not None:
-        max_alpha_prev = np.argmax(alpha_prev)
-        alpha_prev /= alpha_prev.max() 
-    else:
-        max_alpha_prev = None
-
     fig, axs = plt.subplots(
         nrows=2, facecolor="white", figsize=(8, 6), gridspec_kw={"hspace": 0}
     )
 
     ax = axs[0]
     ax.set_title(title)
+
+    ax = plot_gp(
+        X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha, alpha_prev, ax=ax
+    )
+    ax.set_xticklabels([])
+    ax.set_xlabel(None)
+    ax.set_ylabel("$f(\mathbf{x})$", rotation=0, ha="right")
+
+    ax = axs[1]
+    ax = plot_acqf(X_test, alpha, alpha_prev, ax=ax)
+    ax.yaxis.tick_right()
+    ax.yaxis.set_label_position("right")
+    ax.set_ylabel("$\\alpha(\mathbf{x})$", rotation=0, ha="left")
+
+    # plt.legend()
+    plt.show()
+    return fig
+
+
+def plot_gp(
+    X_test,
+    y_actual,
+    X_train,
+    y_train,
+    mean,
+    lcb,
+    ucb,
+    alpha=None,
+    alpha_prev=None,
+    ax=None,
+):
+    if ax is None:
+        ax = plt.gca()
+
+    max_alpha, max_alpha_prev = get_candidates(alpha, alpha_prev)
+
     ax.plot(X_test, y_actual, color="tab:green", label="Actual f")
     ax.plot(X_test, mean, label="f(x)")
     ax.fill_between(X_test.squeeze(), lcb, ucb, alpha=0.25)
@@ -133,27 +176,25 @@ def plot_training(
         ax.scatter(
             X_train[-1], y_train[-1], c="r", marker="*", label="Samples", zorder=50
         )
-    ax.axvline(X_test[max_alpha], color="k", linestyle="-")
-    if max_alpha_prev:
+    if max_alpha is not None:
+        ax.axvline(X_test[max_alpha], color="k", linestyle="-")
+    if max_alpha_prev is not None:
         ax.axvline(X_test[max_alpha_prev], color="r", linestyle=":")
 
-    ax.set_xticklabels([])
-    ax.set_xlabel(None)
-    ax.set_ylabel("$f(\mathbf{x})$", rotation=0, ha="right")
+    return ax
 
-    ax = axs[1]
+
+def plot_acqf(X_test, alpha, alpha_prev=None, ax=None):
+    if ax is None:
+        ax = plt.gca()
+
+    max_alpha, max_alpha_prev = get_candidates(alpha, alpha_prev)
+
     ax.plot(X_test, alpha)
     ax.axvline(X_test[max_alpha], color="k", linestyle="-")
     if max_alpha_prev:
         ax.axvline(X_test[max_alpha_prev], color="r", linestyle=":")
-
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
-    ax.set_ylabel("$\\alpha(\mathbf{x})$", rotation=0, ha="left")
-
-    # plt.legend()
-    plt.show()
-    return fig
+    return ax
 
 
 dtype = torch.double
