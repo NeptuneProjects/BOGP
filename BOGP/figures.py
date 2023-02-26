@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser
-import ast
+# import ast
 from pathlib import Path
-import sys
+# import sys
 import warnings
-sys.path.insert(0, Path.cwd() / "Source")
+# sys.path.insert(0, Path.cwd() / "Source")
 
 from ax.service.ax_client import AxClient
 from matplotlib import colors
@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from BOGP.collate import get_error, load_mfp_results
+from collate import get_error, load_mfp_results
 from tritonoa.io import read_ssp
 
 ROOT = Path.cwd()
@@ -60,8 +60,8 @@ def figure6():
     return experimental_range_est()
 
 
-# def figure7():
-    # return experimental_localization()
+def figure7():
+    return experimental_localization()
 
 
 def adjust_subplotticklabels(ax, low=None, high=None):
@@ -92,7 +92,7 @@ def experimental_localization():
     serial = "serial_full_depth"
     fname = ROOT / "Data" / "localization" / "experimental" / serial / "results" / "collated.csv"
     df = pd.read_csv(fname, index_col=0)
-    return plot_experimental_results(df, df_gps, timesteps, ranges, depths)
+    return plot_experimental_results(df, df_gps, timesteps, ranges, depths, ylim_z=[200, 0], yticks_z=[0, 100, 200])
 
 
 def experimental_range_est():
@@ -280,7 +280,7 @@ def plot_environment():
     return fig
 
 
-def plot_experimental_results(df, df_gps, timesteps, ranges, depths):
+def plot_experimental_results(df, df_gps, timesteps, ranges, depths, ylim_z=[80, 40], yticks_z=[40, 60, 80]):
     STRATEGY_KEY = [
         "High-res MFP",
         "Grid",
@@ -446,7 +446,7 @@ def plot_experimental_results(df, df_gps, timesteps, ranges, depths):
             sns.scatterplot(data=df[df["strategy"] == strategy], ax=ax, **DEPTH_KW)
             ax.set_xlabel(None)
             ax.set_xlim(XLIM)
-            ax.set_ylim(YLIM_Z)
+            ax.set_ylim(ylim_z)
 
             # Switch twin y-axes
             if k > 0:
@@ -470,7 +470,7 @@ def plot_experimental_results(df, df_gps, timesteps, ranges, depths):
                 adjust_subplotticklabels(ax2, low=0)
 
             ax.set_xticks(XTICKS)
-            ax.set_yticks(YTICKS_Z)
+            ax.set_yticks(yticks_z)
             ax.tick_params(axis="both", which="both", length=0)
             adjust_subplotticklabels(ax, -1, 0)
 
