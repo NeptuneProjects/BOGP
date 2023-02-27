@@ -22,7 +22,11 @@ import pandas as pd
 import seaborn as sns
 
 from collate import get_error, load_mfp_results
+from configure import Initializer
+import swellex
 from tritonoa.io import read_ssp
+from tritonoa.kraken import run_kraken
+from tritonoa.sp import beamformer
 
 ROOT = Path.cwd()
 FIGURE_PATH = ROOT / "Reports" / "JASA" / "figures"
@@ -46,31 +50,31 @@ def figure1():
 
 
 def figure2():
-    return plot_training_2D()
-
-
-def figure3():
     return plot_environment()
 
 
-def figure4():
+def figure3():
     return simulations_range_est()
 
 
-# def figure5():
-#     return simulations_localization()
+def figure4():
+    return simulations_localization()
 
 
-def figure6():
+def figure5():
     return experimental_range_est()
 
 
-def figure7():
+def figure6():
     return experimental_localization()
 
 
-def figure8():
+def figure7():
     return experimental_posterior()
+
+
+def figure999():
+    plot_training_2D()
 
 
 def adjust_subplotticklabels(ax, low=None, high=None):
@@ -115,8 +119,187 @@ def experimental_localization():
 
 
 def experimental_posterior():
-    # TODO: Implement 2-D posterior view using MFP & Ax, e.g. at CPA
-    return None
+    AMBSURF_PATH = (
+        ROOT
+        / "Data"
+        / "SWELLEX96"
+        / "VLA"
+        / "selected"
+        / "multifreq"
+        / "148.0-166.0-201.0-235.0-283.0-338.0-388.0"
+    )
+    TIMESTEP = 310
+    STRATEGY = "greedy_batch_qei"
+    CBAR_KW = {"location": "top", "pad": 0}
+    CONTOUR_KW = {
+        "origin": "lower",
+        "extent": [0, 10, 50, 75],
+    }
+    LABEL_KW = {
+        "ha": "center",
+        "va": "center",
+        "rotation": 90,
+        "fontsize": "large"
+
+    }
+    SCATTER_KW = {
+        "marker": "o",
+        "facecolors": "none",
+        "edgecolors": "white",
+        "linewidth": 0.1,
+        # "alpha": 1,
+        "s": 5,
+        "zorder": 40,
+    }
+    SOURCE_KW = {
+        "marker": "s",
+        "facecolors": "none",
+        "edgecolors": "lime",
+        "linewidth": 1,
+        "s": 40,
+        "zorder": 50,
+    }
+    SOURCE_EST_KW = {
+        "marker": "s",
+        "facecolors": "none",
+        "edgecolors": "r",
+        "linewidth": 1,
+        "s": 20,
+        "zorder": 60,
+    }
+    TITLE_KW = {"y": 1.2, "fontsize": "large"}
+    NLEVELS = 21
+    XLIM = [0, 10]
+
+    results0 = (
+        ROOT
+        / "Data"
+        / "localization"
+        / "experimental"
+        / "serial_constrained_50-75"
+        / f"timestep={TIMESTEP}"
+        / STRATEGY
+        / "seed_0292288111"
+        / "results.json"
+    )
+    client0 = AxClient(verbose_logging=False).load_from_json_file(results0)
+    results1 = (
+        ROOT
+        / "Data"
+        / "localization"
+        / "experimental"
+        / "serial_full_depth"
+        / f"timestep={TIMESTEP}"
+        / STRATEGY
+        / "seed_0292288111"
+        / "results.json"
+    )
+    client1 = AxClient(verbose_logging=False).load_from_json_file(results1)
+    clients = [client0, client1]
+
+    rvec_f = np.linspace(0.01, 10, 500)
+    zvec_f = np.linspace(1, 200, 100)
+    f = np.load(AMBSURF_PATH / f"ambsurf_mf_t={TIMESTEP}.npy")
+    src_z_ind, src_r_ind = np.unravel_index(np.argmax(f), (len(zvec_f), len(rvec_f)))
+    src_r = rvec_f[src_r_ind]
+    src_z = zvec_f[src_z_ind]
+
+    nrows = 2
+    ncols = 3
+    fig, axs = plt.subplots(
+        nrows=nrows,
+        ncols=ncols,
+        figsize=(12, 6),
+        gridspec_kw={"wspace": 0.1, "hspace": 0.1},
+    )
+
+    for i in range(nrows):
+        data = clients[i].get_contour_plot()
+        best, _  = clients[i].get_best_parameters()
+        src_r_est = best["rec_r"]
+        src_z_est = best["src_z"]
+        rvec = data.data["data"][0]["x"]
+        zvec = data.data["data"][0]["y"]
+        mean = data.data["data"][0]
+        se = data.data["data"][1]
+        x = data.data["data"][3]["x"]
+        y = data.data["data"][3]["y"]
+
+        axrow = axs[i]
+
+        # Objective function
+        ax = axrow[0]
+        vmin = 0
+        vmax = 0.6
+        vmid = vmax / 2
+        if i == 0:
+            ax.set_title("Objective function $f(\mathbf{X})$", **TITLE_KW)
+        im = ax.contourf(
+            rvec_f, zvec_f, f, levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
+        )
+        ax.scatter(x, y, **SCATTER_KW)
+        ax.scatter(src_r, src_z, **SOURCE_KW)
+        ax.scatter(src_r_est, src_z_est, **SOURCE_EST_KW)
+        ax.invert_yaxis()
+        if i == 0:
+            ax.set_xticklabels([])
+            ax.set_ylim([75, 50])
+        if i == 1:
+            ax.set_xlabel("Range [km]")
+            ax.set_ylim([200, 0])
+        ax.set_xlim(XLIM)
+        ax.set_ylabel("Depth [m]")
+        fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
+        if i == 0:
+            label = "Depth-constrained\nsearch space"
+        else:
+            label = "Full search space"
+        ax.text(-0.27, 0.5, label, transform=ax.transAxes, **LABEL_KW)
+
+        # Mean function
+        ax = axrow[1]
+        if i == 0:
+            ax.set_title("Mean function $\mu(\mathbf{X})$", **TITLE_KW)
+        im = ax.contourf(
+            rvec, zvec, mean["z"], levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
+        )
+        ax.scatter(x, y, **SCATTER_KW)
+        ax.scatter(src_r, src_z, **SOURCE_KW)
+        ax.scatter(src_r_est, src_z_est, **SOURCE_EST_KW)
+        ax.invert_yaxis()
+        ax.set_xlim(XLIM)
+        ax.set_xticklabels([])
+        if i == 0:
+            ax.set_ylim([75, 50])
+        else:
+            ax.set_ylim([200, 0])
+        ax.set_yticklabels([])
+        fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
+
+        # Covariance function
+        ax = axrow[2]
+        vmin = 0
+        vmax = 0.08
+        vmid = vmax / 2
+        if i == 0:
+            ax.set_title("Covar. function $2\sigma(\mathbf{X})$", **TITLE_KW)
+        im = ax.contourf(
+            rvec, zvec, se["z"], levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
+        )
+        ax.scatter(x, y, **SCATTER_KW)
+        ax.scatter(src_r, src_z, **SOURCE_KW)
+        ax.scatter(src_r_est, src_z_est, **SOURCE_EST_KW)
+        ax.invert_yaxis()
+        ax.set_xlim(XLIM)
+        ax.set_xticklabels([])
+        if i == 0:
+            ax.set_ylim([75, 50])
+        else:
+            ax.set_ylim([200, 0])
+        ax.set_yticklabels([])
+        fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
+
+    return fig
 
 
 def experimental_range_est():
@@ -207,10 +390,10 @@ def plot_ambiguity_surface(
     vmax=0,
     interpolation="none",
     marker="*",
-    color="w",
     markersize=15,
     markeredgewidth=1.5,
     markeredgecolor="k",
+    markerfacecolor="w",
 ):
     if ax is None:
         ax = plt.gca()
@@ -231,10 +414,10 @@ def plot_ambiguity_surface(
         rvec[src_r_ind],
         zvec[src_z_ind],
         marker=marker,
-        color=color,
         markersize=markersize,
         markeredgewidth=markeredgewidth,
         markeredgecolor=markeredgecolor,
+        markerfacecolor=markerfacecolor
     )
     ax.invert_yaxis()
     return ax, im
@@ -853,30 +1036,44 @@ def plot_training_2D():
 
 
 def simulations_localization():
+    SMOKE_TEST = False
+
     sim_dir = ROOT / "Data" / "localization" / "simulation"
     serial = "serial_230218"
-    df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
+
+    if not SMOKE_TEST:
+        df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
 
     RANGES = [1.0, 3.0, 5.0, 7.0]
-    TITLE_KW = {"ha": "left", "va": "top", "x": 0}
+    TITLE_KW = {"ha": "center", "va": "top", "y": 1.4}
 
     fig, axs = plt.subplots(
-        figsize=(16, 6), nrows=4, ncols=4, gridspec_kw={"wspace": 0.15}
+        figsize=(16, 8), nrows=4, ncols=4, gridspec_kw={"wspace": 0.16, "hspace": 0.1}
     )
 
     # Column 1 - Objective Function ============================================
     TITLE = "Ambiguity surface: $f(\mathbf{x})$"
     XLIM = [0, 10]
     XLABEL = "Range [km]"
-    YLIM = [0, 1.2]
-    YLABEL = "Depth [km]"
+    YLIM = [200, 0]
+    YLABEL = "Depth [m]"
+    AMBSURF_KW = {
+        "vmin": 0,
+        "vmax": 1,
+        "marker": "s",
+        "markeredgecolor": "w",
+        "markerfacecolor": "none"
+    }
+
+    rvec = np.linspace(0.01, 10, 200)
+    zvec = np.linspace(1, 200, 200)
 
     axcol = axs[:, 0]
     # Set ranges
     [
         axcol[i].text(
             -0.6,
-            0.75,
+            0.9,
             f"$R_\mathrm{{src}} = {r}$ km",
             transform=axcol[i].transAxes,
             fontsize="x-large",
@@ -884,28 +1081,30 @@ def simulations_localization():
         for i, r in enumerate(RANGES)
     ]
 
+    count = 0
     for ax, r in zip(axcol, RANGES):
-        # TODO: Change from 1-D to 2-D ambiguity surface
-        # fname = (
-        #     ROOT
-        #     / "Data"
-        #     / "range_estimation"
-        #     / "simulation"
-        #     / "serial_230217"
-        #     / f"rec_r={r:.1f}__src_z=60.0__snr=20"
-        #     / "grid"
-        #     / "seed_0002406475"
-        #     / "results.json"
-        # )
-
-        selection = (
-            (df["seed"] == int("0002406475"))
-            & (df["strategy"] == "Grid")
-            & (df["range"] == r)
+        env_parameters = swellex.environment | {"freq": 201, "tmpdir": "."}
+        true_parameters = {
+            "rec_r": r,
+            "src_z": 60,
+        }
+        K = Initializer.simulate_measurement_covariance(
+            env_parameters | {"snr": 20} | true_parameters
         )
-        df_obj = df[selection].sort_values("rec_r")
-        g = sns.lineplot(data=df_obj, x="rec_r", y="bartlett", ax=ax)
-        g.set(xlabel=None, ylabel=None)
+
+        amb_surf = np.zeros((len(zvec), len(rvec)))
+        for zz, z in enumerate(zvec):
+            p_rep = run_kraken(env_parameters | {"src_z": z, "rec_r": rvec})
+            for rr, r in enumerate(rvec):
+                amb_surf[zz, rr] = beamformer(K, p_rep[:, rr], atype="cbf").item()
+        
+        ax, im = plot_ambiguity_surface(amb_surf, rvec, zvec, ax=ax, **AMBSURF_KW)
+        if count == 0:
+            cax = ax.inset_axes([0, 1, 1.0, 0.15])
+            cbar = fig.colorbar(im, ax=ax, cax=cax, orientation="horizontal")
+            cbar.ax.xaxis.set_ticks_position("top")
+            cbar.ax.xaxis.set_label_position("top")
+            count += 1
 
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
@@ -931,16 +1130,17 @@ def simulations_localization():
     axcol = axs[:, 1]
 
     for ax, r in zip(axcol, RANGES):
-        selection = df["range"] == r
-        g = sns.lineplot(
-            data=df[selection],
-            x="trial_index",
-            y="best_values",
-            hue="strategy",
-            ax=ax,
-            legend=None,
-        )
-        g.set(xlabel=None, ylabel=None)
+        if not SMOKE_TEST:
+            selection = df["range"] == r
+            g = sns.lineplot(
+                data=df[selection],
+                x="trial_index",
+                y="best_values",
+                hue="strategy",
+                ax=ax,
+                legend=None,
+            )
+            g.set(xlabel=None, ylabel=None)
 
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
@@ -954,28 +1154,29 @@ def simulations_localization():
     axcol[0].set_title(TITLE, **TITLE_KW)
 
     # Column 3 - Range Error History ===========================================
-    TITLE = "Range error history: $\\vert\hat{R}_{src} - R_{src}\\vert$ [km]"
+    TITLE = "Range error history:\n$\\vert\hat{R}_{src} - R_{src}\\vert$ [km]"
     YLIM = [0, 8]  # TODO: Validate this limit
 
     axcol = axs[:, 2]
 
     count = 0
     for ax, r in zip(axcol, RANGES):
-        selection = df["range"] == r
-        g = sns.lineplot(
-            data=df[selection],
-            x="trial_index",
-            y="best_range_error",
-            hue="strategy",
-            ax=ax,
-            legend="auto" if count == 3 else None,
-        )
-        g.set(xlabel=None, ylabel=None)
-        if count == 3:
-            sns.move_legend(
-                ax, "upper center", bbox_to_anchor=(0.5, -0.5), ncol=4, title="Strategy"
+        if not SMOKE_TEST:
+            selection = df["range"] == r
+            g = sns.lineplot(
+                data=df[selection],
+                x="trial_index",
+                y="best_range_error",
+                hue="strategy",
+                ax=ax,
+                legend="auto" if count == 3 else None,
             )
-        count += 1
+            g.set(xlabel=None, ylabel=None)
+            if count == 3:
+                sns.move_legend(
+                    ax, "upper center", bbox_to_anchor=(0.5, -0.5), ncol=4, title="Strategy"
+                )
+            count += 1
 
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
@@ -989,22 +1190,23 @@ def simulations_localization():
     axcol[0].set_title(TITLE, **TITLE_KW)
 
     # Column 4 - Depth Error History ===========================================
-    TITLE = "Depth error history: $\\vert\hat{z}_{src} - z_{src}\\vert$ [m]"
-    YLIM = [200, 0]  # TODO: Validate this limit
+    TITLE = "Depth error history:\n$\\vert\hat{z}_{src} - z_{src}\\vert$ [m]"
+    YLIM = [0, 200]  # TODO: Validate this limit
 
     axcol = axs[:, 3]
 
     for ax, r in zip(axcol, RANGES):
-        selection = df["range"] == r
-        g = sns.lineplot(
-            data=df[selection],
-            x="trial_index",
-            y="best_depth_error",
-            hue="strategy",
-            ax=ax,
-            legend=None,
-        )
-        g.set(xlabel=None, ylabel=None)
+        if not SMOKE_TEST:
+            selection = df["range"] == r
+            g = sns.lineplot(
+                data=df[selection],
+                x="trial_index",
+                y="best_depth_error",
+                hue="strategy",
+                ax=ax,
+                legend=None,
+            )
+            g.set(xlabel=None, ylabel=None)
 
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
