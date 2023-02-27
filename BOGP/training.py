@@ -4,14 +4,66 @@ from pathlib import Path
 
 from botorch import fit_gpytorch_model
 from botorch.acquisition import ExpectedImprovement
-from botorch.test_functions import Griewank
+from botorch.optim import optimize_acqf
 from botorch.models import SingleTaskGP
+from botorch.test_functions import Griewank
 from gpytorch.mlls import ExactMarginalLogLikelihood
+from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import numpy as np
 import torch
+from tqdm import tqdm
 
+from configure import Initializer
+from figures import load_training_data
 import swellex
+from tritonoa.kraken import run_kraken
+from tritonoa.sp import beamformer
+
+class MatchedFieldProcessor:
+    """For use in BoTorch training example."""
+
+    def __init__(self, K, parameters, atype="cbf"):
+        self.K = K
+        self.parameters = parameters
+        self.atype = atype
+
+    def __call__(self, parameters):
+        return self.evaluate(parameters)
+
+    def evaluate(self, parameters):
+        p_rep = run_kraken(self.parameters | parameters)
+        B = beamformer(self.K, p_rep, atype=self.atype).item()
+        return B
+
+
+class ObjectiveFunction:
+    def __init__(self, obj_func):
+        self.obj_func = obj_func
+
+    def evaluate(
+        self, parameters: dict, fixed_parameters: dict = {}, dtype=torch.double, disable_pbar=True
+    ):
+        num_samples = set([len(param) for param in parameters.values()])
+        if not len(num_samples) == 1:
+            raise ValueError("The number of samples is inconsistent across features.")
+        y = []
+        pbar = tqdm(
+            range(next(iter(num_samples))),
+            desc="Evaluating test points",
+            bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
+            leave=True,
+            position=0,
+            unit=" eval",
+            disable=disable_pbar,
+            colour="red",
+        )
+        for i in pbar:
+            params = {
+                k: float(v[i].detach().cpu().numpy()) for k, v in parameters.items()
+            }
+            y.append(self.obj_func(fixed_parameters | params))
+        return torch.Tensor(y).unsqueeze(-1).to(dtype)
 
 
 def get_bounds(search_parameters):
@@ -51,28 +103,39 @@ def generate_random_data(bounds, num_samples, dtype=torch.double):
             .to(dtype)
         )
     else:
-        if isinstance(num_samples, int):
-            num_samples = [num_samples for _ in range(d)]
-        x = []
+        X_tmp = []
         for i in range(d):
-            x.append(
+            X_tmp.append(
                 torch.distributions.uniform.Uniform(bounds[0, i], bounds[1, i])
-                .sample([num_samples[i]])
+                .sample([num_samples])
                 .to(dtype)
             )
-        Xm = torch.meshgrid(*x, indexing="xy")
-        X = torch.cat([x.flatten().unsqueeze(-1) for x in Xm], dim=1)
+        X = torch.cat([x.flatten().unsqueeze(-1) for x in X_tmp], dim=1)
     return X
 
 
-def generate_initial_data(bounds, n_train=10, n_test=None, dtype=torch.double):
+def generate_initial_data(
+    bounds,
+    obj_func,
+    search_space,
+    fixed_parameters,
+    n_train=10,
+    n_test=None,
+    dtype=torch.double,
+):
     X_train = generate_random_data(bounds, n_train, dtype)
-    y_train = branin(X_train).unsqueeze(-1)
+    train_parameters = {
+        item["name"]: X_train[..., i] for i, item in enumerate(search_space)
+    }
+    y_train = obj_func.evaluate(train_parameters, fixed_parameters)
     best_y = y_train.max()
 
     if n_test is not None:
         X_test = get_test_points(bounds, n_test)
-        y_test = branin(X_test).unsqueeze(-1)
+        test_parameters = {
+            item["name"]: X_test[..., i] for i, item in enumerate(search_space)
+        }
+        y_test = obj_func.evaluate(test_parameters, fixed_parameters, disable_pbar=False)
     else:
         X_test, y_test = None, None
 
@@ -87,11 +150,36 @@ def initialize_model(X_train, y_train, state_dict=None):
     return mll, model
 
 
-def optimize_acqf_and_get_observation(X, acq_func):
+def optimize_acqf_and_get_observation(
+    X, acq_func, search_space, obj_func, fixed_parameters
+):
     alpha = acq_func(X.unsqueeze(1))
     ind = torch.argmax(alpha)
     X_new = X[ind].detach().unsqueeze(-1).T
-    y_new = branin(X_new).unsqueeze(-1)
+    new_parameters = {
+        item["name"]: X_new[..., i] for i, item in enumerate(search_space)
+    }
+    y_new = obj_func.evaluate(new_parameters, fixed_parameters)
+    return X_new, y_new, alpha
+
+
+def _optimize_acqf_and_get_observation(X, acq_func, search_space, obj_func, fixed_parameters):
+    bounds = get_bounds(search_space)
+    candidates, _ = optimize_acqf(
+        acq_function=acq_func,
+        bounds=bounds,
+        q=1,
+        num_restarts=40,
+        raw_samples=1024
+    )
+    alpha = acq_func(X.unsqueeze(1))
+    X_new = candidates.detach()
+    new_parameters = {
+        item["name"]: X_new[..., i]
+        for i, item in enumerate(search_space)
+    }
+    y_new = obj_func.evaluate(new_parameters, fixed_parameters)
+
     return X_new, y_new, alpha
 
 
@@ -121,33 +209,209 @@ def plot_training(
     alpha,
     alpha_prev=None,
     title=None,
+    xlabel=None,
+    ylabel=None,
+    ylim=[0, 1]
 ):
-    fig, axs = plt.subplots(
-        nrows=2, facecolor="white", figsize=(8, 6), gridspec_kw={"hspace": 0}
-    )
+    d = X_test.shape[1]
 
-    ax = axs[0]
-    ax.set_title(title)
+    if d == 1:
+        fig, axs = plt.subplots(
+            nrows=2, facecolor="white", figsize=(8, 6), gridspec_kw={"hspace": 0}
+        )
 
-    ax = plot_gp(
-        X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha, alpha_prev, ax=ax
-    )
-    ax.set_xticklabels([])
-    ax.set_xlabel(None)
-    ax.set_ylabel("$f(\mathbf{x})$", rotation=0, ha="right")
+        ax = axs[0]
+        ax.set_title(title)
 
-    ax = axs[1]
-    ax = plot_acqf(X_test, alpha, alpha_prev, ax=ax)
-    ax.yaxis.tick_right()
-    ax.yaxis.set_label_position("right")
-    ax.set_ylabel("$\\alpha(\mathbf{x})$", rotation=0, ha="left")
+        ax = plot_gp_1D(
+            X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha, alpha_prev, ax=ax
+        )
+        handles, labels = ax.get_legend_handles_labels()
+        if len(handles) > 5:
+            del handles[4], labels[4]
+            handles[-1] = Line2D([0], [0], color="r", marker="x", linestyle=":")
+        ax.set_xticklabels([])
+        ax.set_xlabel(None)
+        ax.set_ylim(ylim)
+        ax.set_ylabel("$f(\mathbf{X})$", rotation=0, ha="right")
+        
+        ax = axs[1]
+        ax = plot_acqf_1D(X_test, alpha, alpha_prev, ax=ax)
 
-    # plt.legend()
-    plt.show()
-    return fig
+        handles2, labels2 = ax.get_legend_handles_labels()
+        ax.legend(handles + handles2, labels + labels2, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncols=4)
+
+        ax.set_xlabel(xlabel)
+        ax.set_ylim(ylim)
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
+        ax.set_ylabel("$\\alpha(\mathbf{X})$", rotation=0, ha="left")
+
+        return fig
+    elif d == 2:
+        IMSHOW_KW = {
+            "aspect": "auto",
+            "origin": "lower",
+            "interpolation": "none",
+            "extent": [
+                min(X_test[:, 0]),
+                max(X_test[:, 0]),
+                min(X_test[:, 1]),
+                max(X_test[:, 1]),
+            ],
+        }
+        ACTUAL_KW = {
+            "marker": "s",
+            "facecolors": "none",
+            "edgecolors": "w",
+            "zorder": 30
+        }
+        NEXT_KW = {
+            "facecolors": "none",
+            "edgecolors": "r",
+            "zorder": 60
+        }
+        SCATTER_KW = {
+            "c": "w",
+            "marker": "o",
+            "zorder": 40,
+            "alpha": 0.5,
+            "s": 1
+        }
+        M = len(np.unique(X_test[:, 0]))
+        N = len(np.unique(X_test[:, 1]))
+
+        max_alpha, max_alpha_prev = get_candidates(
+            np.reshape(alpha, (M, N)),
+            np.reshape(alpha_prev, (M, N)) if alpha_prev is not None else None,
+        )
+        max_alpha = np.unravel_index(max_alpha, alpha.shape)
+
+        if max_alpha_prev is not None:
+            max_alpha_prev = np.unravel_index(max_alpha_prev, alpha_prev.shape)
+
+        max_f, _ = get_candidates(
+            np.reshape(y_actual, (M, N))
+        )
+        max_f = np.unravel_index(max_f, y_actual.shape)
+
+        fig, axs = plt.subplots(
+            ncols=4, facecolor="white", figsize=(16, 4), gridspec_kw={"wspace": 0}
+        )
+
+        ax = axs[0]
+        ax.set_title("Actual")
+        ax.imshow(np.reshape(y_actual, (M, N)), **IMSHOW_KW)
+        ax.scatter(*X_test[max_f], **ACTUAL_KW)
+        if not max_alpha_prev:
+            ax.scatter(
+                X_train[:, 0],
+                X_train[:, 1],
+                **SCATTER_KW
+            )
+        else:
+            ax.scatter(
+                X_train[:-1, 0],
+                X_train[:-1, 1],
+                **SCATTER_KW
+            )
+            ax.scatter(
+                X_train[-1, 0],
+                X_train[-1, 1],
+                c="r",
+                marker="x",
+                label="Samples",
+                zorder=50,
+            )
+        if max_alpha is not None:
+            ax.scatter(*X_test[max_alpha], **NEXT_KW)
+        ax.invert_yaxis()
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+
+        ax = axs[1]
+        ax.set_title("Mean Function")
+        ax.imshow(np.reshape(mean, (M, N)), **IMSHOW_KW)
+        ax.scatter(*X_test[max_f], **ACTUAL_KW)
+        if not max_alpha_prev:
+            ax.scatter(
+                X_train[:, 0],
+                X_train[:, 1],
+                **SCATTER_KW
+            )
+        else:
+            ax.scatter(
+                X_train[:-1, 0],
+                X_train[:-1, 1],
+                **SCATTER_KW
+            )
+            ax.scatter(
+                X_train[-1, 0],
+                X_train[-1, 1],
+                c="r",
+                marker="x",
+                label="Samples",
+                zorder=50,
+            )
+        if max_alpha is not None:
+            ax.scatter(*X_test[max_alpha], **NEXT_KW)
+        ax.invert_yaxis()
+        ax.set_xticklabels([])
+        ax.set_xlabel(None)
+        ax.set_yticklabels([])
+        ax.set_ylabel(None)
+
+        ax = axs[2]
+        ax.set_title("Covariance Function")
+        ax.imshow(np.reshape(ucb, (M, N)), **IMSHOW_KW)
+        if not max_alpha_prev:
+            ax.scatter(
+                X_train[:, 0],
+                X_train[:, 1],
+                **SCATTER_KW
+            )
+        else:
+            ax.scatter(
+                X_train[:-1, 0],
+                X_train[:-1, 1],
+                **SCATTER_KW
+            )
+            ax.scatter(
+                X_train[-1, 0],
+                X_train[-1, 1],
+                c="r",
+                marker="x",
+                label="Samples",
+                zorder=50,
+            )
+        if max_alpha is not None:
+            ax.scatter(*X_test[max_alpha], **NEXT_KW)
+        ax.invert_yaxis()
+        ax.set_xticklabels([])
+        ax.set_xlabel(None)
+        ax.set_yticklabels([])
+        ax.set_ylabel(None)
+
+        ax = axs[3]
+        ax.set_title("Acquisition Function")
+        im = ax.imshow(np.reshape(alpha, (M, N)), **IMSHOW_KW)
+        if max_alpha is not None:
+            ax.scatter(*X_test[max_alpha], **NEXT_KW)
+        ax.invert_yaxis()
+        ax.set_xticklabels([])
+        ax.set_xlabel(None)
+        ax.set_yticklabels([])
+        ax.set_ylabel(None)
+
+        cax = ax.inset_axes([1.05, 0, 0.08, 1.0])
+        fig.colorbar(im, ax=ax, cax=cax)
+
+        fig.suptitle(title)
+
+        return fig
 
 
-def plot_gp(
+def plot_gp_1D(
     X_test,
     y_actual,
     X_train,
@@ -164,9 +428,9 @@ def plot_gp(
 
     max_alpha, max_alpha_prev = get_candidates(alpha, alpha_prev)
 
-    ax.plot(X_test, y_actual, color="tab:green", label="Actual f")
-    ax.plot(X_test, mean, label="f(x)")
-    ax.fill_between(X_test.squeeze(), lcb, ucb, alpha=0.25)
+    ax.plot(X_test, y_actual, color="tab:green", label="$f(\mathbf{X})$")
+    ax.plot(X_test, mean, label="$\mu(\mathbf{X})$")
+    ax.fill_between(X_test.squeeze(), lcb, ucb, alpha=0.25, label="$\pm2\sigma(\mathbf{X})$")
     if not max_alpha_prev:
         ax.scatter(X_train, y_train, c="k", marker="x", label="Samples", zorder=40)
     else:
@@ -174,124 +438,225 @@ def plot_gp(
             X_train[:-1], y_train[:-1], c="k", marker="x", label="Samples", zorder=40
         )
         ax.scatter(
-            X_train[-1], y_train[-1], c="r", marker="*", label="Samples", zorder=50
+            X_train[-1], y_train[-1], c="r", marker="x", label="Samples", zorder=50
         )
     if max_alpha is not None:
-        ax.axvline(X_test[max_alpha], color="k", linestyle="-")
+        ax.axvline(X_test[max_alpha], color="k", linestyle="-", label="Next sample $t+1$")
     if max_alpha_prev is not None:
-        ax.axvline(X_test[max_alpha_prev], color="r", linestyle=":")
+        ax.axvline(X_test[max_alpha_prev], color="r", linestyle=":", label="Current sample $t$")
 
     return ax
 
 
-def plot_acqf(X_test, alpha, alpha_prev=None, ax=None):
+def plot_acqf_1D(X_test, alpha, alpha_prev=None, ax=None):
     if ax is None:
         ax = plt.gca()
 
     max_alpha, max_alpha_prev = get_candidates(alpha, alpha_prev)
 
-    ax.plot(X_test, alpha)
+    ax.plot(X_test, alpha, color="tab:red", label="$\\alpha(\mathbf{X})$")
     ax.axvline(X_test[max_alpha], color="k", linestyle="-")
     if max_alpha_prev:
         ax.axvline(X_test[max_alpha_prev], color="r", linestyle=":")
     return ax
 
 
-dtype = torch.double
-torch.manual_seed(2009)
+def main(optimization):
+    seed = 0
+    dtype = torch.double
+    torch.manual_seed(seed)
+    env_parameters = swellex.environment | {"freq": 201, "tmpdir": "."}
 
-branin = Griewank(negate=True, dim=1)
+    true_parameters = {
+        "rec_r": 3.0,
+        "src_z": 60,
+    }
+    K = Initializer.simulate_measurement_covariance(
+        env_parameters | {"snr": 20} | true_parameters
+    )
+    obj_func = ObjectiveFunction(MatchedFieldProcessor(K, env_parameters))
 
-search_space = [
-    {"name": "x1", "bounds": [-10.0, 10.0]},
-    # {
-    #     "name": "x2",
-    #     "bounds": [-5.0, 5.0]
-    # },
-    # {
-    #     "name": "rec_r",
-    #     "type": "range",
-    #     "bounds": [0.01, 10.0],
-    #     "value_type": "float",
-    #     "log_scale": False,
-    # },
-    # {
-    #     "name": "src_z",
-    #     "type": "range",
-    #     "bounds": [1.0, 200.0],
-    #     "value_type": "float",
-    #     "log_scale": False,
-    # },
-]
-env_parameters = swellex.environment
-bounds = get_bounds(search_space)
-
-X_train, y_train, best_y, X_test, y_actual = generate_initial_data(
-    bounds, n_train=5, n_test=1001, dtype=dtype
-)
-mll, model = initialize_model(X_train, y_train)
-
-
-NUM_TRIALS = 3
-
-mean = []
-ucb = []
-lcb = []
-a = []
-
-for trial in range(NUM_TRIALS):
-    fit_gpytorch_model(mll)
-
-    mll.eval()
-    with torch.no_grad():
-        posterior = mll.model(X_test)
-        y_test = posterior.mean
-        cov_test = posterior.confidence_region()
-
-        mean.append(y_test.detach().cpu().numpy())
-        lcb.append(cov_test[0].detach().cpu().numpy())
-        ucb.append(cov_test[1].detach().cpu().numpy())
-
-    EI = ExpectedImprovement(model=model, best_f=best_y)
-    X_new, y_new, alpha = optimize_acqf_and_get_observation(X_test, EI)
-
-    a.append(alpha.detach().cpu().numpy())
-
-    if trial == 0:
-        plot_training(
-            X_test.detach().cpu().numpy(),
-            y_actual.detach().cpu().numpy(),
-            X_train.detach().cpu().numpy(),
-            y_train.detach().cpu().numpy(),
-            mean[-1],
-            lcb[-1],
-            ucb[-1],
-            a[-1],
-            title="Initialization",
+    if optimization == "r":
+        savepath = Path.cwd() / "Data" / "range_estimation" / "demo"
+        search_space = [
+            {
+                "name": "rec_r",
+                "type": "range",
+                "bounds": [0.01, 10.0],
+                "value_type": "float",
+                "log_scale": False,
+            }
+        ]
+        NUM_TRIALS = 90
+        n_test = 1001
+        n_train = 20
+        bounds = get_bounds(search_space)
+        X_train, y_train, best_y, _, _ = generate_initial_data(
+            bounds, obj_func, search_space, env_parameters, n_train=n_train, dtype=dtype
         )
-    else:
-        plot_training(
-            X_test.detach().cpu().numpy(),
-            y_actual.detach().cpu().numpy(),
-            X_train.detach().cpu().numpy(),
-            y_train.detach().cpu().numpy(),
-            mean[-1],
-            lcb[-1],
-            ucb[-1],
-            a[-1],
-            a[-2],
-            title=f"Iteration {trial}",
+        X_test = get_test_points(bounds, num_samples=n_test)
+        X_t = X_test.detach().cpu().numpy()
+        rvec = np.unique(X_t[:, 0])
+        zvec = [true_parameters["src_z"]]
+    elif optimization == "l":
+        savepath = Path.cwd() / "Data" / "localization" / "demo"
+        search_space = [
+            {
+                "name": "rec_r",
+                "type": "range",
+                "bounds": [0.01, 10.0],
+                "value_type": "float",
+                "log_scale": False,
+            },
+            {
+                "name": "src_z",
+                "type": "range",
+                "bounds": [1.0, 200.0],
+                "value_type": "float",
+                "log_scale": False,
+            },
+        ]
+        NUM_TRIALS = 750
+        n_test = [200, 200]
+        n_train = 50
+        bounds = get_bounds(search_space)
+        X_train, y_train, best_y, _, _ = generate_initial_data(
+            bounds, obj_func, search_space, env_parameters, n_train=n_train, dtype=dtype
+        )
+        X_test = get_test_points(bounds, num_samples=n_test)
+        X_t = X_test.detach().cpu().numpy()
+        rvec = np.unique(X_t[:, 0])
+        zvec = np.unique(X_t[:, 1])
+
+    pbar = tqdm(
+        total=len(rvec) * len(zvec),
+        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
+        leave=True,
+        position=0,
+        unit=" depths",
+        colour="red",
+    )
+    f = np.zeros((len(zvec), len(rvec)))
+    for zz, z in enumerate(zvec):
+        p_rep = run_kraken(env_parameters | {"src_z": z, "rec_r": rvec})
+        for rr, _ in enumerate(rvec):
+            f[zz, rr] = beamformer(K, p_rep[:, rr], atype="cbf").item()
+            pbar.update(1)
+    pbar.close()
+
+    y_actual = torch.from_numpy(f.flatten()).to(dtype)
+
+    mll, model = initialize_model(X_train, y_train)
+
+    pbar = tqdm(
+        range(NUM_TRIALS),
+        desc="Optimizing",
+        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
+        leave=True,
+        position=0,
+        unit=" eval",
+        colour="blue",
+    )
+
+    mean = np.zeros((NUM_TRIALS, np.prod(n_test)))
+    ucb = np.zeros_like(mean)
+    lcb = np.zeros_like(mean)
+    alpha_array = np.zeros_like(mean)
+
+    for trial in pbar:
+        fit_gpytorch_model(mll)
+
+        mll.eval()
+        with torch.no_grad():
+            posterior = mll.model(X_test)
+            y_test = posterior.mean
+            cov_test = posterior.confidence_region()
+
+            mean[trial] = y_test.detach().cpu().numpy()
+            lcb[trial] = cov_test[0].detach().cpu().numpy()
+            ucb[trial] = cov_test[1].detach().cpu().numpy()
+
+        EI = ExpectedImprovement(model=model, best_f=best_y)
+        X_new, y_new, alpha = _optimize_acqf_and_get_observation(
+            X_test, EI, search_space, obj_func, env_parameters
         )
 
-    X_train = torch.cat([X_train, X_new])
-    y_train = torch.cat([y_train, y_new])
-    best_y = y_train.max()
+        alpha_array[trial] = alpha.detach().cpu().numpy()
 
-    mll, model = initialize_model(X_train, y_train, model.state_dict())
+        X_train = torch.cat([X_train, X_new])
+        y_train = torch.cat([y_train, y_new])
+        best_y = y_train.max()
+
+        mll, model = initialize_model(X_train, y_train, model.state_dict())
 
 
-savepath = Path.cwd() / "scripts"
-# np.save(savepath / "mean.npy", mean)
-# np.save(savepath / "mean.npy", lcb)
-# np.save(savepath / "mean.npy", ucb)
-# np.save(savepath / "mean.npy", mean)
+    X_test_array = X_test.detach().cpu().numpy()
+    y_actual_array = y_actual.detach().cpu().numpy()
+    X_train_array = X_train.detach().cpu().numpy()
+    y_train_array = y_train.detach().cpu().numpy()
+
+    np.save(savepath / "X_test.npy", X_test_array)
+    np.save(savepath / "y_actual.npy", y_actual_array)
+    np.save(savepath / "X_train.npy", X_train_array)
+    np.save(savepath / "y_train.npy", y_train_array)
+    np.save(savepath / "mean.npy", mean)
+    np.save(savepath / "lcb.npy", lcb)
+    np.save(savepath / "ucb.npy", ucb)
+    np.save(savepath / "alpha.npy", alpha_array)
+
+
+def save_figs(optimization):
+    if optimization == "r":
+        loadpath = Path.cwd() / "Data" / "range_estimation" / "demo"
+        xlabel="$\mathbf{X}=R_{src}$ [km]"
+        ylabel=None
+    elif optimization == "l":
+        loadpath = Path.cwd() / "Data" / "localization" / "demo"
+        xlabel="$R_{src}$ [km]"
+        ylabel="$z_{src}$ [m]"
+    
+    X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha = load_training_data(loadpath)
+
+    trials = mean.shape[0]
+    num_rand = X_train.shape[0] - mean.shape[0]
+    
+    for trial in range(trials):
+        if trial == 0:
+            fig = plot_training(
+                X_test,
+                y_actual,
+                X_train[0:num_rand + trial],
+                y_train[0:num_rand + trial],
+                mean[trial],
+                lcb[trial],
+                ucb[trial],
+                alpha[trial],
+                title="Initialization",
+                ylim=[-0.1, 1.1],
+                xlabel=xlabel,
+                ylabel=ylabel
+            )
+        else:
+            fig = plot_training(
+                X_test,
+                y_actual,
+                X_train[0:num_rand + trial],
+                y_train[0:num_rand + trial],
+                mean[trial],
+                lcb[trial],
+                ucb[trial],
+                alpha[trial],
+                alpha[trial - 1],
+                title=f"Iteration {trial}",
+                ylim=[-0.1, 1.1],
+                xlabel=xlabel,
+                ylabel=ylabel
+            )
+        fig.savefig(loadpath / "figures" / f"trial{trial:03d}.png", bbox_inches="tight", dpi=250)
+        plt.close()
+
+
+if __name__ == "__main__":
+    optimization = "l"
+    main(optimization)
+    save_figs(optimization)

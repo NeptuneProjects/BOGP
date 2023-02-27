@@ -1,16 +1,21 @@
 #!/usr/bin/env python3
 
 from argparse import ArgumentParser
+from copy import deepcopy
+
 # import ast
 from pathlib import Path
+
 # import sys
 import warnings
+
 # sys.path.insert(0, Path.cwd() / "Source")
 
 from ax.service.ax_client import AxClient
-from matplotlib import colors
 from matplotlib import ticker
+from matplotlib.colors import LogNorm
 import matplotlib.gridspec as gridspec
+from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -36,12 +41,12 @@ def main(figures: list):
             # continue
 
 
-# def figure1():
-#     return plot_training_1D()
+def figure1():
+    return plot_training_1D()
 
 
-# def figure2():
-#     return plot_training_2D()
+def figure2():
+    return plot_training_2D()
 
 
 def figure3():
@@ -62,6 +67,10 @@ def figure6():
 
 def figure7():
     return experimental_localization()
+
+
+def figure8():
+    return experimental_posterior()
 
 
 def adjust_subplotticklabels(ax, low=None, high=None):
@@ -88,11 +97,26 @@ def experimental_localization():
     # GPS Range
     gps_fname = ROOT / "Data" / "SWELLEX96" / "VLA" / "selected" / "gps_range.csv"
     df_gps = pd.read_csv(gps_fname, index_col=0)
-    
+
     serial = "serial_full_depth"
-    fname = ROOT / "Data" / "localization" / "experimental" / serial / "results" / "collated.csv"
+    fname = (
+        ROOT
+        / "Data"
+        / "localization"
+        / "experimental"
+        / serial
+        / "results"
+        / "collated.csv"
+    )
     df = pd.read_csv(fname, index_col=0)
-    return plot_experimental_results(df, df_gps, timesteps, ranges, depths, ylim_z=[200, 0], yticks_z=[0, 100, 200])
+    return plot_experimental_results(
+        df, df_gps, timesteps, ranges, depths, ylim_z=[200, 0], yticks_z=[0, 100, 200]
+    )
+
+
+def experimental_posterior():
+    # TODO: Implement 2-D posterior view using MFP & Ax, e.g. at CPA
+    return None
 
 
 def experimental_range_est():
@@ -111,9 +135,17 @@ def experimental_range_est():
     # GPS Range
     gps_fname = ROOT / "Data" / "SWELLEX96" / "VLA" / "selected" / "gps_range.csv"
     df_gps = pd.read_csv(gps_fname, index_col=0)
-    
+
     serial = "serial_constrained_50-75"
-    fname = ROOT / "Data" / "localization" / "experimental" / serial / "results" / "collated.csv"
+    fname = (
+        ROOT
+        / "Data"
+        / "localization"
+        / "experimental"
+        / serial
+        / "results"
+        / "collated.csv"
+    )
     df = pd.read_csv(fname, index_col=0)
     return plot_experimental_results(df, df_gps, timesteps, ranges, depths)
 
@@ -125,12 +157,52 @@ def format_error(error, est_timesteps):
     return error_plot
 
 
+def get_candidates(alpha, alpha_prev=None):
+    if alpha is None:
+        max_alpha = None
+    else:
+        max_alpha = np.argmax(alpha)
+        alpha /= alpha.max()
+
+    if alpha_prev is None:
+        max_alpha_prev = None
+    else:
+        max_alpha_prev = np.argmax(alpha_prev)
+        alpha_prev /= alpha_prev.max()
+    return max_alpha, max_alpha_prev
+
+
+def load_training_data(loadpath):
+    X_test = np.load(loadpath / "X_test.npy")
+    y_actual = np.load(loadpath / "y_actual.npy")
+    X_train = np.load(loadpath / "X_train.npy")
+    y_train = np.load(loadpath / "y_train.npy")
+    mean = np.load(loadpath / "mean.npy")
+    lcb = np.load(loadpath / "lcb.npy")
+    ucb = np.load(loadpath / "ucb.npy")
+    alpha = np.load(loadpath / "alpha.npy")
+    return X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha
+
+
+def plot_acqf_1D(X_test, alpha, alpha_prev=None, ax=None):
+    if ax is None:
+        ax = plt.gca()
+
+    max_alpha, max_alpha_prev = get_candidates(alpha, alpha_prev)
+
+    ax.plot(X_test, alpha, color="tab:red", label="$\\alpha(\mathbf{X})$")
+    ax.axvline(X_test[max_alpha], color="k", linestyle="-")
+    if max_alpha_prev:
+        ax.axvline(X_test[max_alpha_prev], color="r", linestyle=":")
+    return ax
+
+
 def plot_ambiguity_surface(
     B,
     rvec,
     zvec,
     ax=None,
-    cmap="jet",
+    cmap="viridis",
     vmin=-10,
     vmax=0,
     interpolation="none",
@@ -140,7 +212,6 @@ def plot_ambiguity_surface(
     markeredgewidth=1.5,
     markeredgecolor="k",
 ):
-
     if ax is None:
         ax = plt.gca()
 
@@ -280,7 +351,9 @@ def plot_environment():
     return fig
 
 
-def plot_experimental_results(df, df_gps, timesteps, ranges, depths, ylim_z=[80, 40], yticks_z=[40, 60, 80]):
+def plot_experimental_results(
+    df, df_gps, timesteps, ranges, depths, ylim_z=[80, 40], yticks_z=[40, 60, 80]
+):
     STRATEGY_KEY = [
         "High-res MFP",
         "Grid",
@@ -297,7 +370,7 @@ def plot_experimental_results(df, df_gps, timesteps, ranges, depths, ylim_z=[80,
         list(range(95, 103)),
         list(range(187, 199)),
         list(range(287, 294)),
-        list(range(302, 309))
+        list(range(302, 309)),
     ]
     XLIM = [0, 351]
     XTICKS = list(range(0, 351, 50))
@@ -502,48 +575,294 @@ def plot_experimental_results(df, df_gps, timesteps, ranges, depths, ylim_z=[80,
     return fig
 
 
-def plot_range():
-    df = pd.read_csv(
-        ROOT
-        / "Data"
-        / "range_estimation"
-        / "experimental"
-        / "serial_test"
-        / "results"
-        / "aggregated_results.csv"
+def plot_gp_1D(
+    X_test,
+    y_actual,
+    X_train,
+    y_train,
+    mean,
+    lcb,
+    ucb,
+    alpha=None,
+    alpha_prev=None,
+    ax=None,
+):
+    if ax is None:
+        ax = plt.gca()
+
+    max_alpha, max_alpha_prev = get_candidates(alpha, alpha_prev)
+
+    ax.plot(X_test, y_actual, color="tab:green", label="$f(\mathbf{X})$")
+    ax.plot(X_test, mean, label="$\mu(\mathbf{X})$")
+    ax.fill_between(
+        X_test.squeeze(), lcb, ucb, alpha=0.25, label="$\pm2\sigma(\mathbf{X})$"
     )
+    if not max_alpha_prev:
+        ax.scatter(X_train, y_train, c="k", marker="x", label="Samples", zorder=40)
+    else:
+        ax.scatter(
+            X_train[:-1], y_train[:-1], c="k", marker="x", label="Samples", zorder=40
+        )
+        ax.scatter(
+            X_train[-1], y_train[-1], c="r", marker="x", label="Samples", zorder=50
+        )
+    if max_alpha is not None:
+        ax.axvline(
+            X_test[max_alpha], color="k", linestyle="-", label="Next sample $t+1$"
+        )
+    if max_alpha_prev is not None:
+        ax.axvline(
+            X_test[max_alpha_prev], color="r", linestyle=":", label="Current sample $t$"
+        )
 
-    scenarios = [f"{{'timestep': {v}}}" for v in range(200, 210)]
-
-    df_to_plot = pd.DataFrame(columns=["Time Step", "Range [km]", "Strategy"])
-
-    for scenario in scenarios:
-        df1 = df[df["scenario"] == scenario]
-        df1["strategy"]
-
-    # fig = plt.figure()
-
-    return
+    return ax
 
 
 def plot_training_1D():
-    return
+    loadpath = ROOT / "Data" / "range_estimation" / "demo"
+    X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha = load_training_data(
+        loadpath
+    )
+    # Condition acquisition function to correct numerical issues:
+    alpha[alpha < 0] = 0
+
+    num_rand = X_train.shape[0] - mean.shape[0]
+    xlim = [0, 10]
+    ylim = [-0.1, 1.1]
+
+    trials_to_plot = [0, 1, 2, 10, 20, 30, 50, 60, 70]
+
+    fig = plt.figure(figsize=(6, 12))
+    outer_grid = fig.add_gridspec(len(trials_to_plot), 1, hspace=0.1)
+
+    for i, trial in enumerate(trials_to_plot):
+        inner_grid = outer_grid[i].subgridspec(2, 1, hspace=0, height_ratios=[3, 2])
+        axs = inner_grid.subplots()
+
+        ax = axs[0]
+        ax = plot_gp_1D(
+            X_test,
+            y_actual,
+            X_train[0 : num_rand + trial],
+            y_train[0 : num_rand + trial],
+            mean[trial],
+            lcb[trial],
+            ucb[trial],
+            alpha[trial],
+            alpha[trial - 1] if trial != 0 else None,
+            ax=ax,
+        )
+        if trial == trials_to_plot[-1]:
+            handles, labels = ax.get_legend_handles_labels()
+        if i == 0:
+            ax.text(0.1, 0.9, "Initialization", va="top")
+        else:
+            ax.text(0.1, 0.9, f"Iteration {trial}", va="top")
+
+        ax.set_xticklabels([])
+        ax.set_xlim(xlim)
+        ax.set_xlabel(None)
+        ax.set_ylim(ylim)
+        ax.set_ylabel("$f(\mathbf{X})$", rotation=0, ha="center", va="center")
+
+        ax = axs[1]
+        ax = plot_acqf_1D(
+            X_test, alpha[trial], alpha[trial - 1] if trial != 0 else None, ax=ax
+        )
+        ax.set_xlim(xlim)
+        if trial != trials_to_plot[-1]:
+            ax.set_xticklabels([])
+        ax.set_ylim(ylim)
+        ax.yaxis.tick_right()
+        ax.yaxis.set_label_position("right")
+        ax.set_ylabel("$\\alpha(\mathbf{X})$", rotation=0, ha="center", va="center")
+
+    del handles[4], labels[4]
+    handles[-1] = Line2D([0], [0], color="r", marker="x", linestyle=":")
+
+    handles2, labels2 = ax.get_legend_handles_labels()
+    ax.legend(
+        handles + handles2,
+        labels + labels2,
+        loc="upper center",
+        bbox_to_anchor=(0.5, -1.0),
+        ncols=4,
+    )
+
+    ax.set_xlabel("$\mathbf{X}\ (R_{src}$ [km])")
+
+    return fig
 
 
 def plot_training_2D():
-    return
+    loadpath = ROOT / "Data" / "localization" / "demo"
+    (
+        X_test,
+        y_actual,
+        X_train,
+        _,
+        mean,
+        _,
+        ucb,
+        alpha_array,
+    ) = load_training_data(loadpath)
+    # Condition acquisition function to correct numerical issues:
+    alpha_array[alpha_array < 0] = 0
+    IMSHOW_KW = {
+        "aspect": "auto",
+        "origin": "lower",
+        "interpolation": "none",
+        "extent": [0, 10, 0, 200],
+        "vmin": 0,
+        "vmax": 1,
+    }
+    ACTUAL_KW = {"marker": "s", "facecolors": "none", "edgecolors": "w", "zorder": 30}
+    NEXT_KW = {"facecolors": "none", "edgecolors": "r", "zorder": 60}
+    SCATTER_KW = {"c": "w", "marker": "o", "zorder": 40, "alpha": 0.5, "s": 1}
+    M = len(np.unique(X_test[:, 0]))
+    N = len(np.unique(X_test[:, 1]))
+
+    max_f, _ = get_candidates(np.reshape(y_actual, (M, N)))
+    max_f = np.unravel_index(max_f, y_actual.shape)
+
+    num_rand = X_train.shape[0] - mean.shape[0]
+
+    trials_to_plot = [0, 749]
+
+    fig = plt.figure(figsize=(12, 6))
+    outer_grid = fig.add_gridspec(len(trials_to_plot), 1, hspace=0.15)
+
+    for i, trial in enumerate(trials_to_plot):
+        alpha = alpha_array[trial]
+        alpha_prev = alpha_array[trial - 1] if trial != 0 else None
+
+        max_alpha, max_alpha_prev = get_candidates(
+            np.reshape(alpha, (M, N)),
+            np.reshape(alpha_prev, (M, N)) if trial != 0 else None,
+        )
+        max_alpha = np.unravel_index(max_alpha, alpha.shape)
+        if max_alpha_prev is not None:
+            max_alpha_prev = np.unravel_index(max_alpha_prev, alpha_prev.shape)
+
+        inner_grid = outer_grid[i].subgridspec(1, 4, wspace=0)
+        axs = inner_grid.subplots()
+
+        # True objective function (ambiguity surface)
+        ax = axs[0]
+        if i == 0:
+            ax.set_title("Objective function $f(\mathbf{X})$")
+        ax.imshow(np.reshape(y_actual, (M, N)), **IMSHOW_KW)
+        ax.scatter(*X_test[max_f], **ACTUAL_KW)
+        if not max_alpha_prev:
+            ax.scatter(X_train[:, 0], X_train[:, 1], **SCATTER_KW)
+        else:
+            ax.scatter(X_train[:-1, 0], X_train[:-1, 1], **SCATTER_KW)
+            ax.scatter(
+                X_train[-1, 0],
+                X_train[-1, 1],
+                c="r",
+                marker="x",
+                label="Samples",
+                zorder=50,
+            )
+        if max_alpha is not None:
+            ax.scatter(*X_test[max_alpha], **NEXT_KW)
+        ax.invert_yaxis()
+        if trial == trials_to_plot[-1]:
+            ax.set_xlabel("$R_{src}$ [km]")
+            ax.set_ylabel("$z_{src}$ [m]")
+        else:
+            ax.set_xticklabels([])
+            ax.set_yticklabels([])
+
+        # Mean function
+        ax = axs[1]
+        if i == 0:
+            ax.set_title("Mean function $\mu(\mathbf{X})$")
+        ax.imshow(np.reshape(mean[trial], (M, N)), **IMSHOW_KW)
+        ax.scatter(*X_test[max_f], **ACTUAL_KW)
+        if not max_alpha_prev:
+            ax.scatter(X_train[:, 0], X_train[:, 1], **SCATTER_KW)
+        else:
+            ax.scatter(X_train[:-1, 0], X_train[:-1, 1], **SCATTER_KW)
+            ax.scatter(
+                X_train[-1, 0],
+                X_train[-1, 1],
+                c="r",
+                marker="x",
+                label="Samples",
+                zorder=50,
+            )
+        if max_alpha is not None:
+            ax.scatter(*X_test[max_alpha], **NEXT_KW)
+        ax.invert_yaxis()
+        ax.set_xticklabels([])
+        ax.set_xlabel(None)
+        ax.set_yticklabels([])
+        ax.set_ylabel(None)
+
+        # Covariance function
+        ax = axs[2]
+        if i == 0:
+            ax.set_title("Covar. function $2\sigma(\mathbf{X})$")
+        im = ax.imshow(np.reshape(ucb[trial], (M, N)), **IMSHOW_KW)
+        if not max_alpha_prev:
+            ax.scatter(X_train[:, 0], X_train[:, 1], **SCATTER_KW)
+        else:
+            ax.scatter(X_train[:-1, 0], X_train[:-1, 1], **SCATTER_KW)
+            ax.scatter(
+                X_train[-1, 0],
+                X_train[-1, 1],
+                c="r",
+                marker="x",
+                label="Samples",
+                zorder=50,
+            )
+        if max_alpha is not None:
+            ax.scatter(*X_test[max_alpha], **NEXT_KW)
+        ax.invert_yaxis()
+        ax.set_xticklabels([])
+        ax.set_xlabel(None)
+        ax.set_yticklabels([])
+        ax.set_ylabel(None)
+
+        # Colorbar
+        if trial == trials_to_plot[-1]:
+            cax = ax.inset_axes([-0.5, -0.25, 1.0, 0.15])
+            fig.colorbar(im, ax=ax, cax=cax, orientation="horizontal")
+
+        # Acquisition function
+        ax = axs[3]
+        if i == 0:
+            ax.set_title("Acq. function $\log(\\alpha(\mathbf{X}))$")
+        ACQ_IMSHOW_KW = deepcopy(IMSHOW_KW)
+        ln = LogNorm(
+            vmin=ACQ_IMSHOW_KW.pop("vmin") + 0.00001, vmax=ACQ_IMSHOW_KW.pop("vmax")
+        )
+        ax.imshow(np.reshape(alpha, (M, N)), norm=ln, **ACQ_IMSHOW_KW)
+        LogNorm()
+        if max_alpha is not None:
+            ax.scatter(*X_test[max_alpha], **NEXT_KW)
+        ax.invert_yaxis()
+        ax.set_xticklabels([])
+        ax.set_xlabel(None)
+        ax.set_yticklabels([])
+        ax.set_ylabel(None)
+
+    return fig
 
 
 def simulations_localization():
-
     sim_dir = ROOT / "Data" / "localization" / "simulation"
     serial = "serial_230218"
     df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
-    
+
     RANGES = [1.0, 3.0, 5.0, 7.0]
     TITLE_KW = {"ha": "left", "va": "top", "x": 0}
 
-    fig, axs = plt.subplots(figsize=(16, 6), nrows=4, ncols=4, gridspec_kw={"wspace": 0.15})
+    fig, axs = plt.subplots(
+        figsize=(16, 6), nrows=4, ncols=4, gridspec_kw={"wspace": 0.15}
+    )
 
     # Column 1 - Objective Function ============================================
     TITLE = "Ambiguity surface: $f(\mathbf{x})$"
@@ -578,7 +897,7 @@ def simulations_localization():
         #     / "seed_0002406475"
         #     / "results.json"
         # )
-        
+
         selection = (
             (df["seed"] == int("0002406475"))
             & (df["strategy"] == "Grid")
@@ -600,7 +919,7 @@ def simulations_localization():
 
     # Set title
     axcol[0].set_title(TITLE, **TITLE_KW)
-    
+
     # TODO: Indicate maximum with star
 
     # Column 2 - Performance History ===========================================
@@ -611,7 +930,6 @@ def simulations_localization():
 
     axcol = axs[:, 1]
 
-    
     for ax, r in zip(axcol, RANGES):
         selection = df["range"] == r
         g = sns.lineplot(
@@ -623,7 +941,6 @@ def simulations_localization():
             legend=None,
         )
         g.set(xlabel=None, ylabel=None)
-        
 
     # Set x axis
     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
@@ -638,7 +955,7 @@ def simulations_localization():
 
     # Column 3 - Range Error History ===========================================
     TITLE = "Range error history: $\\vert\hat{R}_{src} - R_{src}\\vert$ [km]"
-    YLIM = [0, 8] # TODO: Validate this limit
+    YLIM = [0, 8]  # TODO: Validate this limit
 
     axcol = axs[:, 2]
 
@@ -673,7 +990,7 @@ def simulations_localization():
 
     # Column 4 - Depth Error History ===========================================
     TITLE = "Depth error history: $\\vert\hat{z}_{src} - z_{src}\\vert$ [m]"
-    YLIM = [200, 0] # TODO: Validate this limit
+    YLIM = [200, 0]  # TODO: Validate this limit
 
     axcol = axs[:, 3]
 
@@ -703,7 +1020,6 @@ def simulations_localization():
     return fig
 
 
-
 def simulations_range_est():
     SMOKE_TEST = False
 
@@ -712,11 +1028,12 @@ def simulations_range_est():
     if not SMOKE_TEST:
         df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
 
-
     RANGES = [1.0, 3.0, 5.0, 7.0]
     TITLE_KW = {"ha": "left", "va": "top", "x": 0}
 
-    fig, axs = plt.subplots(figsize=(12, 6), nrows=4, ncols=3, gridspec_kw={"wspace": 0.15})
+    fig, axs = plt.subplots(
+        figsize=(12, 6), nrows=4, ncols=3, gridspec_kw={"wspace": 0.15}
+    )
 
     # Column 1 - Objective Function ============================================
     # TODO: Read in high-res objective function
@@ -734,7 +1051,7 @@ def simulations_range_est():
             f"$R_\mathrm{{src}} = {r}$ km",
             transform=axcol[i].transAxes,
             fontsize="large",
-            ha="left"
+            ha="left",
         )
         for i, r in enumerate(RANGES)
     ]
@@ -751,7 +1068,7 @@ def simulations_range_est():
         #     / "seed_0002406475"
         #     / "results.json"
         # )
-        
+
         if not SMOKE_TEST:
             selection = (
                 (df["seed"] == int("0002406475"))
@@ -798,7 +1115,11 @@ def simulations_range_est():
             g.set(xlabel=None, ylabel=None)
             if count == 3:
                 sns.move_legend(
-                    ax, "upper center", bbox_to_anchor=(0.5, -0.5), ncol=4, title="Strategy"
+                    ax,
+                    "upper center",
+                    bbox_to_anchor=(0.5, -0.5),
+                    ncol=4,
+                    title="Strategy",
                 )
             count += 1
 
