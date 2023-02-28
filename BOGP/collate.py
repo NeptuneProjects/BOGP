@@ -77,25 +77,6 @@ def collate_experimental(path):
 
     # Load high-res MFP
     timesteps, ranges, depths = load_mfp_results(AMBSURF_PATH)
-    # zvec = np.linspace(1, 200, 100)
-    # rvec = np.linspace(10e-3, 10, 500)
-
-    # timesteps = []
-    # ranges = []
-    # depths = []
-    # for t in range(350):
-    #     try:
-    #         surf = np.load(AMBSURF_PATH / f"ambsurf_mf_t={t + 1:03d}.npy")
-    #     except FileNotFoundError:
-    #         continue
-    #     inds = np.unravel_index(surf.argmax(), surf.shape)
-    #     timesteps.append(t)
-    #     depths.append(zvec[inds[0]])
-    #     ranges.append(rvec[inds[1]])
-
-    # timesteps = np.array(timesteps)
-    # ranges = np.array(ranges)
-    # depths = np.array(depths)
 
     df_mfp = pd.DataFrame(
         data={"Time Step": timesteps, "rec_r": ranges, "src_z": depths}
@@ -180,7 +161,7 @@ def collate_simulation(path):
         df["best_depth"] = (
             df["best_parameters"]
             .apply(lambda x: ast.literal_eval(x))
-            .apply(lambda x: list(x.values())[0])
+            .apply(lambda x: list(x.values())[1])
         )
         df["best_depth_error"] = np.abs(df["best_depth"] - df["depth"])
 
