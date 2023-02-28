@@ -1155,7 +1155,7 @@ def simulations_localization():
 
     # Column 3 - Range Error History ===========================================
     TITLE = "Range error history:\n$\\vert\hat{R}_{src} - R_{src}\\vert$ [km]"
-    YLIM = [0, 8]  # TODO: Validate this limit
+    YLIM = [0, 8]
 
     axcol = axs[:, 2]
 
@@ -1174,7 +1174,7 @@ def simulations_localization():
             g.set(xlabel=None, ylabel=None)
             if count == 3:
                 sns.move_legend(
-                    ax, "upper center", bbox_to_anchor=(0.5, -0.5), ncol=4, title="Strategy"
+                    ax, "upper center", bbox_to_anchor=(0.5, -0.35), ncol=7, title="Strategy"
                 )
             count += 1
 
@@ -1191,7 +1191,7 @@ def simulations_localization():
 
     # Column 4 - Depth Error History ===========================================
     TITLE = "Depth error history:\n$\\vert\hat{z}_{src} - z_{src}\\vert$ [m]"
-    YLIM = [0, 200]  # TODO: Validate this limit
+    YLIM = [0, 140]
 
     axcol = axs[:, 3]
 
