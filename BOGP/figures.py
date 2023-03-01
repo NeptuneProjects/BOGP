@@ -1319,8 +1319,8 @@ def simulations_range_est():
                 sns.move_legend(
                     ax,
                     "upper center",
-                    bbox_to_anchor=(0.5, -0.5),
-                    ncol=4,
+                    bbox_to_anchor=(1.1, -0.5),
+                    ncol=7,
                     title="Strategy",
                 )
             count += 1
