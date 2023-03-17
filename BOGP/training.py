@@ -14,17 +14,19 @@ import numpy as np
 import torch
 from tqdm import tqdm
 
-from configure import Initializer
+from acoustics import simulate_measurement_covariance
 from figures import load_training_data
 import swellex
 from tritonoa.kraken import run_kraken
 from tritonoa.sp import beamformer
 
+
 class MatchedFieldProcessor:
     """For use in BoTorch training example."""
 
-    def __init__(self, K, parameters, atype="cbf"):
+    def __init__(self, K, frequencies, parameters, atype="cbf"):
         self.K = K
+        self.frequencies = frequencies
         self.parameters = parameters
         self.atype = atype
 
@@ -32,9 +34,12 @@ class MatchedFieldProcessor:
         return self.evaluate(parameters)
 
     def evaluate(self, parameters):
-        p_rep = run_kraken(self.parameters | parameters)
-        B = beamformer(self.K, p_rep, atype=self.atype).item()
-        return B
+        B = []
+        for f, k in zip(self.frequencies, self.K):
+            p_rep = run_kraken(self.parameters | {"freq": f} | parameters)
+            B.append(beamformer(k, p_rep, atype=self.atype).item())
+
+        return np.mean(np.array(B))
 
 
 class ObjectiveFunction:
@@ -42,7 +47,11 @@ class ObjectiveFunction:
         self.obj_func = obj_func
 
     def evaluate(
-        self, parameters: dict, fixed_parameters: dict = {}, dtype=torch.double, disable_pbar=True
+        self,
+        parameters: dict,
+        fixed_parameters: dict = {},
+        dtype=torch.double,
+        disable_pbar=True,
     ):
         num_samples = set([len(param) for param in parameters.values()])
         if not len(num_samples) == 1:
@@ -135,7 +144,9 @@ def generate_initial_data(
         test_parameters = {
             item["name"]: X_test[..., i] for i, item in enumerate(search_space)
         }
-        y_test = obj_func.evaluate(test_parameters, fixed_parameters, disable_pbar=False)
+        y_test = obj_func.evaluate(
+            test_parameters, fixed_parameters, disable_pbar=False
+        )
     else:
         X_test, y_test = None, None
 
@@ -163,20 +174,17 @@ def optimize_acqf_and_get_observation(
     return X_new, y_new, alpha
 
 
-def _optimize_acqf_and_get_observation(X, acq_func, search_space, obj_func, fixed_parameters):
+def _optimize_acqf_and_get_observation(
+    X, acq_func, search_space, obj_func, fixed_parameters
+):
     bounds = get_bounds(search_space)
     candidates, _ = optimize_acqf(
-        acq_function=acq_func,
-        bounds=bounds,
-        q=1,
-        num_restarts=40,
-        raw_samples=1024
+        acq_function=acq_func, bounds=bounds, q=1, num_restarts=40, raw_samples=1024
     )
     alpha = acq_func(X.unsqueeze(1))
     X_new = candidates.detach()
     new_parameters = {
-        item["name"]: X_new[..., i]
-        for i, item in enumerate(search_space)
+        item["name"]: X_new[..., i] for i, item in enumerate(search_space)
     }
     y_new = obj_func.evaluate(new_parameters, fixed_parameters)
 
@@ -211,7 +219,7 @@ def plot_training(
     title=None,
     xlabel=None,
     ylabel=None,
-    ylim=[0, 1]
+    ylim=[0, 1],
 ):
     d = X_test.shape[1]
 
@@ -234,12 +242,18 @@ def plot_training(
         ax.set_xlabel(None)
         ax.set_ylim(ylim)
         ax.set_ylabel("$f(\mathbf{X})$", rotation=0, ha="right")
-        
+
         ax = axs[1]
         ax = plot_acqf_1D(X_test, alpha, alpha_prev, ax=ax)
 
         handles2, labels2 = ax.get_legend_handles_labels()
-        ax.legend(handles + handles2, labels + labels2, loc="upper center", bbox_to_anchor=(0.5, -0.2), ncols=4)
+        ax.legend(
+            handles + handles2,
+            labels + labels2,
+            loc="upper center",
+            bbox_to_anchor=(0.5, -0.2),
+            ncols=4,
+        )
 
         ax.set_xlabel(xlabel)
         ax.set_ylim(ylim)
@@ -264,20 +278,10 @@ def plot_training(
             "marker": "s",
             "facecolors": "none",
             "edgecolors": "w",
-            "zorder": 30
+            "zorder": 30,
         }
-        NEXT_KW = {
-            "facecolors": "none",
-            "edgecolors": "r",
-            "zorder": 60
-        }
-        SCATTER_KW = {
-            "c": "w",
-            "marker": "o",
-            "zorder": 40,
-            "alpha": 0.5,
-            "s": 1
-        }
+        NEXT_KW = {"facecolors": "none", "edgecolors": "r", "zorder": 60}
+        SCATTER_KW = {"c": "w", "marker": "o", "zorder": 40, "alpha": 0.5, "s": 1}
         M = len(np.unique(X_test[:, 0]))
         N = len(np.unique(X_test[:, 1]))
 
@@ -290,9 +294,7 @@ def plot_training(
         if max_alpha_prev is not None:
             max_alpha_prev = np.unravel_index(max_alpha_prev, alpha_prev.shape)
 
-        max_f, _ = get_candidates(
-            np.reshape(y_actual, (M, N))
-        )
+        max_f, _ = get_candidates(np.reshape(y_actual, (M, N)))
         max_f = np.unravel_index(max_f, y_actual.shape)
 
         fig, axs = plt.subplots(
@@ -304,17 +306,9 @@ def plot_training(
         ax.imshow(np.reshape(y_actual, (M, N)), **IMSHOW_KW)
         ax.scatter(*X_test[max_f], **ACTUAL_KW)
         if not max_alpha_prev:
-            ax.scatter(
-                X_train[:, 0],
-                X_train[:, 1],
-                **SCATTER_KW
-            )
+            ax.scatter(X_train[:, 0], X_train[:, 1], **SCATTER_KW)
         else:
-            ax.scatter(
-                X_train[:-1, 0],
-                X_train[:-1, 1],
-                **SCATTER_KW
-            )
+            ax.scatter(X_train[:-1, 0], X_train[:-1, 1], **SCATTER_KW)
             ax.scatter(
                 X_train[-1, 0],
                 X_train[-1, 1],
@@ -334,17 +328,9 @@ def plot_training(
         ax.imshow(np.reshape(mean, (M, N)), **IMSHOW_KW)
         ax.scatter(*X_test[max_f], **ACTUAL_KW)
         if not max_alpha_prev:
-            ax.scatter(
-                X_train[:, 0],
-                X_train[:, 1],
-                **SCATTER_KW
-            )
+            ax.scatter(X_train[:, 0], X_train[:, 1], **SCATTER_KW)
         else:
-            ax.scatter(
-                X_train[:-1, 0],
-                X_train[:-1, 1],
-                **SCATTER_KW
-            )
+            ax.scatter(X_train[:-1, 0], X_train[:-1, 1], **SCATTER_KW)
             ax.scatter(
                 X_train[-1, 0],
                 X_train[-1, 1],
@@ -365,17 +351,9 @@ def plot_training(
         ax.set_title("Covariance Function")
         ax.imshow(np.reshape(ucb, (M, N)), **IMSHOW_KW)
         if not max_alpha_prev:
-            ax.scatter(
-                X_train[:, 0],
-                X_train[:, 1],
-                **SCATTER_KW
-            )
+            ax.scatter(X_train[:, 0], X_train[:, 1], **SCATTER_KW)
         else:
-            ax.scatter(
-                X_train[:-1, 0],
-                X_train[:-1, 1],
-                **SCATTER_KW
-            )
+            ax.scatter(X_train[:-1, 0], X_train[:-1, 1], **SCATTER_KW)
             ax.scatter(
                 X_train[-1, 0],
                 X_train[-1, 1],
@@ -430,7 +408,9 @@ def plot_gp_1D(
 
     ax.plot(X_test, y_actual, color="tab:green", label="$f(\mathbf{X})$")
     ax.plot(X_test, mean, label="$\mu(\mathbf{X})$")
-    ax.fill_between(X_test.squeeze(), lcb, ucb, alpha=0.25, label="$\pm2\sigma(\mathbf{X})$")
+    ax.fill_between(
+        X_test.squeeze(), lcb, ucb, alpha=0.25, label="$\pm2\sigma(\mathbf{X})$"
+    )
     if not max_alpha_prev:
         ax.scatter(X_train, y_train, c="k", marker="x", label="Samples", zorder=40)
     else:
@@ -441,9 +421,13 @@ def plot_gp_1D(
             X_train[-1], y_train[-1], c="r", marker="x", label="Samples", zorder=50
         )
     if max_alpha is not None:
-        ax.axvline(X_test[max_alpha], color="k", linestyle="-", label="Next sample $t+1$")
+        ax.axvline(
+            X_test[max_alpha], color="k", linestyle="-", label="Next sample $t+1$"
+        )
     if max_alpha_prev is not None:
-        ax.axvline(X_test[max_alpha_prev], color="r", linestyle=":", label="Current sample $t$")
+        ax.axvline(
+            X_test[max_alpha_prev], color="r", linestyle=":", label="Current sample $t$"
+        )
 
     return ax
 
@@ -465,19 +449,27 @@ def main(optimization):
     seed = 0
     dtype = torch.double
     torch.manual_seed(seed)
-    env_parameters = swellex.environment | {"freq": 201, "tmpdir": "."}
+    env_parameters = swellex.environment | {"tmpdir": "."}
 
     true_parameters = {
         "rec_r": 3.0,
         "src_z": 60,
     }
-    K = Initializer.simulate_measurement_covariance(
-        env_parameters | {"snr": 20} | true_parameters
-    )
-    obj_func = ObjectiveFunction(MatchedFieldProcessor(K, env_parameters))
+    frequencies = [148, 166, 201, 235, 283, 338, 388]
+    K = []
+    for f in frequencies:
+        K.append(
+            simulate_measurement_covariance(
+                env_parameters | {"snr": 20, "freq": f} | true_parameters
+            )
+        )
+    K = np.array(K)
+    if len(K.shape) == 2:
+        K = K[np.newaxis, ...]
+    obj_func = ObjectiveFunction(MatchedFieldProcessor(K, frequencies, env_parameters))
 
     if optimization == "r":
-        savepath = Path.cwd() / "Data" / "range_estimation" / "demo"
+        savepath = Path.cwd() / "Data" / "range_estimation" / "demo2"
         search_space = [
             {
                 "name": "rec_r",
@@ -487,9 +479,9 @@ def main(optimization):
                 "log_scale": False,
             }
         ]
-        NUM_TRIALS = 90
-        n_test = 1001
-        n_train = 20
+        NUM_TRIALS = 50
+        n_test = 501
+        n_train = 3
         bounds = get_bounds(search_space)
         X_train, y_train, best_y, _, _ = generate_initial_data(
             bounds, obj_func, search_space, env_parameters, n_train=n_train, dtype=dtype
@@ -499,7 +491,7 @@ def main(optimization):
         rvec = np.unique(X_t[:, 0])
         zvec = [true_parameters["src_z"]]
     elif optimization == "l":
-        savepath = Path.cwd() / "Data" / "localization" / "demo"
+        savepath = Path.cwd() / "Data" / "localization" / "demo2"
         search_space = [
             {
                 "name": "rec_r",
@@ -516,9 +508,9 @@ def main(optimization):
                 "log_scale": False,
             },
         ]
-        NUM_TRIALS = 750
-        n_test = [200, 200]
-        n_train = 50
+        NUM_TRIALS = 100
+        n_test = [40, 40]
+        n_train = 10
         bounds = get_bounds(search_space)
         X_train, y_train, best_y, _, _ = generate_initial_data(
             bounds, obj_func, search_space, env_parameters, n_train=n_train, dtype=dtype
@@ -536,15 +528,21 @@ def main(optimization):
         unit=" depths",
         colour="red",
     )
-    f = np.zeros((len(zvec), len(rvec)))
+
+    B = np.zeros((len(zvec), len(rvec), len(frequencies)))
     for zz, z in enumerate(zvec):
-        p_rep = run_kraken(env_parameters | {"src_z": z, "rec_r": rvec})
         for rr, _ in enumerate(rvec):
-            f[zz, rr] = beamformer(K, p_rep[:, rr], atype="cbf").item()
+            for ff, f in enumerate(frequencies):
+                p_rep = run_kraken(
+                    env_parameters | {"freq": f, "src_z": z, "rec_r": rvec}
+                )
+                B[zz, rr, ff] = beamformer(K[ff], p_rep[:, rr], atype="cbf").item()
+            # B[zz, rr] = beamformer(K, p_rep[:, rr], atype="cbf").item()
             pbar.update(1)
     pbar.close()
+    B = np.mean(B, axis=2)
 
-    y_actual = torch.from_numpy(f.flatten()).to(dtype)
+    y_actual = torch.from_numpy(B.flatten()).to(dtype)
 
     mll, model = initialize_model(X_train, y_train)
 
@@ -589,7 +587,6 @@ def main(optimization):
 
         mll, model = initialize_model(X_train, y_train, model.state_dict())
 
-
     X_test_array = X_test.detach().cpu().numpy()
     y_actual_array = y_actual.detach().cpu().numpy()
     X_train_array = X_train.detach().cpu().numpy()
@@ -607,26 +604,28 @@ def main(optimization):
 
 def save_figs(optimization):
     if optimization == "r":
-        loadpath = Path.cwd() / "Data" / "range_estimation" / "demo"
-        xlabel="$\mathbf{X}=R_{src}$ [km]"
-        ylabel=None
+        loadpath = Path.cwd() / "Data" / "range_estimation" / "demo2"
+        xlabel = "$\mathbf{X}=R_{src}$ [km]"
+        ylabel = None
     elif optimization == "l":
-        loadpath = Path.cwd() / "Data" / "localization" / "demo"
-        xlabel="$R_{src}$ [km]"
-        ylabel="$z_{src}$ [m]"
-    
-    X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha = load_training_data(loadpath)
+        loadpath = Path.cwd() / "Data" / "localization" / "demo2"
+        xlabel = "$R_{src}$ [km]"
+        ylabel = "$z_{src}$ [m]"
+
+    X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha = load_training_data(
+        loadpath
+    )
 
     trials = mean.shape[0]
     num_rand = X_train.shape[0] - mean.shape[0]
-    
+
     for trial in range(trials):
         if trial == 0:
             fig = plot_training(
                 X_test,
                 y_actual,
-                X_train[0:num_rand + trial],
-                y_train[0:num_rand + trial],
+                X_train[0 : num_rand + trial],
+                y_train[0 : num_rand + trial],
                 mean[trial],
                 lcb[trial],
                 ucb[trial],
@@ -634,14 +633,14 @@ def save_figs(optimization):
                 title="Initialization",
                 ylim=[-0.1, 1.1],
                 xlabel=xlabel,
-                ylabel=ylabel
+                ylabel=ylabel,
             )
         else:
             fig = plot_training(
                 X_test,
                 y_actual,
-                X_train[0:num_rand + trial],
-                y_train[0:num_rand + trial],
+                X_train[0 : num_rand + trial],
+                y_train[0 : num_rand + trial],
                 mean[trial],
                 lcb[trial],
                 ucb[trial],
@@ -650,9 +649,11 @@ def save_figs(optimization):
                 title=f"Iteration {trial}",
                 ylim=[-0.1, 1.1],
                 xlabel=xlabel,
-                ylabel=ylabel
+                ylabel=ylabel,
             )
-        fig.savefig(loadpath / "figures" / f"trial{trial:03d}.png", bbox_inches="tight", dpi=250)
+        fig.savefig(
+            loadpath / "figures" / f"trial{trial:03d}.png", bbox_inches="tight", dpi=250
+        )
         plt.close()
 
 

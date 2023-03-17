@@ -36,8 +36,8 @@ num_warmup = 50
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_230218"
-frequencies = [201]
+serial = "serial_multifreq_full"
+frequencies = [148, 166, 201, 235, 283, 338, 388]
 
 [localization.experimental]
 num_mc_runs = 1
