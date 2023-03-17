@@ -102,14 +102,14 @@ class SimulationConfig:
         self.root = Path(self.root)
         self.scenarios = SIM_SCENARIOS
         self.strategies = [
-            # {
-            #     "loop_type": "grid",
-            #     "num_trials": self.num_trials,
-            # },
-            # {
-            #     "loop_type": "lhs",
-            #     "num_trials": self.num_trials,
-            # },
+            {
+                "loop_type": "grid",
+                "num_trials": self.num_trials,
+            },
+            {
+                "loop_type": "lhs",
+                "num_trials": self.num_trials,
+            },
             # {
             #     "loop_type": "random",
             #     "num_trials": self.num_trials,
