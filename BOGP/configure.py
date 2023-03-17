@@ -17,12 +17,10 @@ from botorch.models.gp_regression import FixedNoiseGP
 from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikelihood
 import numpy as np
 
-from acoustics import covariance
+from acoustics import covariance, simulate_measurement_covariance
 from oao.common import UNINFORMED_STRATEGIES
 from oao.utilities import save_config
 import swellex
-from tritonoa.kraken import run_kraken
-from tritonoa.sp import added_wng, snrdb_to_sigma
 
 
 SIM_SCENARIOS = {"rec_r": [1.0, 3.0, 5.0, 7.0], "src_z": [60.0], "snr": [20]}
@@ -104,22 +102,22 @@ class SimulationConfig:
         self.root = Path(self.root)
         self.scenarios = SIM_SCENARIOS
         self.strategies = [
-            {
-                "loop_type": "grid",
-                "num_trials": self.num_trials,
-            },
-            {
-                "loop_type": "lhs",
-                "num_trials": self.num_trials,
-            },
-            {
-                "loop_type": "random",
-                "num_trials": self.num_trials,
-            },
-            {
-                "loop_type": "sobol",
-                "num_trials": self.num_trials,
-            },
+            # {
+            #     "loop_type": "grid",
+            #     "num_trials": self.num_trials,
+            # },
+            # {
+            #     "loop_type": "lhs",
+            #     "num_trials": self.num_trials,
+            # },
+            # {
+            #     "loop_type": "random",
+            #     "num_trials": self.num_trials,
+            # },
+            # {
+            #     "loop_type": "sobol",
+            #     "num_trials": self.num_trials,
+            # },
             {
                 "loop_type": "sequential",
                 "num_trials": self.num_trials,
@@ -309,7 +307,7 @@ class Initializer:
 
                 if self.mode == "simulation":
                     K.append(
-                        self.simulate_measurement_covariance(
+                        simulate_measurement_covariance(
                             self.Config.obj_func_parameters["env_parameters"]
                             | scenario
                             | {"freq": f, "tmpdir": data_folder, "title": f"{f:.1f}Hz"}
@@ -439,17 +437,6 @@ class Initializer:
         data_folder = scenario_folder / "data"
         os.makedirs(data_folder)
         return scenario_folder, data_folder
-
-    @staticmethod
-    def simulate_measurement_covariance(env_parameters: dict) -> np.array:
-        snr = env_parameters.pop("snr")
-        sigma = snrdb_to_sigma(snr)
-        p = run_kraken(env_parameters)
-        p /= np.linalg.norm(p)
-        noise = added_wng(p.shape, sigma=sigma, cmplx=True)
-        p += noise
-        K = p.dot(p.conj().T)
-        return K
 
 
 def load_toml(path) -> dict:

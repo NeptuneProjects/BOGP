@@ -21,8 +21,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
+from acoustics import simulate_measurement_covariance
 from collate import get_error, load_mfp_results
-from configure import Initializer
 import swellex
 from tritonoa.io import read_ssp
 from tritonoa.kraken import run_kraken
@@ -1088,7 +1088,7 @@ def simulations_localization():
             "rec_r": r,
             "src_z": 60,
         }
-        K = Initializer.simulate_measurement_covariance(
+        K = simulate_measurement_covariance(
             env_parameters | {"snr": 20} | true_parameters
         )
 
