@@ -27,17 +27,17 @@ serial = "serial_20230211T174812"
 frequencies = [148, 166, 201, 235, 283, 338, 388]
 
 [localization.simulation]
-num_mc_runs = 20
+num_mc_runs = 3
 num_restarts = 40
 num_samples = 1024
-num_trials = 200
+num_trials = 800
 num_grid_trials = [20, 10]
-num_warmup = 10
+num_warmup = 32
 q = 5
 root = "Data"
 main_seed = 2009
-serial = "serial_multifreq_full2"
-frequencies = [148, 166, 201, 235, 283, 338, 388]
+serial = "serial_multifreq_full3"
+frequencies = [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
 
 [localization.experimental]
 num_mc_runs = 1
