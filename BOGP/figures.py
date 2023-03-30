@@ -1044,6 +1044,7 @@ def simulations_localization():
     if not SMOKE_TEST:
         df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
 
+    FREQUENCIES = [148, 166, 201, 235, 283, 338, 388]
     RANGES = [1.0, 3.0, 5.0, 7.0]
     TITLE_KW = {"ha": "center", "va": "top", "y": 1.4}
 
@@ -1088,15 +1089,28 @@ def simulations_localization():
             "rec_r": r,
             "src_z": 60,
         }
-        K = simulate_measurement_covariance(
-            env_parameters | {"snr": 20} | true_parameters
-        )
 
-        amb_surf = np.zeros((len(zvec), len(rvec)))
-        for zz, z in enumerate(zvec):
-            p_rep = run_kraken(env_parameters | {"src_z": z, "rec_r": rvec})
-            for rr, r in enumerate(rvec):
-                amb_surf[zz, rr] = beamformer(K, p_rep[:, rr], atype="cbf").item()
+        K = []
+        for f in FREQUENCIES:
+            K.append(
+                simulate_measurement_covariance(
+                    env_parameters | {"snr": 20, "freq": f} | true_parameters
+                )
+            )
+        K = np.array(K)
+        if len(K.shape) == 2:
+            K = K[np.newaxis, ...]
+        
+
+
+        amb_surf = np.zeros((len(FREQUENCIES), len(zvec), len(rvec)))
+        for ff, f in enumerate(FREQUENCIES):
+            for zz, z in enumerate(zvec):
+                p_rep = run_kraken(env_parameters | {"freq": f, "src_z": z, "rec_r": rvec})
+                for rr, r in enumerate(rvec):
+                    amb_surf[ff, zz, rr] = beamformer(K[ff], p_rep[:, rr], atype="cbf").item()
+        
+        amb_surf = np.mean(amb_surf, axis=0)
         
         ax, im = plot_ambiguity_surface(amb_surf, rvec, zvec, ax=ax, **AMBSURF_KW)
         if count == 0:
