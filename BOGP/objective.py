@@ -16,4 +16,6 @@ def objective_function(parameters):
         p_rep = run_kraken(env_parameters | {"freq": f} | parameters)
         B.append(beamformer(k, p_rep, atype="cbf").item())
     objective = np.mean(np.array(B))
-    return {"bartlett": (objective, 0.0)}
+    # return {"bartlett": (objective, 0.0), "value": (objective, 0.0)}
+    # return {"bartlett": (objective, None), "value": (objective, None)}
+    return {"bartlett": (objective, None)}
