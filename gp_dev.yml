@@ -11,6 +11,7 @@ dependencies:
   - parallel
   - pip
   - pytorch
+  - seaborn
   - pip:
     - aim-mlflow
     - ax-platform

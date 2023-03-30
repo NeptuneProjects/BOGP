@@ -13,6 +13,7 @@ dependencies:
   - pip
   - pytorch=1.13
   - pytorch-cuda=11.7
+  - seaborn
   - tqdm=4.64
   - pip:
     - ax-platform
