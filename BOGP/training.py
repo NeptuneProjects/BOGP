@@ -2,11 +2,14 @@
 
 from pathlib import Path
 
-from botorch import fit_gpytorch_model
+from botorch import fit_gpytorch_model, fit_gpytorch_mll
 from botorch.acquisition import ExpectedImprovement
 from botorch.optim import optimize_acqf
 from botorch.models import SingleTaskGP
 from botorch.test_functions import Griewank
+from gpytorch.constraints import GreaterThan, LessThan, Interval, Positive
+from gpytorch.kernels import MaternKernel, ProductKernel, RBFKernel, ScaleKernel
+from gpytorch.means import ConstantMean
 from gpytorch.mlls import ExactMarginalLogLikelihood
 from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
@@ -123,6 +126,25 @@ def generate_random_data(bounds, num_samples, dtype=torch.double):
     return X
 
 
+def generate_gridded_data(bounds, num_samples, dtype=torch.double):
+    d = bounds.size(1)
+    if d == 1:
+        bounds = bounds.squeeze()
+        X = torch.linspace(bounds[0], bounds[1], num_samples).unsqueeze(-1).to(dtype)
+    else:
+        if isinstance(num_samples, int):
+            num_samples = [num_samples for _ in range(d)]
+        x = []
+        for i in range(d):
+            x.append(
+                torch.linspace(bounds[0, i], bounds[1, i], num_samples[i]).to(dtype)
+            )
+
+        Xm = torch.meshgrid(*x, indexing="xy")
+        X = torch.cat([x.flatten().unsqueeze(-1) for x in Xm], dim=1)
+    return X
+
+
 def generate_initial_data(
     bounds,
     obj_func,
@@ -132,7 +154,8 @@ def generate_initial_data(
     n_test=None,
     dtype=torch.double,
 ):
-    X_train = generate_random_data(bounds, n_train, dtype)
+    # X_train = generate_random_data(bounds, n_train, dtype)
+    X_train = generate_gridded_data(bounds, [10, 5], dtype)
     train_parameters = {
         item["name"]: X_train[..., i] for i, item in enumerate(search_space)
     }
@@ -151,13 +174,37 @@ def generate_initial_data(
         X_test, y_test = None, None
 
     return X_train, y_train, best_y, X_test, y_test
-
+ 
 
 def initialize_model(X_train, y_train, state_dict=None):
-    model = SingleTaskGP(train_X=X_train, train_Y=y_train)
+
+    # kernel_range = RBFKernel(active_dims=(0), lengthscale_constraint=Interval(0.03, 0.3))
+    # kernel_range = MaternKernel(active_dims=(0), lengthscale_constraint=GreaterThan(0.1))
+    # kernel_range = MaternKernel(active_dims=(0))
+    # kernel_depth = RBFKernel(active_dims=(1), lengthscale_constraint=Interval(0.02, 0.2))
+    # kernel_depth = MaternKernel(active_dims=(1), lengthscale_constraint=GreaterThan(5))
+    # kernel_depth = MaternKernel(active_dims=(1))
+    # base_kernel = ProductKernel(kernel_range, kernel_depth)
+    # base_kernel = MaternKernel(ard_num_dims=2)
+    base_kernel = RBFKernel(ard_num_dims=X_train.shape[-1])
+
+    model = SingleTaskGP(
+        train_X=X_train,
+        train_Y=y_train,
+        mean_module=ConstantMean(constant_constraint=Positive()),
+        covar_module=ScaleKernel(
+            base_kernel=base_kernel
+        )
+    )
     mll = ExactMarginalLogLikelihood(model.likelihood, model)
     if state_dict is not None:
         model.load_state_dict(state_dict)
+        
+    # print(model.covar_module.base_kernel.kernels._modules['0'].lengthscale)
+    # print(model.covar_module.base_kernel.kernels._modules['1'].lengthscale)
+    print(model.covar_module.base_kernel.lengthscale)
+    # print(model.covar_module.lengthscale)
+    
     return mll, model
 
 
@@ -204,6 +251,165 @@ def get_candidates(alpha, alpha_prev=None):
         max_alpha_prev = np.argmax(alpha_prev)
         alpha_prev /= alpha_prev.max()
     return max_alpha, max_alpha_prev
+
+
+def main(optimization):
+    seed = 2009
+    dtype = torch.double
+    torch.manual_seed(seed)
+    env_parameters = swellex.environment | {"tmpdir": "."}
+
+    true_parameters = {
+        "rec_r": 1.0,
+        "src_z": 60,
+    }
+    # frequencies = [201]
+    frequencies = [148, 166, 201, 235, 283, 338, 388]
+    # frequencies = [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
+    K = []
+    for f in frequencies:
+        K.append(
+            simulate_measurement_covariance(
+                env_parameters | {"snr": 20, "freq": f} | true_parameters
+            )
+        )
+    K = np.array(K)
+    if len(K.shape) == 2:
+        K = K[np.newaxis, ...]
+    obj_func = ObjectiveFunction(MatchedFieldProcessor(K, frequencies, env_parameters))
+
+    if optimization == "r":
+        savepath = Path.cwd() / "Data" / "range_estimation" / "demo2"
+        search_space = [
+            {
+                "name": "rec_r",
+                "type": "range",
+                "bounds": [0.1, 8.0],
+                "value_type": "float",
+                "log_scale": False,
+            }
+        ]
+        NUM_TRIALS = 50
+        n_test = 501
+        n_train = 3
+        bounds = get_bounds(search_space)
+        X_train, y_train, best_y, _, _ = generate_initial_data(
+            bounds, obj_func, search_space, env_parameters, n_train=n_train, dtype=dtype
+        )
+        X_test = get_test_points(bounds, num_samples=n_test)
+        X_t = X_test.detach().cpu().numpy()
+        rvec = np.unique(X_t[:, 0])
+        zvec = [true_parameters["src_z"]]
+    elif optimization == "l":
+        savepath = Path.cwd() / "Data" / "localization" / "demo2"
+        search_space = [
+            {
+                "name": "rec_r",
+                "type": "range",
+                "bounds": [0.1, 4.0],
+                "value_type": "float",
+                "log_scale": False,
+            },
+            {
+                "name": "src_z",
+                "type": "range",
+                "bounds": [1.0, 160.0],
+                "value_type": "float",
+                "log_scale": False,
+            },
+        ]
+        NUM_TRIALS = 50
+        n_test = [100, 100]
+        n_train = 50
+        bounds = get_bounds(search_space)
+        X_train, y_train, best_y, _, _ = generate_initial_data(
+            bounds, obj_func, search_space, env_parameters, n_train=n_train, dtype=dtype
+        )
+        X_test = get_test_points(bounds, num_samples=n_test)
+        X_t = X_test.detach().cpu().numpy()
+        rvec = np.unique(X_t[:, 0])
+        zvec = np.unique(X_t[:, 1])
+
+    pbar = tqdm(
+        total=len(rvec) * len(zvec) * len(frequencies),
+        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
+        leave=True,
+        position=0,
+        unit=" depths",
+        colour="red",
+    )
+
+    B = np.zeros((len(frequencies), len(zvec), len(rvec)))
+    for ff, f in enumerate(frequencies):
+        for zz, z in enumerate(zvec):
+            p_rep = run_kraken(
+                env_parameters | {"freq": f, "src_z": z, "rec_r": rvec}
+            )
+            for rr, _ in enumerate(rvec):
+                B[ff, zz, rr] = beamformer(K[ff], p_rep[:, rr], atype="cbf").item()
+                pbar.update(1)
+    pbar.close()
+    B = np.mean(B, axis=0)
+
+    y_actual = torch.from_numpy(B.flatten()).to(dtype)
+
+    mll, model = initialize_model(X_train, y_train)
+
+    pbar = tqdm(
+        range(NUM_TRIALS),
+        desc="Optimizing",
+        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
+        leave=True,
+        position=0,
+        unit=" eval",
+        colour="blue",
+    )
+
+    mean = np.zeros((NUM_TRIALS, np.prod(n_test)))
+    ucb = np.zeros_like(mean)
+    lcb = np.zeros_like(mean)
+    alpha_array = np.zeros_like(mean)
+
+    for trial in pbar:
+        # fit_gpytorch_model(mll)
+        fit_gpytorch_mll(mll)
+
+        mll.eval()
+        with torch.no_grad():
+            posterior = mll.model(X_test)
+            y_test = posterior.mean
+            cov_test = posterior.confidence_region()
+
+            mean[trial] = y_test.detach().cpu().numpy()
+            lcb[trial] = cov_test[0].detach().cpu().numpy()
+            ucb[trial] = cov_test[1].detach().cpu().numpy()
+
+        EI = ExpectedImprovement(model=model, best_f=best_y)
+        X_new, y_new, alpha = _optimize_acqf_and_get_observation(
+            X_test, EI, search_space, obj_func, env_parameters
+        )
+
+        alpha_array[trial] = alpha.detach().cpu().numpy()
+
+        X_train = torch.cat([X_train, X_new])
+        y_train = torch.cat([y_train, y_new])
+        best_y = y_train.max()
+
+        mll, model = initialize_model(X_train, y_train, model.state_dict())
+
+    X_test_array = X_test.detach().cpu().numpy()
+    y_actual_array = y_actual.detach().cpu().numpy()
+    X_train_array = X_train.detach().cpu().numpy()
+    y_train_array = y_train.detach().cpu().numpy()
+
+    np.save(savepath / "X_test.npy", X_test_array)
+    np.save(savepath / "y_actual.npy", y_actual_array)
+    np.save(savepath / "X_train.npy", X_train_array)
+    np.save(savepath / "y_train.npy", y_train_array)
+    np.save(savepath / "mean.npy", mean)
+    np.save(savepath / "lcb.npy", lcb)
+    np.save(savepath / "ucb.npy", ucb)
+    np.save(savepath / "alpha.npy", alpha_array)
 
 
 def plot_training(
@@ -443,163 +649,6 @@ def plot_acqf_1D(X_test, alpha, alpha_prev=None, ax=None):
     if max_alpha_prev:
         ax.axvline(X_test[max_alpha_prev], color="r", linestyle=":")
     return ax
-
-
-def main(optimization):
-    seed = 0
-    dtype = torch.double
-    torch.manual_seed(seed)
-    env_parameters = swellex.environment | {"tmpdir": "."}
-
-    true_parameters = {
-        "rec_r": 3.0,
-        "src_z": 60,
-    }
-    frequencies = [148, 166, 201, 235, 283, 338, 388]
-    K = []
-    for f in frequencies:
-        K.append(
-            simulate_measurement_covariance(
-                env_parameters | {"snr": 20, "freq": f} | true_parameters
-            )
-        )
-    K = np.array(K)
-    if len(K.shape) == 2:
-        K = K[np.newaxis, ...]
-    obj_func = ObjectiveFunction(MatchedFieldProcessor(K, frequencies, env_parameters))
-
-    if optimization == "r":
-        savepath = Path.cwd() / "Data" / "range_estimation" / "demo2"
-        search_space = [
-            {
-                "name": "rec_r",
-                "type": "range",
-                "bounds": [0.01, 10.0],
-                "value_type": "float",
-                "log_scale": False,
-            }
-        ]
-        NUM_TRIALS = 50
-        n_test = 501
-        n_train = 3
-        bounds = get_bounds(search_space)
-        X_train, y_train, best_y, _, _ = generate_initial_data(
-            bounds, obj_func, search_space, env_parameters, n_train=n_train, dtype=dtype
-        )
-        X_test = get_test_points(bounds, num_samples=n_test)
-        X_t = X_test.detach().cpu().numpy()
-        rvec = np.unique(X_t[:, 0])
-        zvec = [true_parameters["src_z"]]
-    elif optimization == "l":
-        savepath = Path.cwd() / "Data" / "localization" / "demo2"
-        search_space = [
-            {
-                "name": "rec_r",
-                "type": "range",
-                "bounds": [0.01, 10.0],
-                "value_type": "float",
-                "log_scale": False,
-            },
-            {
-                "name": "src_z",
-                "type": "range",
-                "bounds": [1.0, 200.0],
-                "value_type": "float",
-                "log_scale": False,
-            },
-        ]
-        NUM_TRIALS = 100
-        n_test = [40, 40]
-        n_train = 10
-        bounds = get_bounds(search_space)
-        X_train, y_train, best_y, _, _ = generate_initial_data(
-            bounds, obj_func, search_space, env_parameters, n_train=n_train, dtype=dtype
-        )
-        X_test = get_test_points(bounds, num_samples=n_test)
-        X_t = X_test.detach().cpu().numpy()
-        rvec = np.unique(X_t[:, 0])
-        zvec = np.unique(X_t[:, 1])
-
-    pbar = tqdm(
-        total=len(rvec) * len(zvec),
-        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
-        leave=True,
-        position=0,
-        unit=" depths",
-        colour="red",
-    )
-
-    B = np.zeros((len(zvec), len(rvec), len(frequencies)))
-    for zz, z in enumerate(zvec):
-        for rr, _ in enumerate(rvec):
-            for ff, f in enumerate(frequencies):
-                p_rep = run_kraken(
-                    env_parameters | {"freq": f, "src_z": z, "rec_r": rvec}
-                )
-                B[zz, rr, ff] = beamformer(K[ff], p_rep[:, rr], atype="cbf").item()
-            # B[zz, rr] = beamformer(K, p_rep[:, rr], atype="cbf").item()
-            pbar.update(1)
-    pbar.close()
-    B = np.mean(B, axis=2)
-
-    y_actual = torch.from_numpy(B.flatten()).to(dtype)
-
-    mll, model = initialize_model(X_train, y_train)
-
-    pbar = tqdm(
-        range(NUM_TRIALS),
-        desc="Optimizing",
-        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
-        leave=True,
-        position=0,
-        unit=" eval",
-        colour="blue",
-    )
-
-    mean = np.zeros((NUM_TRIALS, np.prod(n_test)))
-    ucb = np.zeros_like(mean)
-    lcb = np.zeros_like(mean)
-    alpha_array = np.zeros_like(mean)
-
-    for trial in pbar:
-        fit_gpytorch_model(mll)
-
-        mll.eval()
-        with torch.no_grad():
-            posterior = mll.model(X_test)
-            y_test = posterior.mean
-            cov_test = posterior.confidence_region()
-
-            mean[trial] = y_test.detach().cpu().numpy()
-            lcb[trial] = cov_test[0].detach().cpu().numpy()
-            ucb[trial] = cov_test[1].detach().cpu().numpy()
-
-        EI = ExpectedImprovement(model=model, best_f=best_y)
-        X_new, y_new, alpha = _optimize_acqf_and_get_observation(
-            X_test, EI, search_space, obj_func, env_parameters
-        )
-
-        alpha_array[trial] = alpha.detach().cpu().numpy()
-
-        X_train = torch.cat([X_train, X_new])
-        y_train = torch.cat([y_train, y_new])
-        best_y = y_train.max()
-
-        mll, model = initialize_model(X_train, y_train, model.state_dict())
-
-    X_test_array = X_test.detach().cpu().numpy()
-    y_actual_array = y_actual.detach().cpu().numpy()
-    X_train_array = X_train.detach().cpu().numpy()
-    y_train_array = y_train.detach().cpu().numpy()
-
-    np.save(savepath / "X_test.npy", X_test_array)
-    np.save(savepath / "y_actual.npy", y_actual_array)
-    np.save(savepath / "X_train.npy", X_train_array)
-    np.save(savepath / "y_train.npy", y_train_array)
-    np.save(savepath / "mean.npy", mean)
-    np.save(savepath / "lcb.npy", lcb)
-    np.save(savepath / "ucb.npy", ucb)
-    np.save(savepath / "alpha.npy", alpha_array)
 
 
 def save_figs(optimization):
