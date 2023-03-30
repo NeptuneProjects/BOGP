@@ -5,20 +5,16 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - botorch
   - cmocean
-  # - cudatoolkit=11.3
-  - feather-format
   - jupyterlab
   - matplotlib
-  - numpy
-  - pandas
+  - parallel
   - pip
   - pytorch
-  # - scikit-optimize
-  - scipy
-  - tqdm
   - pip:
-    - git+https://github.com/NeptuneProjects/TritonOA.git
+    - aim-mlflow
     - ax-platform
+    - tomli-w
+    - git+https://github.com/NeptuneProjects/TritonOA.git
+    - git+https://github.com/NeptuneProjects/OAOptimization.git
   
