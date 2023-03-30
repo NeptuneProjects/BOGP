@@ -168,3 +168,5 @@ cython_debug/
 *.prt
 *.npy
 .vscode
+mlruns/
+project/
