@@ -170,3 +170,4 @@ cython_debug/
 .vscode
 docs/
 deprecated/
+outputs/
