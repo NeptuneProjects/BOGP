@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, str(Path.cwd() / "Source"))
-from data.swellex96 import acoustics
+from data.swellex96 import amb_surf
 from tritonoa.io.profile import read_ssp
 
 ROOT = Path.home() / "Research" / "Projects" / "BOGP"
@@ -66,7 +66,7 @@ def main(path, mode, dr, dz, nr, nz):
             "search_parameters": search_parameters,
         }
         if mode == "r":
-            B, rvec = acoustics.run_mfp(parameters, mode, dr=dr, dz=dz, nr=nr, nz=nz)
+            B, rvec = amb_surf.run_mfp(parameters, mode, dr=dr, dz=dz, nr=nr, nz=nz)
             np.savez(
                 Path(path) / f"range_{freq}Hz_{depth_true}m_{r}km",
                 # ROOT
@@ -78,7 +78,7 @@ def main(path, mode, dr, dz, nr, nz):
                 rvec=rvec,
             )
         elif mode == "l":
-            B, rvec, zvec = acoustics.run_mfp(
+            B, rvec, zvec = amb_surf.run_mfp(
                 parameters, mode, dr=dr, dz=dz, nr=nr, nz=nz
             )
             np.savez(
