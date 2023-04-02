@@ -168,7 +168,5 @@ cython_debug/
 *.prt
 *.npy
 .vscode
-mlruns/
-project/
-MATLAB/
+docs/
 deprecated/
