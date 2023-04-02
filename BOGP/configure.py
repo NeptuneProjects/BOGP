@@ -18,6 +18,7 @@ from gpytorch.mlls.exact_marginal_log_likelihood import ExactMarginalLogLikeliho
 import numpy as np
 
 from acoustics import covariance, simulate_measurement_covariance
+import parameterization
 from oao.common import UNINFORMED_STRATEGIES
 from oao.utilities import save_config
 import swellex
@@ -32,13 +33,13 @@ SKIP_TIMESTEPS = (
     + list(range(302, 309))
 )
 EXP_SCENARIOS = {"timestep": [i for i in range(350) if i not in SKIP_TIMESTEPS]}
+
+PARAMS_KWARGS = {"type": "range", "value_type": "float", "log_scale": False}
 RANGE_ESTIMATION_PARAMETERS = [
     {
         "name": "rec_r",
-        "type": "range",
-        "bounds": [0.01, 10.0],
-        "value_type": "float",
-        "log_scale": False,
+        "bounds": [0.01, 8.0],
+        **PARAMS_KWARGS,
     },
 ]
 
@@ -46,17 +47,13 @@ RANGE_ESTIMATION_PARAMETERS = [
 LOCALIZATION_PARAMETERS = [
     {
         "name": "rec_r",
-        "type": "range",
-        "bounds": [0.01, 10.0],
-        "value_type": "float",
-        "log_scale": False,
+        "bounds": [0.01, 8.0],
+        **PARAMS_KWARGS,
     },
     {
         "name": "src_z",
-        "type": "range",
-        "bounds": [1.0, 200.0],
-        "value_type": "float",
-        "log_scale": False,
+        "bounds": [1.0, 160.0],
+        **PARAMS_KWARGS,
     },
 ]
 
@@ -106,10 +103,10 @@ class SimulationConfig:
                 "loop_type": "grid",
                 "num_trials": self.num_trials,
             },
-            {
-                "loop_type": "lhs",
-                "num_trials": self.num_trials,
-            },
+            # {
+            #     "loop_type": "lhs",
+            #     "num_trials": self.num_trials,
+            # },
             # {
             #     "loop_type": "random",
             #     "num_trials": self.num_trials,
@@ -227,6 +224,7 @@ class SimulationConfig:
         self.experiment_kwargs = {
             "name": "test_mfp",
             "objectives": {"bartlett": ObjectiveProperties(minimize=False)},
+            # "outcome_constraints": ["value >= 0.5"]
         }
         self.obj_func_parameters = {
             "env_parameters": swellex.environment,
@@ -292,14 +290,20 @@ class Initializer:
     def configure(self):
         self.make_folders()
         scenarios = self.get_scenario_dict(**self.Config.scenarios)
+        print(list(scenarios))
 
         if self.mode == "experimental":
             p = []
             for f in self.Config.frequencies:
                 p.append(np.load(self.Config.datadir / f"{f:.1f}Hz" / "data.npy"))
             p = np.array(p)
+            params = {"indexed": parameterization.IndexedParameterization(EXP_SCENARIOS)}
+        else:
+            params = {"permutated": parameterization.PermutatedParameterization(SIM_SCENARIOS)}
 
-        for scenario in scenarios:
+        parameterizations = parameterization.Parameterization(**params)
+
+        for scenario in parameterizations:
             scenario_folder, data_folder = self.make_scenario_folder(scenario)
 
             K = []

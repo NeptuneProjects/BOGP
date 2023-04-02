@@ -2,8 +2,8 @@
 
 import numpy as np
 
-from tritonoa.kraken import run_kraken
-from tritonoa.sp import beamformer
+from tritonoa.at.models.kraken.runner import run_kraken
+from tritonoa.signal.mfp import MatchedFieldProcessor
 
 
 def objective_function(parameters):
@@ -13,9 +13,13 @@ def objective_function(parameters):
     env_parameters = parameters.pop("env_parameters")
     B = []
     for f, k in zip(frequencies, K):
-        p_rep = run_kraken(env_parameters | {"freq": f} | parameters)
+        p_rep = runner.run_kraken(env_parameters | {"freq": f} | parameters)
         B.append(beamformer(k, p_rep, atype="cbf").item())
     objective = np.mean(np.array(B))
     # return {"bartlett": (objective, 0.0), "value": (objective, 0.0)}
     # return {"bartlett": (objective, None), "value": (objective, None)}
     return {"bartlett": (objective, None)}
+
+def objective_function2(parameters):
+
+    return {"bartlett": (runner(parameters), None)}

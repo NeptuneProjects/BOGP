@@ -3,7 +3,7 @@
 
 from dataclasses import dataclass, field
 import itertools
-from typing import Any, Optional
+from typing import Any
 
 
 class UnequalLengthWarning(Warning):

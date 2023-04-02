@@ -7,8 +7,10 @@ from argparse import ArgumentParser
 from pathlib import Path
 import sys
 
+from data import aggregate
+
 sys.path.insert(0, str(Path.cwd() / "Source"))
-from BOGP import aggregate, utils
+from BOGP import utils
 
 ROOT = Path.cwd() / "Data" / "Simulations"
 EXPERIMENT = ROOT / "range_estimation"
