@@ -1,0 +1,47 @@
+run:
+  - convert
+  - merge
+  - process
+configs:
+  convert:
+    _target_: __main__.ConversionConfig
+    paths:
+      _target_: __main__.ProcessPaths
+      source: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/raw/sio
+      destination: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/raw/npy
+    glob_pattern: "*/VLA_*[!.npy]"
+    channels_to_remove: 1
+    max_workers: 8
+  merge:
+    _target_: __main__.MergeConfig
+    paths:
+      _target_: __main__.ProcessPaths
+      source: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/raw/npy
+      destination: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/processed
+    glob_pattern: "VLA_*[!header].npy"
+    filename: merged.npz
+    base_time: 96131 23:02
+    start: 96131 23:21
+    end: 96132 00:24
+    fs: 1500
+    channels_to_remove: null
+  process:
+    _target_: __main__.ProcessConfig
+    paths:
+      _target_: __main__.ProcessPaths
+      source: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/processed/merged.npz
+      destination: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/processed
+    frequencies: [50, 60]
+    num_segments: 350
+    fs: 1500
+    channels_to_remove: [42]
+    freq_finding_params:
+      _target_: __main__.FrequencyPeakFindingParameters
+      lower_bw: 1.0
+      upper_bw: 1.0
+    fft_params:
+      _target_: __main__.FFTParameters
+      nfft: 8192
+      window:
+        _target_: functools.partial
+        _args_: ["${get_method:numpy.hamming}"]
