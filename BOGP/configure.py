@@ -299,7 +299,7 @@ class Initializer:
             p = np.array(p)
             params = {"indexed": parameterization.IndexedParameterization(EXP_SCENARIOS)}
         else:
-            params = {"permutated": parameterization.PermutatedParameterization(SIM_SCENARIOS)}
+            params = {"permutated": parameterization.PermutedParameterization(SIM_SCENARIOS)}
 
         parameterizations = parameterization.Parameterization(**params)
 
