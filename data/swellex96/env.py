@@ -38,6 +38,7 @@ def main(args):
         "chigh": 1650,
         # 6. Receiver parameters
         "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
+        "tilt": args.tilt,
     }
 
     with open(args.destination, "w") as f:
@@ -45,7 +46,9 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = ArgumentParser()
+    parser = ArgumentParser(
+        description="Builds acoustic environment model for SWELLEX96."
+    )
     parser.add_argument("ctd_path", type=str, help="Path to CTD data file.")
     parser.add_argument("destination", type=str, help="Path to destination file.")
     parser.add_argument(
@@ -54,5 +57,6 @@ if __name__ == "__main__":
     parser.add_argument(
         "--model", type=str, help="Model specification.", default="KRAKEN"
     )
+    parser.add_argument("--tilt", type=float, help="Tilt angle of the array.")
     args = parser.parse_args()
     main(args)
