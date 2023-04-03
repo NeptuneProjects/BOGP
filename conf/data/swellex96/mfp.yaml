@@ -30,7 +30,7 @@ parameters:
     # scenario:
     # depth: [9, 60]
   fixed:
-    tmpdir: tmp
+    tmpdir: .tmp
   # Not implemented yet:
   # exclude_parameters:
   #   timestep:

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import logging
 import os
 from pathlib import Path
+import shutil
 import sys
 
 import hydra
@@ -15,13 +16,13 @@ import numpy as np
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
 
-from tritonoa.at.models.kraken.kraken import clean_up_kraken_files
 from tritonoa.at.models.kraken.runner import run_kraken as runner
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
+
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from BOGP import parameterization as param
-from env import load_env_from_json
+from env import load_env_from_json, save_env_to_json
 from gps_range import load_range_csv
 
 log = logging.getLogger(__name__)
@@ -120,8 +121,18 @@ def load_covariance(path, frequencies, num_segments, num_elements):
 
 
 def run_parameterizations(cfg, parameterization: param.Parameterization):
+    def _format_savepath():
+        freq_descr = "".join([f"{f}-" for f in cfg.frequencies])[:-1]
+        resolutions = [len(v) for v in cfg.mfp_parameters.search_space.values()]
+        res_descr = "".join([f"{r}x" for r in resolutions])[:-1]
+        return cfg.paths.mfp_path / f"{freq_descr}_{res_descr}"
+
     log.info("Generating ambiguity surfaces for each scenario.")
-    savepath = cfg.paths.mfp_path / "".join([f"{f}-" for f in cfg.frequencies])[:-1]
+
+    savepath = _format_savepath()
+    tmpdir = savepath / cfg.parameters.fixed.tmpdir
+    tmpdir.mkdir(parents=True, exist_ok=True)
+
     log.info("Loading covariance matrices.")
     K = load_covariance(
         path=cfg.paths.covariance_path,
@@ -149,6 +160,7 @@ def run_parameterizations(cfg, parameterization: param.Parameterization):
             ]
             [pbar.update(1) for _ in as_completed(futures)]
 
+    shutil.rmtree(tmpdir)
     log.info("Processing complete.")
 
 
@@ -164,7 +176,6 @@ def worker(
 
     scenario["tmpdir"] = savepath / scenario["tmpdir"]
     scenario["title"] = f"{scenario['timestep']:03d}"
-    scenario["tmpdir"].mkdir(parents=True, exist_ok=True)
 
     MFP = MatchedFieldProcessor(
         runner=runner,
@@ -185,7 +196,6 @@ def worker(
             {"src_z": z, "src_r": cfg.mfp_parameters.search_space.rec_r}
         )
 
-    clean_up_kraken_files(scenario["tmpdir"])
     _save_results()
 
 
