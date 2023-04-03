@@ -6,7 +6,7 @@ paths:
   range_path: ${paths.data_path}/gps/gps_range.csv
   mfp_path: ${paths.data_path}/acoustic/ambiguity_surfaces
   covariance_path: ${paths.data_path}/acoustic/processed
-frequencies: [49.0, 64.0]
+frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
 num_segments: 350
 num_elements: 64
 max_workers: 8
@@ -39,7 +39,7 @@ mfp_parameters:
   search_space:
     rec_r:
       _target_: numpy.linspace
-      _args_: [1.0, 8.0, 21]
+      _args_: [0.01, 8.0, 200]
     src_z:
       _target_: numpy.linspace
-      _args_: [1.0, 200.0, 21]
+      _args_: [1.0, 200.0, 200]
