@@ -38,7 +38,7 @@ class IndexedParameterization:
 
 
 @dataclass
-class PermutatedParameterization:
+class PermutedParameterization:
     scenario: dict[list] = field(default_factory=dict)
 
     def __len__(self) -> int:
@@ -54,8 +54,8 @@ class Parameterization:
     indexed: IndexedParameterization = field(
         default_factory=IndexedParameterization
     )
-    permutated: PermutatedParameterization = field(
-        default_factory=PermutatedParameterization
+    permuted: PermutedParameterization = field(
+        default_factory=PermutedParameterization
     )
     fixed: dict[str, Any] = field(default_factory=dict)
 
@@ -71,15 +71,15 @@ class Parameterization:
 
     def permute_parameterizations(self) -> list[dict]:
         indexed = self.indexed.parameterize()
-        permutated = self.permutated.parameterize()
+        permuted = self.permuted.parameterize()
         scenarios = []
         for item in indexed:
-            for perm in permutated:
+            for perm in permuted:
                 scenarios.append({**item, **perm})
         return scenarios
 
     def add_fixed_parameterization(self) -> list[dict]:
-        return [{**s, **self.fixed} for s in self.scenarios]
+        return [{**self.fixed, **s} for s in self.scenarios]
 
 
 def main():
@@ -92,9 +92,9 @@ def main():
 
 
     idx_param = IndexedParameterization(indexed)
-    perm_param = PermutatedParameterization(permuted)
+    perm_param = PermutedParameterization(permuted)
 
-    param = Parameterization(indexed=idx_param, permutated=perm_param, fixed=fixed)
+    param = Parameterization(indexed=idx_param, permuted=perm_param, fixed=fixed)
     print(param[5])
     
 
