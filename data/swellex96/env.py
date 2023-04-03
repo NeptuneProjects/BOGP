@@ -3,6 +3,7 @@
 
 from argparse import ArgumentParser
 import json
+import os
 from pathlib import Path
 
 import numpy as np
@@ -10,7 +11,17 @@ import numpy as np
 from tritonoa.io.profile import read_ssp
 
 
-def main(args):
+def load_env_from_json(path: os.PathLike) -> dict:
+    with open(path, "r") as f:
+        return json.load(f)
+
+
+def save_env_to_json(environment: dict, path: os.PathLike) -> None:
+    with open(path, "w") as f:
+        json.dump(environment, f, indent=4)
+
+
+def main(args) -> None:
     # Load CTD data
     z_data, c_data, _ = read_ssp(Path(args.ctd_path), 0, 3, header=None)
     z_data = np.append(z_data, 217).tolist()
@@ -41,8 +52,7 @@ def main(args):
         "tilt": args.tilt,
     }
 
-    with open(args.destination, "w") as f:
-        json.dump(environment, f, indent=4)
+    save_env_to_json(environment, args.destination)
 
 
 if __name__ == "__main__":
