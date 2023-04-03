@@ -1,16 +1,19 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass
+import logging
+import os
 from pathlib import Path
 import time
+from typing import Callable
 
 import hydra
 from hydra.core.config_store import ConfigStore
 from hydra.utils import instantiate
-from omegaconf import OmegaConf
-
 import numpy as np
+from omegaconf import OmegaConf
 from scipy.io import savemat
 from tqdm import tqdm
 
@@ -23,6 +26,8 @@ from tritonoa.sp.processing import (
     generate_complex_pressure,
 )
 from tritonoa.sp.timefreq import frequency_vector
+
+log = logging.getLogger(__name__)
 
 
 @dataclass
@@ -71,6 +76,7 @@ class ProcessConfig:
     channels_to_remove: int
     freq_finding_params: FrequencyPeakFindingParameters
     fft_params: FFTParameters
+    max_workers: int
 
     def __post_init__(self) -> None:
         self.paths.__post_init__()
@@ -80,19 +86,19 @@ class ProcessConfig:
         return frequency_vector(fs=self.fs, nfft=self.fft_params.nfft)
 
 
-def convert(config: ConversionConfig):
-    print("Converting SIO files to NUMPY files...")
+def convert(config: ConversionConfig) -> None:
+    log.info("Converting SIO files to NUMPY files.")
     handler = SIODataHandler(files=config.paths.source.glob(config.glob_pattern))
     handler.convert_to_numpy(
         channels_to_remove=config.channels_to_remove,
         destination=config.paths.destination,
         max_workers=config.max_workers,
     )
-    print("...conversion complete. ", end="")
+    log.info("Conversion complete.")
 
 
-def merge(config: MergeConfig):
-    print("Merging numpy files...")
+def merge(config: MergeConfig) -> None:
+    log.info("Merging numpy files.")
     handler = SIODataHandler(files=config.paths.source.glob(config.glob_pattern))
     handler.merge_numpy_files(
         base_time=config.base_time,
@@ -102,31 +108,51 @@ def merge(config: MergeConfig):
         channels_to_remove=config.channels_to_remove,
         savepath=config.paths.destination / config.filename,
     )
-    print("...merge complete. ", end="")
+    log.info("Merge complete.")
 
 
-def process(config: ProcessConfig):
-    print(f"Processing data for {config.frequencies} Hz...")
+def process(config: ProcessConfig) -> None:
+    log.info(f"Processing data for {config.frequencies} Hz.")
     x, _ = DataStream.load(config.paths.source, exclude="t")
-    print(f"Loaded data with shape: {x.shape}")
+    log.info(f"Loaded data with shape: {x.shape}")
 
     x[:, 42] = x[:, [41, 43]].mean(axis=1)  # Remove corrupted channel
     x = np.fliplr(x)  # Reverse channel index
 
-    for freq in tqdm(config.frequencies, bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}"):
-        process_worker(
-            data=x,
-            num_segments=config.num_segments,
-            freq_params=FrequencyParameters(
-                freq=freq, fvec=config.fvec, peak_params=config.freq_finding_params
-            ),
-            fft_params=config.fft_params,
-            destination=config.paths.destination,
-        )
-    print("...processing complete. ", end="")
+    with tqdm(
+        total=len(config.frequencies),
+        desc="Processing frequencies",
+        unit="freq",
+        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
+    ) as pbar:
+        with ThreadPoolExecutor(max_workers=config.max_workers) as executor:
+            futures = [
+                executor.submit(
+                    process_worker,
+                    data=x,
+                    num_segments=config.num_segments,
+                    freq_params=FrequencyParameters(
+                        freq=freq,
+                        fvec=config.fvec,
+                        peak_params=config.freq_finding_params,
+                    ),
+                    fft_params=config.fft_params,
+                    destination=config.paths.destination,
+                )
+                for freq in config.frequencies
+            ]
+            [pbar.update(1) for _ in as_completed(futures)]
+
+    log.info("Processing complete.")
 
 
-def process_worker(data, num_segments, freq_params, fft_params, destination):
+def process_worker(
+    data: np.ndarray,
+    num_segments: int,
+    freq_params: FrequencyParameters,
+    fft_params: FFTParameters,
+    destination: os.PathLike,
+) -> None:
     def _save_data():
         savepath = destination / f"{freq_params.freq:.1f}Hz"
         savepath.mkdir(parents=True, exist_ok=True)
@@ -145,7 +171,7 @@ def process_worker(data, num_segments, freq_params, fft_params, destination):
     _save_data()
 
 
-def run_operation(operation: str):
+def run_operation(operation: str) -> Callable:
     return instantiate({"_target_": f"__main__.{operation}"}, _partial_=True)
 
 
@@ -162,14 +188,14 @@ cs.store(name="process_config", node=ProcessConfig)
     version_base=None,
 )
 def main(cfg: ProcessConfig):
-    print("Running acoustic processing pipeline.")
+    log.info("Running acoustic processing pipeline.")
     start_pipeline = time.time()
     for command in cfg.run:
         start_command = time.time()
         config = instantiate(cfg.configs[command])
         run_operation(command)(config)
-        print(f"{time.time() - start_command:.2f} s elapsed.")
-    print(f"...pipeline complete. {time.time() - start_pipeline:.2f} s elapsed.")
+        log.info(f"{time.time() - start_command:.2f} s elapsed.")
+    log.info(f"Pipeline complete. {time.time() - start_pipeline:.2f} s elapsed.")
 
 
 if __name__ == "__main__":
