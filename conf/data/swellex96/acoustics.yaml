@@ -1,23 +1,24 @@
 run:
-  - convert
-  - merge
+  # - convert
+  # - merge
   - process
 configs:
+  data_path: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic
   convert:
     _target_: __main__.ConversionConfig
     paths:
       _target_: __main__.ProcessPaths
-      source: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/raw/sio
-      destination: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/raw/npy
+      source: ${configs.data_path}/raw/sio
+      destination: ${configs.data_path}/raw/npy
     glob_pattern: "*/VLA_*[!.npy]"
     channels_to_remove: 1
-    max_workers: 8
+    max_workers: 4
   merge:
     _target_: __main__.MergeConfig
     paths:
       _target_: __main__.ProcessPaths
-      source: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/raw/npy
-      destination: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/processed
+      source: ${configs.data_path}/raw/npy
+      destination: ${configs.data_path}/processed
     glob_pattern: "VLA_*[!header].npy"
     filename: merged.npz
     base_time: 96131 23:02
@@ -29,9 +30,9 @@ configs:
     _target_: __main__.ProcessConfig
     paths:
       _target_: __main__.ProcessPaths
-      source: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/processed/merged.npz
-      destination: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic/processed
-    frequencies: [50, 60]
+      source: ${configs.data_path}/processed/merged.npz
+      destination: ${configs.data_path}/processed
+    frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
     num_segments: 350
     fs: 1500
     channels_to_remove: [42]
@@ -42,6 +43,7 @@ configs:
     fft_params:
       _target_: __main__.FFTParameters
       nfft: 8192
-      window:
-        _target_: functools.partial
-        _args_: ["${get_method:numpy.hamming}"]
+      window: null
+        # _target_: functools.partial
+        # _args_: ["${get_method:numpy.hamming}"]
+    max_workers: 8
