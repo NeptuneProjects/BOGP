@@ -37,7 +37,7 @@ parameters:
   #     - [0, 1, 2, 3, 4]
   #     - [345, 346, 347, 348, 349]
 mfp_parameters:
-  search_space:
+  grid:
     rec_r:
       _target_: numpy.linspace
       _args_: [0.01, 8.0, 200]

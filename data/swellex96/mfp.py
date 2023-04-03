@@ -6,6 +6,7 @@ from dataclasses import dataclass
 import logging
 import os
 from pathlib import Path
+import pickle
 import shutil
 import sys
 
@@ -120,16 +121,28 @@ def load_covariance(path, frequencies, num_segments, num_elements):
     return K
 
 
-def run_parameterizations(cfg, parameterization: param.Parameterization):
+def save_grid_parameters(grid: DictConfig, savepath: Path) -> None:
+    """Save grid parameters to file."""
+    grid_parameteres = format_dict_config(grid)
+    with open(savepath / "grid_parameters.pkl", "wb") as f:
+        pickle.dump(grid_parameteres, f)
+
+
+def run_parameterizations(
+    cfg: DictConfig, parameterization: param.Parameterization
+) -> Path:
     def _format_savepath():
         freq_descr = "".join([f"{f}-" for f in cfg.frequencies])[:-1]
-        resolutions = [len(v) for v in cfg.mfp_parameters.search_space.values()]
+        resolutions = [len(v) for v in cfg.mfp_parameters.grid.values()]
         res_descr = "".join([f"{r}x" for r in resolutions])[:-1]
         return cfg.paths.mfp_path / f"{freq_descr}_{res_descr}"
 
     log.info("Generating ambiguity surfaces for each scenario.")
 
     savepath = _format_savepath()
+
+    save_grid_parameters(cfg.mfp_parameters.grid, savepath)
+    
     tmpdir = savepath / cfg.parameters.fixed.tmpdir
     tmpdir.mkdir(parents=True, exist_ok=True)
 
@@ -187,13 +200,13 @@ def worker(
 
     amb_surface = np.zeros(
         (
-            len(cfg.mfp_parameters.search_space.src_z),
-            len(cfg.mfp_parameters.search_space.rec_r),
+            len(cfg.mfp_parameters.grid.src_z),
+            len(cfg.mfp_parameters.grid.rec_r),
         )
     )
-    for zz, z in enumerate(cfg.mfp_parameters.search_space.src_z):
+    for zz, z in enumerate(cfg.mfp_parameters.grid.src_z):
         amb_surface[zz] = MFP.evaluate(
-            {"src_z": z, "src_r": cfg.mfp_parameters.search_space.rec_r}
+            {"src_z": z, "src_r": cfg.mfp_parameters.grid.rec_r}
         )
 
     _save_results()
