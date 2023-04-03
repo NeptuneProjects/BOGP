@@ -97,16 +97,6 @@ class ProcessConfig:
         return frequency_vector(fs=self.fs, nfft=self.fft_params.nfft)
 
 
-def convert(config: ConversionConfig) -> None:
-    log.info("Converting SIO files to NUMPY files.")
-    handler = SIODataHandler(files=config.paths.source.glob(config.glob_pattern))
-    handler.convert_to_numpy(
-        channels_to_remove=config.channels_to_remove,
-        destination=config.paths.destination,
-        max_workers=config.max_workers,
-    )
-    log.info("Conversion complete.")
-
 
 def compute_covariance(config: CovarianceConfig) -> None:
     log.info("Computing covariance matrices.")
@@ -117,14 +107,14 @@ def compute_covariance(config: CovarianceConfig) -> None:
         unit="freq",
         bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
     ):
-        covariance_worker(
+        compute_covariance_worker(
             path=config.paths.source / f"{freq:.1f}Hz",
             timesteps=config.num_segments,
         )
     log.info("Covariance computation complete.")
 
 
-def covariance_worker(path: os.PathLike, timesteps: int):
+def compute_covariance_worker(path: os.PathLike, timesteps: int):
     p = np.load(path / "data.npy")
     K = np.zeros((timesteps, p.shape[1], p.shape[1]), dtype=complex)
     for t in range(timesteps):
@@ -133,6 +123,17 @@ def covariance_worker(path: os.PathLike, timesteps: int):
         K[t] = covariance(d)
 
     np.save(path / "covariance.npy", K)
+
+
+def convert(config: ConversionConfig) -> None:
+    log.info("Converting SIO files to NUMPY files.")
+    handler = SIODataHandler(files=config.paths.source.glob(config.glob_pattern))
+    handler.convert_to_numpy(
+        channels_to_remove=config.channels_to_remove,
+        destination=config.paths.destination,
+        max_workers=config.max_workers,
+    )
+    log.info("Conversion complete.")
 
 
 def merge(config: MergeConfig) -> None:
