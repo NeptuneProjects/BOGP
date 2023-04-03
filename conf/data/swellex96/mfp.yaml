@@ -1,0 +1,45 @@
+_target_: __main__.RunConfig
+paths:
+  _target_: __main__.MFPPaths
+  data_path: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA
+  env_path: ${paths.data_path}/env_models/swellex96.json
+  range_path: ${paths.data_path}/gps/gps_range.csv
+  mfp_path: ${paths.data_path}/acoustic/ambiguity_surfaces
+  covariance_path: ${paths.data_path}/acoustic/processed
+frequencies: [49.0, 64.0]
+num_segments: 350
+num_elements: 64
+max_workers: 8
+parameters:
+  indexed:
+    # _target_: __main__.param.IndexedParameterization
+    # scenario:
+    timestep:
+      _target_: builtins.list
+      _args_:
+        - _target_: builtins.range
+          _args_: [0, 350]
+      # range:
+      #   _target_: builtins.list
+      #   _args_:
+      #     - _target_: builtins.range
+      #       _args_: [5, 15]
+  permuted:
+    # _target_: __main__.param.PermutedParameterization
+    # scenario:
+    # depth: [9, 60]
+  fixed:
+    tmpdir: tmp
+  # Not implemented yet:
+  # exclude_parameters:
+  #   timestep:
+  #     - [0, 1, 2, 3, 4]
+  #     - [345, 346, 347, 348, 349]
+mfp_parameters:
+  search_space:
+    rec_r:
+      _target_: numpy.linspace
+      _args_: [1.0, 8.0, 21]
+    src_z:
+      _target_: numpy.linspace
+      _args_: [1.0, 200.0, 21]
