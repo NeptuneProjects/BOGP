@@ -25,6 +25,7 @@ from tritonoa.sp.processing import (
     FrequencyPeakFindingParameters,
     generate_complex_pressure,
 )
+from tritonoa.sp.beamforming import covariance
 from tritonoa.sp.timefreq import frequency_vector
 
 log = logging.getLogger(__name__)
@@ -47,6 +48,16 @@ class ConversionConfig:
     glob_pattern: str
     channels_to_remove: list[int]
     max_workers: int
+
+    def __post_init__(self):
+        self.paths.__post_init__()
+
+
+@dataclass
+class CovarianceConfig:
+    paths: ProcessPaths
+    frequencies: list[float]
+    num_segments: int
 
     def __post_init__(self):
         self.paths.__post_init__()
@@ -95,6 +106,33 @@ def convert(config: ConversionConfig) -> None:
         max_workers=config.max_workers,
     )
     log.info("Conversion complete.")
+
+
+def compute_covariance(config: CovarianceConfig) -> None:
+    log.info("Computing covariance matrices.")
+    for freq in tqdm(
+        config.frequencies,
+        total=len(config.frequencies),
+        desc="Processing frequencies",
+        unit="freq",
+        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
+    ):
+        covariance_worker(
+            path=config.paths.source / f"{freq:.1f}Hz",
+            timesteps=config.num_segments,
+        )
+    log.info("Covariance computation complete.")
+
+
+def covariance_worker(path: os.PathLike, timesteps: int):
+    p = np.load(path / "data.npy")
+    K = np.zeros((timesteps, p.shape[1], p.shape[1]), dtype=complex)
+    for t in range(timesteps):
+        d = np.expand_dims(p[t], 1)
+        d /= np.linalg.norm(d)
+        K[t] = covariance(d)
+
+    np.save(path / "covariance.npy", K)
 
 
 def merge(config: MergeConfig) -> None:

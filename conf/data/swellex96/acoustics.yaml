@@ -1,7 +1,8 @@
 run:
   # - convert
   # - merge
-  - process
+  # - process
+  - compute_covariance
 configs:
   data_path: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA/acoustic
   convert:
@@ -13,6 +14,14 @@ configs:
     glob_pattern: "*/VLA_*[!.npy]"
     channels_to_remove: 1
     max_workers: 4
+  compute_covariance:
+    _target_: __main__.CovarianceConfig
+    paths:
+      _target_: __main__.ProcessPaths
+      source: ${configs.data_path}/processed
+      destination: ${configs.data_path}/processed
+    frequencies: ${configs.process.frequencies}
+    num_segments: ${configs.process.num_segments}
   merge:
     _target_: __main__.MergeConfig
     paths:
