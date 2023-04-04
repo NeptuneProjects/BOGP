@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from dataclasses import dataclass
 import logging
 import os
@@ -140,9 +140,10 @@ def run_parameterizations(
     log.info("Generating ambiguity surfaces for each scenario.")
 
     savepath = _format_savepath()
+    savepath.mkdir(parents=True, exist_ok=True)
 
     save_grid_parameters(cfg.mfp_parameters.grid, savepath)
-    
+
     tmpdir = savepath / cfg.parameters.fixed.tmpdir
     tmpdir.mkdir(parents=True, exist_ok=True)
 
@@ -160,7 +161,9 @@ def run_parameterizations(
         unit="scenario",
         bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
     ) as pbar:
-        with ThreadPoolExecutor(max_workers=cfg.max_workers) as executor:
+        save_env_to_json(parameterization[0], savepath / "parameterization.json")
+
+        with ProcessPoolExecutor(max_workers=cfg.max_workers) as executor:
             futures = [
                 executor.submit(
                     worker,
@@ -169,7 +172,7 @@ def run_parameterizations(
                     cfg,
                     K[:, i, ...],
                 )
-                for i, scenario in enumerate(parameterization)
+                for i, scenario in enumerate(parameterization[0:8])
             ]
             [pbar.update(1) for _ in as_completed(futures)]
 
@@ -205,9 +208,8 @@ def worker(
         )
     )
     for zz, z in enumerate(cfg.mfp_parameters.grid.src_z):
-        amb_surface[zz] = MFP.evaluate(
-            {"src_z": z, "src_r": cfg.mfp_parameters.grid.rec_r}
-        )
+        tmp = MFP({"src_z": z, "rec_r": cfg.mfp_parameters.grid.rec_r})
+        amb_surface[zz, :] = tmp
 
     _save_results()
 
