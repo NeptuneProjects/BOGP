@@ -172,7 +172,7 @@ def run_parameterizations(
                     cfg,
                     K[:, i, ...],
                 )
-                for i, scenario in enumerate(parameterization[0:8])
+                for i, scenario in enumerate(parameterization[250:258])
             ]
             [pbar.update(1) for _ in as_completed(futures)]
 
@@ -207,8 +207,13 @@ def worker(
             len(cfg.mfp_parameters.grid.rec_r),
         )
     )
+    # import matplotlib.pyplot as plt
     for zz, z in enumerate(cfg.mfp_parameters.grid.src_z):
         tmp = MFP({"src_z": z, "rec_r": cfg.mfp_parameters.grid.rec_r})
+        
+        # plt.plot(abs(tmp))
+        # plt.show()
+
         amb_surface[zz, :] = tmp
 
     _save_results()
