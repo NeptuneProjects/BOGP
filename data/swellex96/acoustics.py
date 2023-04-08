@@ -156,6 +156,7 @@ def process(config: ProcessConfig) -> None:
     log.info(f"Loaded data with shape: {x.shape}")
 
     x[:, 42] = x[:, [41, 43]].mean(axis=1)  # Remove corrupted channel
+    # x -= x.mean(axis=0) # Remove mean
     x = np.fliplr(x)  # Reverse channel index
 
     with tqdm(
