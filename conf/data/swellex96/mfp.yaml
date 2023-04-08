@@ -31,6 +31,7 @@ parameters:
     # depth: [9, 60]
   fixed:
     tmpdir: .tmp
+    tilt: -1.0
   # Not implemented yet:
   # exclude_parameters:
   #   timestep:
@@ -40,7 +41,7 @@ mfp_parameters:
   grid:
     rec_r:
       _target_: numpy.linspace
-      _args_: [0.01, 8.0, 40]
+      _args_: [0.1, 8.0, 40]
     src_z:
       _target_: numpy.linspace
       _args_: [1.0, 200.0, 20]
