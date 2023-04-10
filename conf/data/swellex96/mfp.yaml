@@ -41,7 +41,7 @@ mfp_parameters:
   grid:
     rec_r:
       _target_: numpy.linspace
-      _args_: [0.1, 8.0, 40]
+      _args_: [0.1, 8.0, 200]
     src_z:
       _target_: numpy.linspace
-      _args_: [1.0, 200.0, 20]
+      _args_: [1.0, 200.0, 100]
