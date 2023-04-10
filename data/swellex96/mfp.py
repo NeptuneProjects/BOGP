@@ -172,7 +172,7 @@ def run_parameterizations(
                     cfg,
                     K[:, i, ...],
                 )
-                for i, scenario in enumerate(parameterization[250:258])
+                for i, scenario in enumerate(parameterization)
             ]
             [pbar.update(1) for _ in as_completed(futures)]
 
@@ -190,6 +190,8 @@ def worker(
         np.save(savepath / f"surface_{scenario['title']}.npy", amb_surface)
         # np.save(savepath / f"covariance_{scenario['title']}.npy", K)
 
+    # Set unique name for this scenario to avoid i/o collisions in 
+    # multiprocessing.
     scenario["tmpdir"] = savepath / scenario["tmpdir"]
     scenario["title"] = f"{scenario['timestep']:03d}"
 
