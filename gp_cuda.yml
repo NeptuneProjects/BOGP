@@ -6,16 +6,16 @@ channels:
   - defaults
 dependencies:
   - python=3.10
-  - cmocean=2
-  - jupyterlab=3.5
-  - matplotlib=3.6
-  - parallel=20230122
+  - cmocean
+  - jupyterlab
+  - matplotlib
+  - parallel
   - pip
-  - pytorch=1.13
-  - pytorch-cuda=11.7
+  - pytorch
+  - pytorch-cuda=11.8
   - seaborn
-  - tqdm=4.64
   - pip:
+    - aim-mlflow
     - ax-platform
     - hydra-core
     - tomli-w
