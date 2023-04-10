@@ -2,7 +2,7 @@
 # -*- coding: utf-8 -*-
 """Usage:
 python3 ./data/plotting/mfp.py \
-    ../data/swellex96_S5_VLA/acoustic/ambiguity_surfaces/49-64-79-94-112-130-148-166-201-235-283-338-388_40x20 \
+    ../data/swellex96_S5_VLA/acoustic/ambiguity_surfaces/49-64-79-94-112-130-148-166-201-235-283-338-388_200x100 \
     --glob "*.npy"
 """
 
@@ -33,19 +33,17 @@ def load_grid_data(filename):
 
 def plot(grid_data, ambiguity_surface):
     fig = plt.figure(figsize=(8, 6), facecolor="w", dpi=125)
-    plt.imshow(ambiguity_surface, aspect="auto")
-    print(ambiguity_surface.min(), ambiguity_surface.max())
-    # _, im = plot_ambiguity_surface(
-    #     ambiguity_surface,
-    #     grid_data["rec_r"],
-    #     grid_data["src_z"],
-    #     imshow_kwargs={"vmin": 0, "vmax": 1},
-    # )
-    # plt.xlabel("Range [km]")
-    # plt.ylabel("Depth [m]")
-    # plt.title("MFP Ambiguity Surface")
-    # cbar = plt.colorbar(im)
-    # cbar.set_label("Normalized Correlation [dB]")
+    _, im = plot_ambiguity_surface(
+        ambiguity_surface,
+        grid_data["rec_r"],
+        grid_data["src_z"],
+        imshow_kwargs={"vmin": 0, "vmax": 1},
+    )
+    plt.xlabel("Range [km]")
+    plt.ylabel("Depth [m]")
+    plt.title("MFP Ambiguity Surface")
+    cbar = plt.colorbar(im)
+    cbar.set_label("Normalized Correlation [dB]")
     return fig
 
 

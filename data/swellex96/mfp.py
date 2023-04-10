@@ -207,14 +207,9 @@ def worker(
             len(cfg.mfp_parameters.grid.rec_r),
         )
     )
-    # import matplotlib.pyplot as plt
+    
     for zz, z in enumerate(cfg.mfp_parameters.grid.src_z):
-        tmp = MFP({"src_z": z, "rec_r": cfg.mfp_parameters.grid.rec_r})
-        
-        # plt.plot(abs(tmp))
-        # plt.show()
-
-        amb_surface[zz, :] = tmp
+        amb_surface[zz, :] = MFP({"src_z": z, "rec_r": cfg.mfp_parameters.grid.rec_r})
 
     _save_results()
 
