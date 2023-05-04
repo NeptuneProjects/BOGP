@@ -15,8 +15,6 @@ from hydra.utils import instantiate
 import numpy as np
 from omegaconf import OmegaConf
 from scipy.io import savemat
-from tqdm import tqdm
-
 from tritonoa.data import DataStream
 from tritonoa.io.sio import SIODataHandler
 from tritonoa.sp.processing import (
@@ -27,6 +25,7 @@ from tritonoa.sp.processing import (
 )
 from tritonoa.sp.beamforming import covariance
 from tritonoa.sp.timefreq import frequency_vector
+from tqdm import tqdm
 
 log = logging.getLogger(__name__)
 
@@ -223,7 +222,7 @@ cs.store(name="process_config", node=ProcessConfig)
 
 
 @hydra.main(
-    config_path=str(Path(__file__).parents[2] / "conf" / "data" / "swellex96"),
+    config_path=str(Path(__file__).parents[3] / "conf" / "swellex96" / "data"),
     config_name="acoustics",
     version_base=None,
 )

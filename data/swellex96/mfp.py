@@ -22,7 +22,7 @@ from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
-from BOGP import parameterization as param
+from optimization import parameterization as param
 from env import load_env_from_json, save_env_to_json
 from gps_range import load_range_csv
 
@@ -222,7 +222,7 @@ cs.store(name="run_config", node=RunConfig)
 
 
 @hydra.main(
-    config_path=str(Path(__file__).parents[2] / "conf" / "data" / "swellex96"),
+    config_path=str(Path(__file__).parents[2] / "conf" / "swellex96" / "data"),
     config_name="mfp",
     version_base=None,
 )

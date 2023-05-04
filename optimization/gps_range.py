@@ -1,18 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 
-def load_range_csv(path: os.PathLike) -> np.ndarray:
+def load_range_csv(path):
     return np.loadtxt(path, delimiter=",", skiprows=1, usecols=2)
 
 
-def save_range_csv(path: Path) -> None:
+def save_range_csv(path):
     start = pd.to_datetime(pd.Timestamp(1996, 5, 10, 23, 21, 0))
     end = pd.to_datetime(pd.Timestamp(1996, 5, 11, 0, 24, 0))
     t = pd.date_range(start, end=end, periods=350)
@@ -31,7 +30,7 @@ def save_range_csv(path: Path) -> None:
     df2.to_csv(path)
 
 
-def main() -> None:
+def main():
     DATADIR = Path(__file__).parents[3] / "data" / "swellex96_S5_VLA" / "gps"
     save_range_csv(DATADIR / "gps_range2.csv")
 

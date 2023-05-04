@@ -10,6 +10,7 @@ from gpytorch.kernels import MaternKernel, RBFKernel, ScaleKernel
 from gpytorch.likelihoods import GaussianLikelihood
 from gpytorch.means import ConstantMean
 from gpytorch.models import ExactGP
+from gpytorch.priors import GammaPrior
 
 
 class LocalizationGP(GPyTorchModel, ExactGP):
@@ -17,7 +18,7 @@ class LocalizationGP(GPyTorchModel, ExactGP):
 
     def __init__(self, train_X, train_Y) -> None:
         super().__init__(train_X, train_Y.squeeze(-1), GaussianLikelihood())
-        self.mean_module = ConstantMean()
+        self.mean_module = ConstantMean(constant_constraint=Positive())
         self.covar_module = ScaleKernel(
             base_kernel=RBFKernel(ard_num_dims=train_X.shape[-1])
         )
@@ -34,13 +35,19 @@ class ConstrainedLocalizationGP(GPyTorchModel, ExactGP):
 
     def __init__(self, train_X, train_Y) -> None:
         super().__init__(train_X, train_Y.squeeze(-1), GaussianLikelihood())
-        self.mean_module = ConstantMean(constant_constraint=Positive())
-
+        self.mean_module = ConstantMean()
         self.covar_module = ScaleKernel(
             base_kernel=(
-                RBFKernel(active_dims=[0], lengthscale_constraint=Interval(0.02, 0.2))
-                * RBFKernel(active_dims=[1], lengthscale_constraint=Interval(0.02, 0.2))
+                RBFKernel(
+                    active_dims=[0],
+                    lengthscale_constraint=Interval(0.007, 1.2),
+                )
+                * RBFKernel(
+                    active_dims=[1],
+                    lengthscale_constraint=Interval(0.07, 1.0),
+                )
             ),
+            outputscale_prior=GammaPrior(3.0, 6.0),
         )
         self.to(train_X)
 

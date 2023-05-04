@@ -7,7 +7,6 @@ from pathlib import Path
 from ax.service.ax_client import AxClient
 from tqdm import tqdm
 
-import __init__
 
 COLUMNS = ["optimization", "mode", "serial", "scenario", "strategy", "seed"]
 

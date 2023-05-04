@@ -13,8 +13,6 @@ directory for convenient analysis and plotting.
 import argparse
 import ast
 from pathlib import Path
-import sys
-sys.path.insert(0, Path.cwd() / "Source")
 
 import numpy as np
 import pandas as pd
