@@ -5,6 +5,7 @@ import logging
 from pathlib import Path
 from typing import Union
 
+from hydra_zen import load_from_yaml
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -12,7 +13,6 @@ logger.setLevel(logging.DEBUG)
 
 
 class Aggregator:
-    # TODO: Add parameterization to dataframes.
     pbar_kwargs = {
         "desc": "Aggregating results",
         "bar_format": "{l_bar}{bar:20}{r_bar}{bar:-20b}",
@@ -37,9 +37,13 @@ class Aggregator:
 
     def build_best_df(self) -> pd.DataFrame:
         def _format_df(path: Path) -> pd.DataFrame:
-            return self.append_strategy_seed_cols(
-                pd.read_csv(path, index_col=0).tail(1), *path.parts[-3:-1]
-            )
+            df = pd.read_csv(path, index_col=0).tail(1)
+            df = self.append_strategy_seed_cols(df, *path.parts[-3:-1])
+            for k, v in self.get_parameterization(
+                path.parent / "configured.yaml"
+            ).items():
+                df[k] = v
+            return df
 
         return self.remove_parameter_columns(
             self.remove_duplicate_columns(
@@ -49,13 +53,22 @@ class Aggregator:
 
     def build_full_df(self) -> pd.DataFrame:
         def _format_df(path: Path) -> pd.DataFrame:
-            return self.append_strategy_seed_cols(
-                pd.read_csv(path, index_col=0), *path.parts[-3:-1]
-            )
+            df = pd.read_csv(path, index_col=0)
+            df = self.append_strategy_seed_cols(df, *path.parts[-3:-1])
+            for k, v in self.get_parameterization(
+                path.parent / "configured.yaml"
+            ).items():
+                df[k] = v
+            return df
 
         return self.remove_duplicate_columns(
             pd.concat(map(_format_df, [f for f in self.files]), ignore_index=True)
         )
+
+    @staticmethod
+    def get_parameterization(path: Path) -> dict:
+        cfg = load_from_yaml(path)["parameterization"]
+        return {f"param_{k}": v for k, v in cfg.items() if k != "tmpdir"}
 
     def mkdir(self) -> None:
         self.savepath.mkdir(parents=True, exist_ok=True)
@@ -129,7 +142,6 @@ class Aggregator:
 
 def main(args):
     agg = Aggregator(args.path)
-    "../data/swellex96_S5_VLA/outputs/localization/simulation/serial_000"
     agg.run()
 
 
