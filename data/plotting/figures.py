@@ -6,12 +6,11 @@ from copy import deepcopy
 # import ast
 from pathlib import Path
 
-# import sys
+import sys
 import warnings
 
-# sys.path.insert(0, Path.cwd() / "Source")
-
 from ax.service.ax_client import AxClient
+import matplotlib as mpl
 from matplotlib import ticker
 from matplotlib.colors import LogNorm
 import matplotlib.gridspec as gridspec
@@ -21,15 +20,18 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 
-from acoustics import simulate_measurement_covariance
-from collate import get_error, load_mfp_results
-import swellex
-from tritonoa.io import read_ssp
-from tritonoa.kraken import run_kraken
-from tritonoa.sp import beamformer
+sys.path.insert(0, str(Path(__file__).parents[2]))
+import optimization.utils as utils
+# from acoustics import simulate_measurement_covariance
+# from collate import get_error, load_mfp_results
+# import swellex
+# from tritonoa.io import read_ssp
+from tritonoa.at.models.kraken.runner import run_kraken
+from tritonoa.sp.beamforming import beamformer
+from tritonoa.sp.mfp import MatchedFieldProcessor
 
-ROOT = Path.cwd()
-FIGURE_PATH = ROOT / "Reports" / "JASA" / "figures"
+ROOT = Path(__file__).parents[3]
+FIGURE_PATH = ROOT / "reports" / "manuscripts" / "JASA" / "figures"
 SAVEFIG_KWARGS = {"dpi": 200, "facecolor": "white", "bbox_inches": "tight"}
 
 
@@ -54,7 +56,7 @@ def figure2():
 
 
 def figure3():
-    return simulations_range_est()
+    return show_sampling_density()
 
 
 def figure4():
@@ -62,7 +64,7 @@ def figure4():
 
 
 def figure5():
-    return experimental_range_est()
+    return show_sampling_density()
 
 
 def figure6():
@@ -1035,39 +1037,105 @@ def plot_training_2D():
     return fig
 
 
-def simulations_localization():
+def show_sampling_density():
     SMOKE_TEST = False
+    serial = "serial_000"
+    results_dir = ROOT / "data" / "swellex96_S5_VLA" / "outputs" / "localization" / "simulation" / serial / "results"
+    print(results_dir)
 
-    sim_dir = ROOT / "Data" / "localization" / "simulation"
-    serial = "serial_230218"
 
     if not SMOKE_TEST:
-        df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
+        df = pd.read_csv(results_dir / "aggregated_results.csv")
+
+    rec_r = 5.0
+    src_z = 60.0
+    strategies = {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI"}
+    seed = int("002406475")
+    
+    params = {
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["cm"],
+        "font.size": 10,
+    }
+    mpl.rcParams.update(params)
+
+    # sns.set_theme(style="darkgrid")
+    fig = plt.figure(figsize=(12, 4))
+    outer_gs = gridspec.GridSpec(nrows=1, ncols=3, wspace=0.16)
+    margin = 1.1
+    
+    for i, (strat, strat_name) in enumerate(strategies.items()):
+        selection = (df["param_rec_r"] == rec_r) & (df["param_src_z"] == src_z) & (df["strategy"] == strat) & ((df["seed"] == seed) | (df["seed"] == 0))
+
+
+        inner_gs = outer_gs[i].subgridspec(nrows=2, ncols=2, wspace=0.1, hspace=0.1, height_ratios=[1, 6], width_ratios=[6, 1])
+
+        ax = fig.add_subplot(inner_gs[1, 0])
+        ax.scatter(x=df[selection]["rec_r"], y=df[selection]["src_z"], s=25, alpha=0.5, color="k", edgecolors="none")
+        ax.set_xlim(rec_r - margin * 1, rec_r + margin * 1)
+        ax.set_ylim(src_z - margin * 40, src_z + margin * 40)
+        ax.invert_yaxis()
+
+        ax_histx = fig.add_subplot(inner_gs[0, 0], sharex=ax)
+        ax_histx.hist(df[selection]["rec_r"], bins=100, color="k")
+        ax_histx.set_ylim(0, 13)
+        plt.setp(ax_histx.get_xticklabels(), visible=False)
+        ax_histx.set_title(strat_name.upper())
+        
+        ax_histy = fig.add_subplot(inner_gs[1, 1], sharey=ax)
+        ax_histy.hist(df[selection]["src_z"], bins=100, color="k", orientation='horizontal')
+        ax_histy.set_xlim(0, 13)
+        plt.setp(ax_histy.get_yticklabels(), visible=False)
+
+        if i == 0:
+            ax.set_xlabel("Range [km]")
+            ax.set_ylabel("Depth [m]")
+            ax_histx.set_ylabel("Count")
+        
+    return fig
+
+
+def simulations_localization():
+    SMOKE_TEST = False
+    
+    serial = "serial_000"
+    results_dir = ROOT / "data" / "swellex96_S5_VLA" / "outputs" / "localization" / "simulation" / serial / "results"
+    print(results_dir)
+
+
+    if not SMOKE_TEST:
+        df = pd.read_csv(results_dir / "aggregated_results.csv")
 
     FREQUENCIES = [148, 166, 201, 235, 283, 338, 388]
     RANGES = [1.0, 3.0, 5.0, 7.0]
     TITLE_KW = {"ha": "center", "va": "top", "y": 1.4}
 
     fig, axs = plt.subplots(
-        figsize=(16, 8), nrows=4, ncols=4, gridspec_kw={"wspace": 0.16, "hspace": 0.1}
+        figsize=(16, 10), nrows=4, ncols=4, gridspec_kw={"wspace": 0.16, "hspace": 0.17}
     )
 
     # Column 1 - Objective Function ============================================
     TITLE = "Ambiguity surface: $f(\mathbf{x})$"
     XLIM = [0, 10]
     XLABEL = "Range [km]"
-    YLIM = [200, 0]
+    YLIM = [100, 20]
     YLABEL = "Depth [m]"
     AMBSURF_KW = {
         "vmin": 0,
         "vmax": 1,
-        "marker": "s",
-        "markeredgecolor": "w",
-        "markerfacecolor": "none"
+        "marker": None,
+        # "markeredgecolor": "w",
+        # "markerfacecolor": "none"
     }
 
-    rvec = np.linspace(0.01, 10, 200)
-    zvec = np.linspace(1, 200, 200)
+    NUM_RVEC = 21
+    NUM_ZVEC = 21
+    zvec = np.linspace(20, 100, NUM_ZVEC)
+    min_r, max_r = 0.01, 8.0
+    r_bounds_rel = [-1.0, 1.0]
+    environment = utils.load_env_from_json(ROOT / "data" / "swellex96_S5_VLA" / "env_models" / "swellex96.json")
+    env_parameters = environment | {"tmpdir": "."}
 
     axcol = axs[:, 0]
     # Set ranges
@@ -1084,35 +1152,42 @@ def simulations_localization():
 
     count = 0
     for ax, r in zip(axcol, RANGES):
-        env_parameters = swellex.environment | {"freq": 201, "tmpdir": "."}
+        print(f"Plotting objective function for range {r} km...")
+        r_lower, r_upper = utils.adjust_bounds(
+            lower=r + r_bounds_rel[0],
+            lower_bound=min_r,
+            upper=r + r_bounds_rel[1],
+            upper_bound=max_r
+        )
+        rvec = np.linspace(r_lower, r_upper, NUM_RVEC)
+
         true_parameters = {
             "rec_r": r,
             "src_z": 60,
         }
-
-        K = []
-        for f in FREQUENCIES:
-            K.append(
-                simulate_measurement_covariance(
-                    env_parameters | {"snr": 20, "freq": f} | true_parameters
-                )
+        if not SMOKE_TEST:
+            K = utils.simulate_covariance(
+                runner=run_kraken,
+                parameters=env_parameters | true_parameters,
+                freq=FREQUENCIES, 
             )
-        K = np.array(K)
-        if len(K.shape) == 2:
-            K = K[np.newaxis, ...]
-        
 
-
-        amb_surf = np.zeros((len(FREQUENCIES), len(zvec), len(rvec)))
-        for ff, f in enumerate(FREQUENCIES):
+            MFP = MatchedFieldProcessor(
+                runner=run_kraken,
+                covariance_matrix=K,
+                freq=FREQUENCIES,
+                parameters=env_parameters,
+                beamformer=beamformer,
+            )
+            
+            amb_surf = np.zeros((len(zvec), len(rvec)))
             for zz, z in enumerate(zvec):
-                p_rep = run_kraken(env_parameters | {"freq": f, "src_z": z, "rec_r": rvec})
-                for rr, r in enumerate(rvec):
-                    amb_surf[ff, zz, rr] = beamformer(K[ff], p_rep[:, rr], atype="cbf").item()
-        
-        amb_surf = np.mean(amb_surf, axis=0)
-        
-        ax, im = plot_ambiguity_surface(amb_surf, rvec, zvec, ax=ax, **AMBSURF_KW)
+                amb_surf[zz, :] = MFP({"src_z": z, "rec_r": rvec})
+            
+            ax, im = plot_ambiguity_surface(amb_surf, rvec, zvec, ax=ax, **AMBSURF_KW)
+        else:
+            ax, im = plot_ambiguity_surface(np.random.randn(len(zvec), len(rvec)), rvec, zvec, ax=ax, **AMBSURF_KW)
+
         if count == 0:
             cax = ax.inset_axes([0, 1, 1.0, 0.15])
             cbar = fig.colorbar(im, ax=ax, cax=cax, orientation="horizontal")
@@ -1121,8 +1196,8 @@ def simulations_localization():
             count += 1
 
     # Set x axis
-    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
-    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+    [axcol[i].set_xlim(*[r + b for b in r_bounds_rel]) for i, r in enumerate(RANGES)]
+    # [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
     # [axcol[-1].set_xlabel(None) for i in range(len(RANGES) - 1)]
     [axcol[-1].set_xlabel(XLABEL)]
 
@@ -1133,23 +1208,22 @@ def simulations_localization():
     # Set title
     axcol[0].set_title(TITLE, **TITLE_KW)
 
-    # TODO: Indicate maximum with star
-
     # Column 2 - Performance History ===========================================
     TITLE = "Best observed: $\hat{f}(\mathbf{x})$"
-    XLIM = [0, 801]
-    XLABEL = "Evaluation"
-    YLIM = [0, 1.2]
+    XLIM = [0, 145]
+    XLABEL = "Trial"
+    YLIM = [0, 1.0]
 
     axcol = axs[:, 1]
 
     for ax, r in zip(axcol, RANGES):
+        print(f"Plotting performance history for range {r} km...")
         if not SMOKE_TEST:
-            selection = df["range"] == r
+            selection = df["param_rec_r"] == r
             g = sns.lineplot(
                 data=df[selection],
                 x="trial_index",
-                y="best_values",
+                y="best_value",
                 hue="strategy",
                 ax=ax,
                 legend=None,
@@ -1169,18 +1243,19 @@ def simulations_localization():
 
     # Column 3 - Range Error History ===========================================
     TITLE = "Range error history:\n$\\vert\hat{R}_{src} - R_{src}\\vert$ [km]"
-    YLIM = [0, 8]
+    YLIM = [0, 1.1]
 
     axcol = axs[:, 2]
 
     count = 0
     for ax, r in zip(axcol, RANGES):
+        print(f"Plotting range error for range {r} km...")
         if not SMOKE_TEST:
-            selection = df["range"] == r
+            selection = df["param_rec_r"] == r
             g = sns.lineplot(
                 data=df[selection],
                 x="trial_index",
-                y="best_range_error",
+                y="best_error_rec_r",
                 hue="strategy",
                 ax=ax,
                 legend="auto" if count == 3 else None,
@@ -1205,17 +1280,18 @@ def simulations_localization():
 
     # Column 4 - Depth Error History ===========================================
     TITLE = "Depth error history:\n$\\vert\hat{z}_{src} - z_{src}\\vert$ [m]"
-    YLIM = [0, 140]
+    YLIM = [0, 41]
 
     axcol = axs[:, 3]
 
     for ax, r in zip(axcol, RANGES):
+        print(f"Plotting depth error for range {r} km...")
         if not SMOKE_TEST:
-            selection = df["range"] == r
+            selection = df["param_rec_r"] == r
             g = sns.lineplot(
                 data=df[selection],
                 x="trial_index",
-                y="best_depth_error",
+                y="best_error_src_z",
                 hue="strategy",
                 ax=ax,
                 legend=None,
@@ -1232,155 +1308,155 @@ def simulations_localization():
 
     # Set title
     axcol[0].set_title(TITLE, **TITLE_KW)
-
+    
     return fig
 
 
-def simulations_range_est():
-    SMOKE_TEST = False
+# def simulations_range_est():
+#     SMOKE_TEST = False
 
-    sim_dir = ROOT / "Data" / "range_estimation" / "simulation"
-    serial = "serial_230217"
-    if not SMOKE_TEST:
-        df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
+#     sim_dir = ROOT / "Data" / "range_estimation" / "simulation"
+#     serial = "serial_230217"
+#     if not SMOKE_TEST:
+#         df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
 
-    RANGES = [1.0, 3.0, 5.0, 7.0]
-    TITLE_KW = {"ha": "left", "va": "top", "x": 0}
+#     RANGES = [1.0, 3.0, 5.0, 7.0]
+#     TITLE_KW = {"ha": "left", "va": "top", "x": 0}
 
-    fig, axs = plt.subplots(
-        figsize=(12, 6), nrows=4, ncols=3, gridspec_kw={"wspace": 0.15}
-    )
+#     fig, axs = plt.subplots(
+#         figsize=(12, 6), nrows=4, ncols=3, gridspec_kw={"wspace": 0.15}
+#     )
 
-    # Column 1 - Objective Function ============================================
-    # TODO: Read in high-res objective function
-    TITLE = "Ambiguity surface: $f(\mathbf{x})$"
-    XLIM = [0, 10]
-    XLABEL = "Range [km]"
-    YLIM = [0, 1.2]
+#     # Column 1 - Objective Function ============================================
+#     # TODO: Read in high-res objective function
+#     TITLE = "Ambiguity surface: $f(\mathbf{x})$"
+#     XLIM = [0, 10]
+#     XLABEL = "Range [km]"
+#     YLIM = [0, 1.2]
 
-    axcol = axs[:, 0]
-    # Set ranges
-    [
-        axcol[i].text(
-            -0.52,
-            0.5,
-            f"$R_\mathrm{{src}} = {r}$ km",
-            transform=axcol[i].transAxes,
-            fontsize="large",
-            ha="left",
-        )
-        for i, r in enumerate(RANGES)
-    ]
+#     axcol = axs[:, 0]
+#     # Set ranges
+#     [
+#         axcol[i].text(
+#             -0.52,
+#             0.5,
+#             f"$R_\mathrm{{src}} = {r}$ km",
+#             transform=axcol[i].transAxes,
+#             fontsize="large",
+#             ha="left",
+#         )
+#         for i, r in enumerate(RANGES)
+#     ]
 
-    for ax, r in zip(axcol, RANGES):
-        # fname = (
-        #     ROOT
-        #     / "Data"
-        #     / "range_estimation"
-        #     / "simulation"
-        #     / "serial_230217"
-        #     / f"rec_r={r:.1f}__src_z=60.0__snr=20"
-        #     / "grid"
-        #     / "seed_0002406475"
-        #     / "results.json"
-        # )
+#     for ax, r in zip(axcol, RANGES):
+#         # fname = (
+#         #     ROOT
+#         #     / "Data"
+#         #     / "range_estimation"
+#         #     / "simulation"
+#         #     / "serial_230217"
+#         #     / f"rec_r={r:.1f}__src_z=60.0__snr=20"
+#         #     / "grid"
+#         #     / "seed_0002406475"
+#         #     / "results.json"
+#         # )
 
-        if not SMOKE_TEST:
-            selection = (
-                (df["seed"] == int("0002406475"))
-                & (df["strategy"] == "Grid")
-                & (df["range"] == r)
-            )
-            df_obj = df[selection].sort_values("rec_r")
-            g = sns.lineplot(data=df_obj, x="rec_r", y="bartlett", ax=ax)
-            g.set(xlabel=None, ylabel=None)
-            ax.axvline(r, color="r")
+#         if not SMOKE_TEST:
+#             selection = (
+#                 (df["seed"] == int("0002406475"))
+#                 & (df["strategy"] == "Grid")
+#                 & (df["range"] == r)
+#             )
+#             df_obj = df[selection].sort_values("rec_r")
+#             g = sns.lineplot(data=df_obj, x="rec_r", y="bartlett", ax=ax)
+#             g.set(xlabel=None, ylabel=None)
+#             ax.axvline(r, color="r")
 
-    # Set x axis
-    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
-    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
-    # [axcol[-1].set_xlabel(None) for i in range(len(RANGES) - 1)]
-    [axcol[-1].set_xlabel(XLABEL)]
+#     # Set x axis
+#     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
+#     [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+#     # [axcol[-1].set_xlabel(None) for i in range(len(RANGES) - 1)]
+#     [axcol[-1].set_xlabel(XLABEL)]
 
-    # Set y axis
-    [axcol[i].set_ylim(YLIM) for i, _ in enumerate(RANGES)]
+#     # Set y axis
+#     [axcol[i].set_ylim(YLIM) for i, _ in enumerate(RANGES)]
 
-    # Set title
-    axcol[0].set_title(TITLE, **TITLE_KW)
+#     # Set title
+#     axcol[0].set_title(TITLE, **TITLE_KW)
 
-    # Column 2 - Performance History ===========================================
-    TITLE = "Best observed: $\hat{f}(\mathbf{x})$"
-    XLIM = [0, 201]
-    XLABEL = "Evaluation"
-    YLIM = [0, 1.2]
+#     # Column 2 - Performance History ===========================================
+#     TITLE = "Best observed: $\hat{f}(\mathbf{x})$"
+#     XLIM = [0, 201]
+#     XLABEL = "Evaluation"
+#     YLIM = [0, 1.2]
 
-    axcol = axs[:, 1]
+#     axcol = axs[:, 1]
 
-    count = 0
-    for ax, r in zip(axcol, RANGES):
-        if not SMOKE_TEST:
-            selection = df["range"] == r
-            g = sns.lineplot(
-                data=df[selection],
-                x="trial_index",
-                y="best_values",
-                hue="strategy",
-                ax=ax,
-                legend="auto" if count == 3 else None,
-            )
-            g.set(xlabel=None, ylabel=None)
-            if count == 3:
-                sns.move_legend(
-                    ax,
-                    "upper center",
-                    bbox_to_anchor=(1.1, -0.5),
-                    ncol=7,
-                    title="Strategy",
-                )
-            count += 1
+#     count = 0
+#     for ax, r in zip(axcol, RANGES):
+#         if not SMOKE_TEST:
+#             selection = df["range"] == r
+#             g = sns.lineplot(
+#                 data=df[selection],
+#                 x="trial_index",
+#                 y="best_values",
+#                 hue="strategy",
+#                 ax=ax,
+#                 legend="auto" if count == 3 else None,
+#             )
+#             g.set(xlabel=None, ylabel=None)
+#             if count == 3:
+#                 sns.move_legend(
+#                     ax,
+#                     "upper center",
+#                     bbox_to_anchor=(1.1, -0.5),
+#                     ncol=7,
+#                     title="Strategy",
+#                 )
+#             count += 1
 
-    # Set x axis
-    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
-    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
-    [axcol[-1].set_xlabel(XLABEL)]
+#     # Set x axis
+#     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
+#     [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+#     [axcol[-1].set_xlabel(XLABEL)]
 
-    # Set y axis
-    [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
+#     # Set y axis
+#     [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
 
-    # Set title
-    axcol[0].set_title(TITLE, **TITLE_KW)
+#     # Set title
+#     axcol[0].set_title(TITLE, **TITLE_KW)
 
-    # Column 3 - Error History =================================================
-    TITLE = "Error history: $\\vert\hat{R}_{src} - R_{src}\\vert$ [km]"
-    YLIM = [0, 8]
+#     # Column 3 - Error History =================================================
+#     TITLE = "Error history: $\\vert\hat{R}_{src} - R_{src}\\vert$ [km]"
+#     YLIM = [0, 8]
 
-    axcol = axs[:, 2]
+#     axcol = axs[:, 2]
 
-    for ax, r in zip(axcol, RANGES):
-        if not SMOKE_TEST:
-            selection = df["range"] == r
-            g = sns.lineplot(
-                data=df[selection],
-                x="trial_index",
-                y="best_range_error",
-                hue="strategy",
-                ax=ax,
-                legend=None,
-            )
-            g.set(xlabel=None, ylabel=None)
+#     for ax, r in zip(axcol, RANGES):
+#         if not SMOKE_TEST:
+#             selection = df["range"] == r
+#             g = sns.lineplot(
+#                 data=df[selection],
+#                 x="trial_index",
+#                 y="best_range_error",
+#                 hue="strategy",
+#                 ax=ax,
+#                 legend=None,
+#             )
+#             g.set(xlabel=None, ylabel=None)
 
-    # Set x axis
-    [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
-    [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
-    [axcol[-1].set_xlabel(XLABEL)]
+#     # Set x axis
+#     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
+#     [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
+#     [axcol[-1].set_xlabel(XLABEL)]
 
-    # Set y axis
-    [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
+#     # Set y axis
+#     [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
 
-    # Set title
-    axcol[0].set_title(TITLE, **TITLE_KW)
+#     # Set title
+#     axcol[0].set_title(TITLE, **TITLE_KW)
 
-    return fig
+#     return fig
 
 
 if __name__ == "__main__":
