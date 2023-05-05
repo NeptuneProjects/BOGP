@@ -54,16 +54,25 @@ class Aggregator:
     def build_full_df(self) -> pd.DataFrame:
         def _format_df(path: Path) -> pd.DataFrame:
             df = pd.read_csv(path, index_col=0)
+            df["trial_index"] = df.index
             df = self.append_strategy_seed_cols(df, *path.parts[-3:-1])
             for k, v in self.get_parameterization(
                 path.parent / "configured.yaml"
             ).items():
-                df[k] = v
+                df[k] = v # Add parameterization to dataframe
+            df = self.compute_error(df)
             return df
 
         return self.remove_duplicate_columns(
             pd.concat(map(_format_df, [f for f in self.files]), ignore_index=True)
         )
+
+    @staticmethod
+    def compute_error(df) -> pd.DataFrame:
+        param_cols = [col for col in df.columns if col.startswith("param_")]
+        for param in param_cols:
+            df[f"best_error_{param[6:]}"] = abs(df[f"best_{param[6:]}"] - df[param])
+        return df
 
     @staticmethod
     def get_parameterization(path: Path) -> dict:
