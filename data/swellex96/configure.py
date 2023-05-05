@@ -31,7 +31,14 @@ def configure(cfg: DictConfig) -> None:
     qpath = utils.make_serial_paths(main_path)
     seeds = utils.get_random_seeds(main_seed=mc.seed, num_mc_runs=mc.num_mc_runs)
 
+    grid_search_configured = False
     for scenario, optimizer, seed in product(scenarios, cfg.optimizers, seeds):
+        if grid_search_configured:
+            continue
+        if optimizer == "grid":
+            seed = "0" * 9
+            grid_search_configured = True
+
         savepath = utils.make_save_path(
             path=main_path, scenario=scenario, strategy=optimizer, seed=seed
         )
