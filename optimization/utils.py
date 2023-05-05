@@ -57,6 +57,19 @@ def get_covariance_matrix_paths(freq: list, path: Path) -> list[Path]:
     return [path / f"{f:.1f}Hz" / "covariance.npy" for f in freq]
 
 
+def adjust_bounds(lower: float, lower_bound: float, upper: float, upper_bound: float) -> float:
+    if lower < lower_bound:
+        new_lower = lower_bound
+        new_upper = new_lower + abs(lower) + abs(upper)
+    elif upper > upper_bound:
+        new_upper = upper_bound
+        new_lower = new_upper - abs(lower) - abs(upper)
+    else:
+        new_lower = lower
+        new_upper = upper
+    return new_lower, new_upper
+
+
 def format_search_space(search_space: SearchSpaceBounds, scenario: dict) -> dict:
     parameters = []
     for bounds in search_space.bounds:
