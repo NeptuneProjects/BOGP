@@ -8,30 +8,55 @@
 
 """This script collates data from disparate locations in the project 
 directory for convenient analysis and plotting.
+
+Usage:
+    collate.py <mode> <serial>
 """
 
 import argparse
-import ast
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from conf.swellex96.optimization.common import SWELLEX96Paths
+
 ROOT = Path.cwd() / "Data"
+NO_DATA = [
+    list(range(73, 85)),
+    list(range(95, 103)),
+    list(range(187, 199)),
+    list(range(287, 294)),
+    list(range(302, 309)),
+]
+SKIP_T = (
+    [49, 72, 94, 186, 286, 301]
+    + NO_DATA[0]
+    + NO_DATA[1]
+    + NO_DATA[2]
+    + NO_DATA[3]
+    + NO_DATA[4]
+)
+
+
+def load_grid_parameters(path: Path):
+    data = np.load(path, allow_pickle=True)
+    return data["rec_r"], data["src_z"]
 
 
 def load_mfp_results(ambsurf_path):
     # Load high-res MFP
-    zvec = np.linspace(1, 200, 100)
-    rvec = np.linspace(10e-3, 10, 500)
+    rvec, zvec = load_grid_parameters(ambsurf_path / "grid_parameters.pkl")
 
     timesteps = []
     ranges = []
     depths = []
     for t in range(350):
         try:
-            surf = np.load(ambsurf_path / f"ambsurf_mf_t={t + 1:03d}.npy")
+            surf = np.load(ambsurf_path / f"surface_{t:03d}.npy")
         except FileNotFoundError:
             continue
         inds = np.unravel_index(surf.argmax(), surf.shape)
@@ -46,158 +71,85 @@ def load_mfp_results(ambsurf_path):
     return timesteps, ranges, depths
 
 
-def collate_experimental(path):
-    AMBSURF_PATH = (
-        ROOT
-        / "SWELLEX96"
-        / "VLA"
-        / "selected"
-        / "multifreq"
-        / "148.0-166.0-201.0-235.0-283.0-338.0-388.0"
-    )
-    NO_DATA = [
-        list(range(73, 85)),
-        list(range(95, 103)),
-        list(range(187, 199)),
-        list(range(287, 294)),
-        list(range(302, 309)),
-    ]
-    SKIP_T = (
-        [49, 72, 94, 186, 286, 301]
-        + NO_DATA[0]
-        + NO_DATA[1]
-        + NO_DATA[2]
-        + NO_DATA[3]
-        + NO_DATA[4]
-    )
+def build_mfp_df(path: Path) -> pd.DataFrame:
+    timesteps, ranges, depths = load_mfp_results(path)
+    df = pd.DataFrame(data={"Time Step": timesteps, "best_rec_r": ranges, "best_src_z": depths})
+    df["Time Step"] = df["Time Step"].astype(int)
+    df["strategy"] = "mfp"
+    return df
 
-    print(f"Reading data from {path}")
 
-    # Load high-res MFP
-    timesteps, ranges, depths = load_mfp_results(AMBSURF_PATH)
+def load_sbl_results(path: Path):
+    data = loadmat(path)["snapshotPeak"]
+    data[:, 1:] = np.flipud(data[:, 1:])
+    data[:, 1] = data[:, 1] / 1000
+    return data
 
-    df_mfp = pd.DataFrame(
-        data={"Time Step": timesteps, "rec_r": ranges, "src_z": depths}
-    )
-    df_mfp["Time Step"] = df_mfp["Time Step"].astype(int)
-    selection = df_mfp["Time Step"].isin(SKIP_T)
-    df_mfp = df_mfp.drop(df_mfp[selection].index)
-    df_mfp["strategy"] = "High-res MFP"
 
-    # Load strategies
-    fname = path / "results" / "best_results.csv"
+def build_sbl_df(path: Path) -> pd.DataFrame:
+    data = load_sbl_results(path)
+    df = pd.DataFrame(data=data, columns=["Time Step", "best_rec_r", "best_src_z"])
+    df["Time Step"] = df["Time Step"].astype(int) - 1
+    df["strategy"] = "sbl"
+    return df
 
+
+def build_bogp_df(path: Path) -> pd.DataFrame:
     df = pd.read_csv(
-        fname,
+        path,
         delimiter=",",
         skip_blank_lines=False,
         on_bad_lines="error",
+        index_col=0,
     )
-    df["scenario"] = (
-        df["scenario"]
-        .apply(lambda x: ast.literal_eval(x))
-        .apply(lambda x: list(x.values())[0])
+    df = df.rename(
+        columns={
+            "param_time_step": "Time Step",
+            "param_rec_r": "Range [km]",
+            "param_src_z": "Depth [m]",
+        }
     )
-    df = df.rename(columns={"scenario": "Time Step"})
-    df = df.loc[:, ~df.columns.str.match("Unnamed")]
-    df = df.rename(columns={"scenario": "Time Step"})
-    df = df.replace({"strategy": "sequential_qpi1"}, "PI")
-    df = df.replace({"strategy": "sequential_qei1"}, "EI")
-    df = df.replace({"strategy": "greedy_batch_qei5"}, "qEI")
-    df = df.replace({"strategy": "lhs"}, "LHS")
-    df = df.replace({"strategy": "random"}, "Rand")
+    return df
+
+
+def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.replace({"strategy": "mfp"}, "High-res MFP")
     df = df.replace({"strategy": "sobol"}, "Sobol")
     df = df.replace({"strategy": "grid"}, "Grid")
-    df["trial_index"] = df["trial_index"] + 1
-    df["trial_index"] = df["trial_index"].astype(int)
+    df = df.replace({"strategy": "sbl"}, "SBL")
+    df = df.replace({"strategy": "gpei"}, "Sobol+GP/EI")
+    return df
+
+
+def remove_bad_rows(df) -> pd.DataFrame:
     selection = df["Time Step"].isin(SKIP_T)
     df = df.drop(df[selection].index)
+    return df
+
+
+def collate_data(mode: str, serial: str) -> None:
+    data_path = SWELLEX96Paths.outputs / "localization" / mode / serial / "results"
+
+    # Load high-res MFP
+    df_mfp = build_mfp_df(
+        SWELLEX96Paths.ambiguity_surfaces / "148-166-201-235-283-338-388_200x100"
+    )
+
+    # Load strategies
+    df_bogp = build_bogp_df(data_path / "best_results.csv")
 
     # Load SBL results
+    df_sbl = build_sbl_df(SWELLEX96Paths.sbl_data)
 
-    sbl_data = loadmat(
-        ROOT / "SWELLEX96" / "VLA" / "selected" / "SBL" / "results_constrained.mat"
-    )["snapshotPeak"]
-    sbl_data[:, 1:] = np.flipud(sbl_data[:, 1:])
-    sbl_data[:, 1] = sbl_data[:, 1] / 1000
-    df_sbl = pd.DataFrame(data=sbl_data, columns=["Time Step", "rec_r", "src_z"])
-    df_sbl["Time Step"] = df_sbl["Time Step"].astype(int) - 1
-    selection = df_sbl["Time Step"].isin(SKIP_T)
-    df_sbl = df_sbl.drop(df_sbl[selection].index)
-    df_sbl["strategy"] = "SBL"
+    # Merge and format dataframes
+    df = pd.concat([df_bogp, df_sbl, df_mfp], ignore_index=True)
+    df = rename_columns(df)
+    df = remove_bad_rows(df)
+    df = df.sort_values(by=["Time Step", "strategy"])
 
-    df = pd.concat([df, df_sbl, df_mfp], ignore_index=True)
-
-    savepath = path / "results" / "collated.csv"
-    df.to_csv(savepath)
-    print(f"Collated data saved to {savepath}")
-
-
-def collate_simulation(path):
-    print(f"Reading data from {path}")
-    df = pd.read_csv(path / "results" / "aggregated_results.csv")
-    df = df.loc[:, ~df.columns.str.match("Unnamed")]
-
-    df["range"] = (
-        df["scenario"]
-        .apply(lambda x: ast.literal_eval(x))
-        .apply(lambda x: list(x.values())[0])
-    )
-    df["depth"] = (
-        df["scenario"]
-        .apply(lambda x: ast.literal_eval(x))
-        .apply(lambda x: list(x.values())[1])
-    )
-    df["best_range"] = (
-        df["best_parameters"]
-        .apply(lambda x: ast.literal_eval(x))
-        .apply(lambda x: list(x.values())[0])
-    )
-    df["best_range_error"] = np.abs(df["best_range"] - df["range"])
-
-    if path.parents[1].name == "localization":
-        df["best_depth"] = (
-            df["best_parameters"]
-            .apply(lambda x: ast.literal_eval(x))
-            .apply(lambda x: list(x.values())[1])
-        )
-        df["best_depth_error"] = np.abs(df["best_depth"] - df["depth"])
-
-    df = df.replace({"strategy": "sequential_qpi1"}, "PI")
-    df = df.replace({"strategy": "sequential_qei1"}, "EI")
-    df = df.replace({"strategy": "greedy_batch_qei5"}, "qEI")
-    df = df.replace({"strategy": "lhs"}, "LHS")
-    df = df.replace({"strategy": "random"}, "Rand")
-    df = df.replace({"strategy": "sobol"}, "Sobol")
-    df = df.replace({"strategy": "grid"}, "Grid")
-    df["trial_index"] = df["trial_index"] + 1
-
-    savepath = path / "results" / "collated.csv"
-    df.to_csv(savepath)
-    print(f"Collated data saved to {savepath}")
-
-
-def format_args(args):
-    if args.optim == "r":
-        args.optim = "range_estimation"
-    elif args.optim == "l":
-        args.optim = "localization"
-
-    if args.mode == "e":
-        args.mode = "experimental"
-    elif args.mode == "s":
-        args.mode = "simulation"
-
-    return args
-
-
-def get_collate_func(mode):
-    if mode == "experimental":
-        return collate_experimental
-    elif mode == "simulation":
-        return collate_simulation
-    else:
-        raise ValueError("Wrong mode selected.")
+    fname = "collated_results.csv"
+    df.to_csv(data_path / fname, index=False)
+    print(f"Collated data saved to {data_path / fname}")
 
 
 def get_error(df, var: str, timesteps, var_act):
@@ -213,14 +165,11 @@ def get_error(df, var: str, timesteps, var_act):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "optim",
-        choices=["r", "l"],
-        help="Choose which optimization problem to collate.",
-    )
-    parser.add_argument(
-        "mode", choices=["e", "s"], help="Choose which mode to collate."
+        "mode",
+        choices=["experimental", "simulation"],
+        help="Choose which optimization mode to collate.",
     )
     parser.add_argument("serial", help="Enter the data serial to collate.")
-    args = format_args(parser.parse_args())
-    path = ROOT / args.optim / args.mode / args.serial
-    get_collate_func(args.mode)(path)
+    args = parser.parse_args()
+
+    collate_data(mode=args.mode, serial=args.serial)
