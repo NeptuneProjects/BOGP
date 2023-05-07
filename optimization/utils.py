@@ -116,7 +116,7 @@ def make_serial_paths(path: Path) -> Path:
 
 
 def make_save_path(path: Path, scenario: dict, strategy: str, seed: int) -> Path:
-    savepath = path / format_scenario_path(scenario) / strategy / f"{seed:09d}"
+    savepath = path / format_scenario_path(scenario) / strategy / f"{int(seed):09d}"
     savepath.mkdir(parents=True, exist_ok=True)
     return savepath
 
@@ -151,7 +151,7 @@ def setup_scenario_path(scenario, scenario_keys, savepath_base):
 
 
 def format_configfile_name(path: Path, optimizer: str, seed: int):
-    return f"{path.parents[1].name}__{optimizer}__{seed:09d}.yaml"
+    return f"{path.parents[1].name}__{optimizer}__{int(seed):09d}.yaml"
 
 
 def get_config_path() -> Path:
