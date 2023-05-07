@@ -140,9 +140,12 @@ ExperimentalCovarianceConf = pbuilds(
 
 # objective/parameters
 Swellex96EnvConf = builds(
-    utils.load_env_from_json, path=SWELLEX96Paths.environment_data
+    dict,
+    builds(
+        **utils.load_env_from_json, path=SWELLEX96Paths.environment_data
+    )
+    # utils.load_env_from_json, path=SWELLEX96Paths.environment_data
 )
-print(Swellex96EnvConf)
 
 # objective/beamformer
 BeamformerConf = pbuilds(beamformer)
