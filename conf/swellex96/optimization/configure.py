@@ -29,7 +29,18 @@ class ObjectiveConfig:
     beamformer: str = "bartlett"
 
 
-ObjectiveConf = builds(
+ExperimentalObjectiveConf = builds(
+    ObjectiveConfig,
+    name="mfp",
+    runner="kraken",
+    covariance_matrix="experimental",
+    parameters="swellex96",
+    beamformer="bartlett",
+    builds_bases=(ObjectiveConfig,),
+)
+
+
+SimulationObjectiveConf = builds(
     ObjectiveConfig,
     name="mfp",
     runner="kraken",
@@ -81,6 +92,7 @@ ExperimentalMonteCarloConf = builds(
 class ParameterizationConf:
     parameterization: Parameterization
     mode: str
+    objective: ObjectiveConfig
     mc_config: MonteCarloConfig
 
 
@@ -95,6 +107,7 @@ SimulationParameterizationConf = builds(
         fixed=builds(dict, src_z=60.0),
     ),
     mode="simulation",
+    objective=SimulationObjectiveConf,
     mc_config=SimulationMonteCarloConf,
     builds_bases=(ParameterizationConf,),
 )
@@ -114,6 +127,7 @@ ExperimentalParameterizationConf = builds(
         fixed=builds(dict, src_z=60.0, tilt=-1.0),
     ),
     mode="experimental",
+    objective=ExperimentalObjectiveConf,
     mc_config=ExperimentalMonteCarloConf,
     builds_bases=(ParameterizationConf,),
 )
@@ -145,5 +159,5 @@ cs.store(
     node=ExperimentalParameterizationConf,
 )
 cs.store(group="problem", name="localization", node=LocalizationDefinitionConf)
-cs.store(group="objective", name="mfp", node=ObjectiveConf)
+# cs.store(group="objective", name="mfp", node=ObjectiveConf)
 cs.store(group="metric", name="bartlett", node=BartlettMetricConf)

@@ -23,7 +23,7 @@ from optimization import utils
 def configure(cfg: DictConfig) -> None:
     scenarios = instantiate(cfg.parameterization.parameterization).scenarios
     search_space = cfg.problem.search_space  # DO NOT INSTANTIATE!!!
-    objective = instantiate(cfg.objective)
+    objective = instantiate(cfg.parameterization.objective)
     metric = instantiate(cfg.metric)
     mc = instantiate(cfg.parameterization.mc_config)
 
@@ -33,9 +33,7 @@ def configure(cfg: DictConfig) -> None:
 
     grid_search_configured = False
     for scenario, optimizer, seed in product(scenarios, cfg.optimizers, seeds):
-        if grid_search_configured:
-            continue
-        if optimizer == "grid":
+        if not grid_search_configured and optimizer == "grid":
             seed = "0" * 9
             grid_search_configured = True
 
@@ -101,7 +99,7 @@ Config = make_config(
     defaults=[
         "_self_",
         {"parameterization": "simulation"},
-        {"objective": "mfp"},
+        # {"objective": "mfp"},
         {"problem": "localization"},
         {"metric": "bartlett"},
     ],
@@ -110,7 +108,7 @@ Config = make_config(
     frequencies=FREQ,
     parameterization=MISSING,
     optimizers=["grid", "sobol", "gpei"],
-    objective=MISSING,
+    # objective=MISSING,
     problem=MISSING,
     monitor=None,
     formatter="noiseless",
