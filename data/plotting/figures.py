@@ -19,16 +19,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-sys.path.insert(0, str(Path(__file__).parents[2]))
-import optimization.utils as utils
-# from acoustics import simulate_measurement_covariance
-# from collate import get_error, load_mfp_results
-# import swellex
-# from tritonoa.io import read_ssp
+from tritonoa.io.profile import read_ssp
 from tritonoa.at.models.kraken.runner import run_kraken
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
+
+sys.path.insert(0, str(Path(__file__).parents[2]))
+from conf.swellex96.optimization.common import SWELLEX96Paths
+from data.collate import load_mfp_results
+import optimization.utils as utils
 
 ROOT = Path(__file__).parents[3]
 FIGURE_PATH = ROOT / "reports" / "manuscripts" / "JASA" / "figures"
@@ -48,30 +47,41 @@ def main(figures: list):
 
 
 def figure1():
-    return plot_training_1D()
+    return show_sampling_density()
 
 
 def figure2():
-    return plot_environment()
+    # Reserved for GP model selection
+    return
 
 
 def figure3():
-    return show_sampling_density()
+    return plot_training_1D()
 
 
 def figure4():
-    return simulations_localization()
+    return plot_environment()
 
 
 def figure5():
-    return show_sampling_density()
+    return simulations_localization()
 
 
 def figure6():
-    return experimental_localization()
+    # Reserved to show n_warmup tradeoff curves
+    return
 
 
 def figure7():
+    # Reserved for showing CPU time
+    return
+
+
+def figure8():
+    return experimental_localization()
+
+
+def figure9():
     return experimental_posterior()
 
 
@@ -88,36 +98,28 @@ def adjust_subplotticklabels(ax, low=None, high=None):
 
 
 def experimental_localization():
-    AMBSURF_PATH = (
-        ROOT
-        / "Data"
-        / "SWELLEX96"
-        / "VLA"
-        / "selected"
-        / "multifreq"
-        / "148.0-166.0-201.0-235.0-283.0-338.0-388.0"
-    )
-    # Load high-res MFP
-    timesteps, ranges, depths = load_mfp_results(AMBSURF_PATH)
+    # AMBSURF_PATH = (
+    #     SWELLEX96Paths.ambiguity_surfaces
+    #     / "148-166-201-235-283-338-388_200x100"
+    # )
+    # # Load high-res MFP
+    # timesteps, ranges, depths = load_mfp_results(AMBSURF_PATH)
 
-    # GPS Range
-    gps_fname = ROOT / "Data" / "SWELLEX96" / "VLA" / "selected" / "gps_range.csv"
-    df_gps = pd.read_csv(gps_fname, index_col=0)
+    # # GPS Range
+    # gps_fname = SWELLEX96Paths.gps_data
+    # df_gps = pd.read_csv(gps_fname, index_col=0)
 
-    serial = "serial_full_depth"
+    serial = "serial_000"
     fname = (
-        ROOT
-        / "Data"
+        SWELLEX96Paths.outputs
         / "localization"
         / "experimental"
         / serial
         / "results"
-        / "collated.csv"
+        / "collated_results.csv"
     )
-    df = pd.read_csv(fname, index_col=0)
-    return plot_experimental_results(
-        df, df_gps, timesteps, ranges, depths, ylim_z=[200, 0], yticks_z=[0, 100, 200]
-    )
+    df = pd.read_csv(fname)
+    return plot_experimental_results(df, ylim_z=[100, 20], yticks_z=[20, 60, 100])
 
 
 def experimental_posterior():
@@ -137,13 +139,7 @@ def experimental_posterior():
         "origin": "lower",
         "extent": [0, 10, 50, 75],
     }
-    LABEL_KW = {
-        "ha": "center",
-        "va": "center",
-        "rotation": 90,
-        "fontsize": "large"
-
-    }
+    LABEL_KW = {"ha": "center", "va": "center", "rotation": 90, "fontsize": "large"}
     SCATTER_KW = {
         "marker": "o",
         "facecolors": "none",
@@ -217,7 +213,7 @@ def experimental_posterior():
 
     for i in range(nrows):
         data = clients[i].get_contour_plot()
-        best, _  = clients[i].get_best_parameters()
+        best, _ = clients[i].get_best_parameters()
         src_r_est = best["rec_r"]
         src_z_est = best["src_z"]
         rvec = data.data["data"][0]["x"]
@@ -419,15 +415,22 @@ def plot_ambiguity_surface(
         markersize=markersize,
         markeredgewidth=markeredgewidth,
         markeredgecolor=markeredgecolor,
-        markerfacecolor=markerfacecolor
+        markerfacecolor=markerfacecolor,
     )
     ax.invert_yaxis()
     return ax, im
 
 
 def plot_environment():
+    params = {
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["cm"],
+        "font.size": 10,
+    }
+    mpl.rcParams.update(params)
     zw, cw, _ = read_ssp(
-        ROOT / "Data" / "SWELLEX96" / "CTD" / "i9606.prn", 0, 3, header=None
+        ROOT / "data" / "swellex96_S5_VLA" / "ctd" / "i9606.prn", 0, 3, header=None
     )
     zw = np.append(zw, 217)
     cw = np.append(cw, cw[-1])
@@ -503,7 +506,7 @@ def plot_environment():
         va="center",
     )
     ax.annotate(
-        "Bedrock halfspace\n$c = 5200\ \mathrm{m\ s^{-1}}}$\n$\\rho = 2.66\ \mathrm{g\ cm^{-3}}$\n$a=0.02\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
+        "Bedrock halfspace\n$c = 5200\ \mathrm{m\ s^{-1}}$\n$\\rho = 2.66\ \mathrm{g\ cm^{-3}}$\n$a=0.02\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
         xy=(1500, 1090),
         xycoords="data",
         xytext=(1460, 940),
@@ -536,19 +539,21 @@ def plot_environment():
     return fig
 
 
-def plot_experimental_results(
-    df, df_gps, timesteps, ranges, depths, ylim_z=[80, 40], yticks_z=[40, 60, 80]
-):
+def plot_experimental_results(df, ylim_z=[80, 40], yticks_z=[40, 60, 80]):
+    params = {
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["cm"],
+        "font.size": 10,
+    }
+    mpl.rcParams.update(params)
     STRATEGY_KEY = [
         "High-res MFP",
+        "Sobol",
         "Grid",
         "SBL",
-        "LHS",
-        "Rand",
-        "Sobol",
-        "PI",
-        "EI",
-        "qEI",
+        "Sobol+GP/EI",
+        "",
     ]
     no_data = [
         list(range(73, 85)),
@@ -570,7 +575,7 @@ def plot_experimental_results(
     GPS_KW = {"color": "k", "label": "GPS Range", "legend": None, "zorder": 15}
     RANGE_KW = {
         "x": "Time Step",
-        "y": "rec_r",
+        "y": "best_rec_r",
         "s": 10,
         "label": "Strategy",
         "legend": None,
@@ -580,7 +585,7 @@ def plot_experimental_results(
     }
     DEPTH_KW = {
         "x": "Time Step",
-        "y": "src_z",
+        "y": "best_src_z",
         "s": 10,
         "color": "green",
         "label": "Strategy",
@@ -600,11 +605,12 @@ def plot_experimental_results(
     fig = plt.figure(figsize=(12, 8), facecolor="white")
     sns.set_theme(style="darkgrid")
 
-    gs = gridspec.GridSpec(3, 3, figure=fig, hspace=0.3, wspace=0.25)
+    nrows, ncols = 3, 2
+    gs = gridspec.GridSpec(nrows, ncols, figure=fig, hspace=0.3, wspace=0.25)
 
     k = 0
-    for i in range(3):
-        for j in range(3):
+    for i in range(nrows):
+        for j in range(ncols):
             strategy = STRATEGY_KEY[k]
 
             # Range ====================================================
@@ -614,23 +620,23 @@ def plot_experimental_results(
             )
 
             # Range Error
-            if k > 0:
-                ax2 = fig.add_subplot(sgs[0])
-                # ax2.grid(False)
+            # if k > 0:
+            #     ax2 = fig.add_subplot(sgs[0])
+            #     # ax2.grid(False)
 
-                error, est_timesteps = get_error(
-                    df[df["strategy"] == strategy], "rec_r", timesteps, ranges
-                )
-                error = np.abs(error)
-                error_plot = format_error(error, est_timesteps)
-                ax2.plot(list(range(350)), error_plot * 1000, **ERROR_KW)
+            #     error, est_timesteps = get_error(
+            #         df[df["strategy"] == strategy], "rec_r", timesteps, ranges
+            #     )
+            #     error = np.abs(error)
+            #     error_plot = format_error(error, est_timesteps)
+            #     ax2.plot(list(range(350)), error_plot * 1000, **ERROR_KW)
 
-                ax = ax2.twinx()
-            else:
-                ax = fig.add_subplot(sgs[0])
+            #     ax = ax2.twinx()
+            # else:
+            ax = fig.add_subplot(sgs[0])
 
             [ax.axvspan(l[0] - 1, l[-1] + 1, zorder=5, **NO_DATA_KW) for l in no_data]
-            sns.lineplot(data=df_gps, x=df_gps.index, y="Range [km]", ax=ax, **GPS_KW)
+            sns.lineplot(data=df, x="Time Step", y="Range [km]", ax=ax, **GPS_KW)
             sns.scatterplot(data=df[df["strategy"] == strategy], ax=ax, **RANGE_KW)
             ax.set_xlim(XLIM)
             ax.set_xticks(XTICKS)
@@ -638,67 +644,68 @@ def plot_experimental_results(
             ax.set_xlabel(None)
             ax.set_ylim(YLIM_R)
             ax.set_title(strategy)
+            # continue
 
-            # Switch twin y-axes
-            if k > 0:
-                primary_ticks = len(ax.yaxis.get_major_ticks())
-                ax2.yaxis.set_major_locator(ticker.LinearLocator(primary_ticks))
+            # # Switch twin y-axes
+            # if k > 0:
+            #     primary_ticks = len(ax.yaxis.get_major_ticks())
+            #     ax2.yaxis.set_major_locator(ticker.LinearLocator(primary_ticks))
 
-                ax2.yaxis.tick_right()
-                ax2.yaxis.set_label_position("right")
+            #     ax2.yaxis.tick_right()
+            #     ax2.yaxis.set_label_position("right")
 
-                ax.yaxis.tick_left()
-                ax.yaxis.set_label_position("left")
+            #     ax.yaxis.tick_left()
+            #     ax.yaxis.set_label_position("left")
 
-                ax.grid(True)
-                ax2.set_xlabel(None)
-                ax2.set_yscale("log")
-                ax2.set_ylim(YLIM_R_ERR)
-                ax2.set_yticks(YTICKS_R_ERR)
-                ax2.tick_params(
-                    axis="y", which="both", length=0, colors=ERROR_KW["color"]
-                )
-                adjust_subplotticklabels(ax2, low=0)
+            #     ax.grid(True)
+            #     ax2.set_xlabel(None)
+            #     ax2.set_yscale("log")
+            #     ax2.set_ylim(YLIM_R_ERR)
+            #     ax2.set_yticks(YTICKS_R_ERR)
+            #     ax2.tick_params(
+            #         axis="y", which="both", length=0, colors=ERROR_KW["color"]
+            #     )
+            #     adjust_subplotticklabels(ax2, low=0)
 
-            ax.set_yticks(YTICKS_R)
-            ax.tick_params(axis="both", which="both", length=0)
-            adjust_subplotticklabels(ax, 0, -1)
+            # ax.set_yticks(YTICKS_R)
+            # ax.tick_params(axis="both", which="both", length=0)
+            # adjust_subplotticklabels(ax, 0, -1)
 
-            if k == 6:
-                ax.set_ylabel("Range [km]")
-                if k > 0:
-                    ax2.set_ylabel(
-                        "Error [m]",
-                        color=ERROR_KW["color"],
-                        rotation=0,
-                        va="bottom",
-                        ha="right",
-                        # y=1.08,
-                        labelpad=0,
-                    )
-                    ax2.yaxis.set_label_coords(1.05, 1.08)
-            else:
-                ax.set_ylabel(None)
-                if k > 0:
-                    ax2.set_ylabel(None)
+            # if k == 6:
+            #     ax.set_ylabel("Range [km]")
+            #     if k > 0:
+            #         ax2.set_ylabel(
+            #             "Error [m]",
+            #             color=ERROR_KW["color"],
+            #             rotation=0,
+            #             va="bottom",
+            #             ha="right",
+            #             # y=1.08,
+            #             labelpad=0,
+            #         )
+            #         ax2.yaxis.set_label_coords(1.05, 1.08)
+            # else:
+            #     ax.set_ylabel(None)
+            #     if k > 0:
+            #         ax2.set_ylabel(None)
 
-            # Depth ====================================================
+            # # Depth ====================================================
 
-            # Depth Error
-            if k > 0:
-                ax2 = fig.add_subplot(sgs[1])
-                # ax2.grid(False)
+            # # Depth Error
+            # if k > 0:
+            #     ax2 = fig.add_subplot(sgs[1])
+            #     # ax2.grid(False)
 
-                error, est_timesteps = get_error(
-                    df[df["strategy"] == strategy], "src_z", timesteps, depths
-                )
-                error = np.abs(error)
-                error_plot = format_error(error, est_timesteps)
-                ax2.plot(list(range(350)), error_plot, **ERROR_KW)
+            #     error, est_timesteps = get_error(
+            #         df[df["strategy"] == strategy], "src_z", timesteps, depths
+            #     )
+            #     error = np.abs(error)
+            #     error_plot = format_error(error, est_timesteps)
+            #     ax2.plot(list(range(350)), error_plot, **ERROR_KW)
 
-                ax = ax2.twinx()
-            else:
-                ax = fig.add_subplot(sgs[1])
+            #     ax = ax2.twinx()
+            # else:
+            ax = fig.add_subplot(sgs[1])
 
             [ax.axvspan(l[0] - 1, l[-1] + 1, zorder=1, **NO_DATA_KW) for l in no_data]
             sns.scatterplot(data=df[df["strategy"] == strategy], ax=ax, **DEPTH_KW)
@@ -706,55 +713,55 @@ def plot_experimental_results(
             ax.set_xlim(XLIM)
             ax.set_ylim(ylim_z)
 
-            # Switch twin y-axes
-            if k > 0:
-                primary_ticks = len(ax.yaxis.get_major_ticks())
-                ax2.yaxis.set_major_locator(ticker.LinearLocator(primary_ticks))
+            # # Switch twin y-axes
+            # if k > 0:
+            #     primary_ticks = len(ax.yaxis.get_major_ticks())
+            #     ax2.yaxis.set_major_locator(ticker.LinearLocator(primary_ticks))
 
-                ax2.yaxis.tick_right()
-                ax2.yaxis.set_label_position("right")
+            #     ax2.yaxis.tick_right()
+            #     ax2.yaxis.set_label_position("right")
 
-                ax.yaxis.tick_left()
-                ax.yaxis.set_label_position("left")
+            #     ax.yaxis.tick_left()
+            #     ax.yaxis.set_label_position("left")
 
-                # ax.grid(True)
-                ax2.set_yscale("log")
-                ax2.set_ylim(YLIM_Z_ERR)
-                ax2.set_yticks(YTICKS_Z_ERR)
-                ax2.tick_params(axis="x", which="both", length=0)
-                ax2.tick_params(
-                    axis="y", which="both", length=0, colors=ERROR_KW["color"]
-                )
-                adjust_subplotticklabels(ax2, low=0)
+            #     # ax.grid(True)
+            #     ax2.set_yscale("log")
+            #     ax2.set_ylim(YLIM_Z_ERR)
+            #     ax2.set_yticks(YTICKS_Z_ERR)
+            #     ax2.tick_params(axis="x", which="both", length=0)
+            #     ax2.tick_params(
+            #         axis="y", which="both", length=0, colors=ERROR_KW["color"]
+            #     )
+            #     adjust_subplotticklabels(ax2, low=0)
 
-            ax.set_xticks(XTICKS)
-            ax.set_yticks(yticks_z)
-            ax.tick_params(axis="both", which="both", length=0)
-            adjust_subplotticklabels(ax, -1, 0)
+            # ax.set_xticks(XTICKS)
+            # ax.set_yticks(yticks_z)
+            # ax.tick_params(axis="both", which="both", length=0)
+            # adjust_subplotticklabels(ax, -1, 0)
 
-            if k == 6:
-                ax2.set_xlabel("Time Step")
-                ax.set_ylabel("Depth [m]")
-                if k > 0:
-                    pass
-                    # ax2.set_ylabel(
-                    #     "Error [m]",
-                    #     color=ERROR_KW["color"],
-                    #     rotation=0,
-                    #     va="top",
-                    #     # ha="right",
-                    #     x=-0.1,
-                    #     y=-0.05,
-                    #     labelpad=0,
-                    # )
-            else:
-                ax.set_ylabel(None)
-                if k > 0:
-                    ax2.set_xlabel(None)
-                    ax2.set_ylabel(None)
+            # if k == 6:
+            #     ax2.set_xlabel("Time Step")
+            #     ax.set_ylabel("Depth [m]")
+            #     if k > 0:
+            #         pass
+            #         # ax2.set_ylabel(
+            #         #     "Error [m]",
+            #         #     color=ERROR_KW["color"],
+            #         #     rotation=0,
+            #         #     va="top",
+            #         #     # ha="right",
+            #         #     x=-0.1,
+            #         #     y=-0.05,
+            #         #     labelpad=0,
+            #         # )
+            # else:
+            #     ax.set_ylabel(None)
+            #     if k > 0:
+            #         ax2.set_xlabel(None)
+            #         ax2.set_ylabel(None)
 
-            # if k == 1:
-            #     return fig
+            # # if k == 1:
+            # #     return fig
             k += 1
 
     return fig
@@ -804,7 +811,16 @@ def plot_gp_1D(
 
 
 def plot_training_1D():
-    loadpath = ROOT / "Data" / "range_estimation" / "demo"
+    params = {
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["cm"],
+        "font.size": 10,
+    }
+    mpl.rcParams.update(params)
+    loadpath = (
+        ROOT / "data" / "swellex96_S5_VLA" / "outputs" / "range_estimation" / "demo"
+    )
     X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha = load_training_data(
         loadpath
     )
@@ -842,7 +858,7 @@ def plot_training_1D():
         if i == 0:
             ax.text(0.1, 0.9, "Initialization", va="top")
         else:
-            ax.text(0.1, 0.9, f"Iteration {trial}", va="top")
+            ax.text(0.1, 0.9, f"Trial {trial}", va="top")
 
         ax.set_xticklabels([])
         ax.set_xlim(xlim)
@@ -1040,18 +1056,30 @@ def plot_training_2D():
 def show_sampling_density():
     SMOKE_TEST = False
     serial = "serial_000"
-    results_dir = ROOT / "data" / "swellex96_S5_VLA" / "outputs" / "localization" / "simulation" / serial / "results"
+    results_dir = (
+        ROOT
+        / "data"
+        / "swellex96_S5_VLA"
+        / "outputs"
+        / "localization"
+        / "simulation"
+        / serial
+        / "results"
+    )
     print(results_dir)
-
 
     if not SMOKE_TEST:
         df = pd.read_csv(results_dir / "aggregated_results.csv")
 
     rec_r = 5.0
     src_z = 60.0
-    strategies = {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI"}
+    strategies = {
+        "grid": "Grid Search (144)",
+        "sobol": "Sobol Sequence (144)",
+        "gpei": "Sobol (128) + GP-EI (16)",
+    }
     seed = int("002406475")
-    
+
     params = {
         "text.usetex": True,
         "font.family": "serif",
@@ -1064,15 +1092,33 @@ def show_sampling_density():
     fig = plt.figure(figsize=(12, 4))
     outer_gs = gridspec.GridSpec(nrows=1, ncols=3, wspace=0.16)
     margin = 1.1
-    
+
     for i, (strat, strat_name) in enumerate(strategies.items()):
-        selection = (df["param_rec_r"] == rec_r) & (df["param_src_z"] == src_z) & (df["strategy"] == strat) & ((df["seed"] == seed) | (df["seed"] == 0))
+        selection = (
+            (df["param_rec_r"] == rec_r)
+            & (df["param_src_z"] == src_z)
+            & (df["strategy"] == strat)
+            & ((df["seed"] == seed) | (df["seed"] == 0))
+        )
 
-
-        inner_gs = outer_gs[i].subgridspec(nrows=2, ncols=2, wspace=0.1, hspace=0.1, height_ratios=[1, 6], width_ratios=[6, 1])
+        inner_gs = outer_gs[i].subgridspec(
+            nrows=2,
+            ncols=2,
+            wspace=0.1,
+            hspace=0.1,
+            height_ratios=[1, 6],
+            width_ratios=[6, 1],
+        )
 
         ax = fig.add_subplot(inner_gs[1, 0])
-        ax.scatter(x=df[selection]["rec_r"], y=df[selection]["src_z"], s=25, alpha=0.5, color="k", edgecolors="none")
+        ax.scatter(
+            x=df[selection]["rec_r"],
+            y=df[selection]["src_z"],
+            s=25,
+            alpha=0.5,
+            color="k",
+            edgecolors="none",
+        )
         ax.set_xlim(rec_r - margin * 1, rec_r + margin * 1)
         ax.set_ylim(src_z - margin * 40, src_z + margin * 40)
         ax.invert_yaxis()
@@ -1082,37 +1128,70 @@ def show_sampling_density():
         ax_histx.set_ylim(0, 13)
         plt.setp(ax_histx.get_xticklabels(), visible=False)
         ax_histx.set_title(strat_name.upper())
-        
+
         ax_histy = fig.add_subplot(inner_gs[1, 1], sharey=ax)
-        ax_histy.hist(df[selection]["src_z"], bins=100, color="k", orientation='horizontal')
+        ax_histy.hist(
+            df[selection]["src_z"], bins=100, color="k", orientation="horizontal"
+        )
         ax_histy.set_xlim(0, 13)
         plt.setp(ax_histy.get_yticklabels(), visible=False)
+
+        ax.scatter(
+            x=rec_r,
+            y=src_z,
+            marker="o",
+            s=75,
+            color="red",
+            facecolor="none",
+            linewidths=2,
+        )
 
         if i == 0:
             ax.set_xlabel("Range [km]")
             ax.set_ylabel("Depth [m]")
             ax_histx.set_ylabel("Count")
-        
+
     return fig
 
 
 def simulations_localization():
+    PAPER = False
     SMOKE_TEST = False
-    
-    serial = "serial_000"
-    results_dir = ROOT / "data" / "swellex96_S5_VLA" / "outputs" / "localization" / "simulation" / serial / "results"
-    print(results_dir)
+    params = {
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["cm"],
+        "font.size": 12 if PAPER else 16,
+    }
+    mpl.rcParams.update(params)
 
+    serial = "serial_000"
+    results_dir = (
+        ROOT
+        / "data"
+        / "swellex96_S5_VLA"
+        / "outputs"
+        / "localization"
+        / "simulation"
+        / serial
+        / "results"
+    )
 
     if not SMOKE_TEST:
         df = pd.read_csv(results_dir / "aggregated_results.csv")
+        df["strategy"] = df["strategy"].map(
+            {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI"}
+        )
 
     FREQUENCIES = [148, 166, 201, 235, 283, 338, 388]
     RANGES = [1.0, 3.0, 5.0, 7.0]
-    TITLE_KW = {"ha": "center", "va": "top", "y": 1.4}
+    TITLE_KW = {"ha": "center", "va": "bottom", "y": 1.05}
 
     fig, axs = plt.subplots(
-        figsize=(16, 10), nrows=4, ncols=4, gridspec_kw={"wspace": 0.16, "hspace": 0.17}
+        figsize=(16 if PAPER else 24, 10),
+        nrows=4,
+        ncols=4,
+        gridspec_kw={"wspace": 0.16, "hspace": 0.17},
     )
 
     # Column 1 - Objective Function ============================================
@@ -1129,23 +1208,28 @@ def simulations_localization():
         # "markerfacecolor": "none"
     }
 
-    NUM_RVEC = 21
-    NUM_ZVEC = 21
+    NUM_RVEC = 80
+    NUM_ZVEC = 80
     zvec = np.linspace(20, 100, NUM_ZVEC)
     min_r, max_r = 0.01, 8.0
     r_bounds_rel = [-1.0, 1.0]
-    environment = utils.load_env_from_json(ROOT / "data" / "swellex96_S5_VLA" / "env_models" / "swellex96.json")
+    environment = utils.load_env_from_json(
+        ROOT / "data" / "swellex96_S5_VLA" / "env_models" / "swellex96.json"
+    )
     env_parameters = environment | {"tmpdir": "."}
 
     axcol = axs[:, 0]
     # Set ranges
     [
         axcol[i].text(
-            -0.6,
-            0.9,
+            -0.3,
+            0.5,
             f"$R_\mathrm{{src}} = {r}$ km",
             transform=axcol[i].transAxes,
+            ha="center",
+            va="center",
             fontsize="x-large",
+            rotation=90,
         )
         for i, r in enumerate(RANGES)
     ]
@@ -1157,7 +1241,7 @@ def simulations_localization():
             lower=r + r_bounds_rel[0],
             lower_bound=min_r,
             upper=r + r_bounds_rel[1],
-            upper_bound=max_r
+            upper_bound=max_r,
         )
         rvec = np.linspace(r_lower, r_upper, NUM_RVEC)
 
@@ -1169,7 +1253,7 @@ def simulations_localization():
             K = utils.simulate_covariance(
                 runner=run_kraken,
                 parameters=env_parameters | true_parameters,
-                freq=FREQUENCIES, 
+                freq=FREQUENCIES,
             )
 
             MFP = MatchedFieldProcessor(
@@ -1179,14 +1263,16 @@ def simulations_localization():
                 parameters=env_parameters,
                 beamformer=beamformer,
             )
-            
+
             amb_surf = np.zeros((len(zvec), len(rvec)))
             for zz, z in enumerate(zvec):
                 amb_surf[zz, :] = MFP({"src_z": z, "rec_r": rvec})
-            
+
             ax, im = plot_ambiguity_surface(amb_surf, rvec, zvec, ax=ax, **AMBSURF_KW)
         else:
-            ax, im = plot_ambiguity_surface(np.random.randn(len(zvec), len(rvec)), rvec, zvec, ax=ax, **AMBSURF_KW)
+            ax, im = plot_ambiguity_surface(
+                np.random.randn(len(zvec), len(rvec)), rvec, zvec, ax=ax, **AMBSURF_KW
+            )
 
         if count == 0:
             cax = ax.inset_axes([0, 1, 1.0, 0.15])
@@ -1206,7 +1292,7 @@ def simulations_localization():
     axcol[-1].set_ylabel(YLABEL)
 
     # Set title
-    axcol[0].set_title(TITLE, **TITLE_KW)
+    axcol[0].set_title(TITLE, **TITLE_KW | {"y": 1.3})
 
     # Column 2 - Performance History ===========================================
     TITLE = "Best observed: $\hat{f}(\mathbf{x})$"
@@ -1263,7 +1349,11 @@ def simulations_localization():
             g.set(xlabel=None, ylabel=None)
             if count == 3:
                 sns.move_legend(
-                    ax, "upper center", bbox_to_anchor=(0.5, -0.35), ncol=7, title="Strategy"
+                    ax,
+                    "upper center",
+                    bbox_to_anchor=(0.5, -0.3),
+                    ncol=7,
+                    title="Strategy",
                 )
             count += 1
 
@@ -1308,7 +1398,7 @@ def simulations_localization():
 
     # Set title
     axcol[0].set_title(TITLE, **TITLE_KW)
-    
+
     return fig
 
 
