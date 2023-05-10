@@ -26,20 +26,14 @@ from conf.swellex96.optimization.common import SWELLEX96Paths
 
 ROOT = Path.cwd() / "Data"
 NO_DATA = [
-    list(range(73, 85)),
-    list(range(95, 103)),
-    list(range(187, 199)),
-    list(range(287, 294)),
-    list(range(302, 309)),
+    list(range(0, 6)),
+    list(range(61, 73)),
+    list(range(83, 91)),
+    list(range(175, 186)),
+    list(range(275, 281)),
+    list(range(290, 296)),
 ]
-SKIP_T = (
-    [49, 72, 94, 186, 286, 301]
-    + NO_DATA[0]
-    + NO_DATA[1]
-    + NO_DATA[2]
-    + NO_DATA[3]
-    + NO_DATA[4]
-)
+SKIP_T = [item for sublist in NO_DATA for item in sublist]
 
 
 def load_grid_parameters(path: Path):
