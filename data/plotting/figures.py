@@ -26,7 +26,7 @@ from tritonoa.sp.mfp import MatchedFieldProcessor
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from conf.swellex96.optimization.common import SWELLEX96Paths
-from data.collate import load_mfp_results
+from data.collate import load_mfp_results, NO_DATA
 import optimization.utils as utils
 
 ROOT = Path(__file__).parents[3]
@@ -98,18 +98,7 @@ def adjust_subplotticklabels(ax, low=None, high=None):
 
 
 def experimental_localization():
-    # AMBSURF_PATH = (
-    #     SWELLEX96Paths.ambiguity_surfaces
-    #     / "148-166-201-235-283-338-388_200x100"
-    # )
-    # # Load high-res MFP
-    # timesteps, ranges, depths = load_mfp_results(AMBSURF_PATH)
-
-    # # GPS Range
-    # gps_fname = SWELLEX96Paths.gps_data
-    # df_gps = pd.read_csv(gps_fname, index_col=0)
-
-    serial = "serial_000"
+    serial = "serial_001"
     fname = (
         SWELLEX96Paths.outputs
         / "localization"
@@ -124,16 +113,11 @@ def experimental_localization():
 
 def experimental_posterior():
     AMBSURF_PATH = (
-        ROOT
-        / "Data"
-        / "SWELLEX96"
-        / "VLA"
-        / "selected"
-        / "multifreq"
-        / "148.0-166.0-201.0-235.0-283.0-338.0-388.0"
+        SWELLEX96Paths.ambiguity_surfaces / "148-166-201-235-283-338-388_200x100"
     )
-    TIMESTEP = 310
-    STRATEGY = "greedy_batch_qei"
+    # TIMESTEP = 310
+    TIMESTEP = 100
+    STRATEGY = "gpei"
     CBAR_KW = {"location": "top", "pad": 0}
     CONTOUR_KW = {
         "origin": "lower",
@@ -169,32 +153,19 @@ def experimental_posterior():
     NLEVELS = 21
     XLIM = [0, 10]
 
-    results0 = (
-        ROOT
-        / "Data"
+    results = (
+        SWELLEX96Paths.outputs
         / "localization"
         / "experimental"
-        / "serial_constrained_50-75"
-        / f"timestep={TIMESTEP}"
-        / STRATEGY
-        / "seed_0292288111"
-        / "results.json"
+        / "serial_001"
+        / "src_z=60.00__tilt=-1.00__time_step=100__rec_r=5.08"
+        / "gpei"
+        / "292288111"
+        / "client.json"
     )
-    client0 = AxClient(verbose_logging=False).load_from_json_file(results0)
-    results1 = (
-        ROOT
-        / "Data"
-        / "localization"
-        / "experimental"
-        / "serial_full_depth"
-        / f"timestep={TIMESTEP}"
-        / STRATEGY
-        / "seed_0292288111"
-        / "results.json"
-    )
-    client1 = AxClient(verbose_logging=False).load_from_json_file(results1)
-    clients = [client0, client1]
-
+    client = AxClient(verbose_logging=False).load_from_json_file(results)
+    
+    return
     rvec_f = np.linspace(0.01, 10, 500)
     zvec_f = np.linspace(1, 200, 100)
     f = np.load(AMBSURF_PATH / f"ambsurf_mf_t={TIMESTEP}.npy")
@@ -202,100 +173,100 @@ def experimental_posterior():
     src_r = rvec_f[src_r_ind]
     src_z = zvec_f[src_z_ind]
 
-    nrows = 2
+    nrows = 1
     ncols = 3
     fig, axs = plt.subplots(
         nrows=nrows,
         ncols=ncols,
-        figsize=(12, 6),
+        figsize=(12, 3),
         gridspec_kw={"wspace": 0.1, "hspace": 0.1},
     )
 
-    for i in range(nrows):
-        data = clients[i].get_contour_plot()
-        best, _ = clients[i].get_best_parameters()
-        src_r_est = best["rec_r"]
-        src_z_est = best["src_z"]
-        rvec = data.data["data"][0]["x"]
-        zvec = data.data["data"][0]["y"]
-        mean = data.data["data"][0]
-        se = data.data["data"][1]
-        x = data.data["data"][3]["x"]
-        y = data.data["data"][3]["y"]
+    # for i in range(nrows):
+    data = client.get_contour_plot()
+    best, _ = client.get_best_parameters()
+    src_r_est = best["rec_r"]
+    src_z_est = best["src_z"]
+    rvec = data.data["data"][0]["x"]
+    zvec = data.data["data"][0]["y"]
+    mean = data.data["data"][0]
+    se = data.data["data"][1]
+    x = data.data["data"][3]["x"]
+    y = data.data["data"][3]["y"]
 
-        axrow = axs[i]
+    axrow = axs[i]
 
-        # Objective function
-        ax = axrow[0]
-        vmin = 0
-        vmax = 0.6
-        vmid = vmax / 2
-        if i == 0:
-            ax.set_title("Objective function $f(\mathbf{X})$", **TITLE_KW)
-        im = ax.contourf(
-            rvec_f, zvec_f, f, levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
-        )
-        ax.scatter(x, y, **SCATTER_KW)
-        ax.scatter(src_r, src_z, **SOURCE_KW)
-        ax.scatter(src_r_est, src_z_est, **SOURCE_EST_KW)
-        ax.invert_yaxis()
-        if i == 0:
-            ax.set_xticklabels([])
-            ax.set_ylim([75, 50])
-        if i == 1:
-            ax.set_xlabel("Range [km]")
-            ax.set_ylim([200, 0])
-        ax.set_xlim(XLIM)
-        ax.set_ylabel("Depth [m]")
-        fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
-        if i == 0:
-            label = "Depth-constrained\nsearch space"
-        else:
-            label = "Full search space"
-        ax.text(-0.27, 0.5, label, transform=ax.transAxes, **LABEL_KW)
-
-        # Mean function
-        ax = axrow[1]
-        if i == 0:
-            ax.set_title("Mean function $\mu(\mathbf{X})$", **TITLE_KW)
-        im = ax.contourf(
-            rvec, zvec, mean["z"], levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
-        )
-        ax.scatter(x, y, **SCATTER_KW)
-        ax.scatter(src_r, src_z, **SOURCE_KW)
-        ax.scatter(src_r_est, src_z_est, **SOURCE_EST_KW)
-        ax.invert_yaxis()
-        ax.set_xlim(XLIM)
+    # Objective function
+    ax = axrow[0]
+    vmin = 0
+    vmax = 0.6
+    vmid = vmax / 2
+    if i == 0:
+        ax.set_title("Objective function $f(\mathbf{X})$", **TITLE_KW)
+    im = ax.contourf(
+        rvec_f, zvec_f, f, levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
+    )
+    ax.scatter(x, y, **SCATTER_KW)
+    ax.scatter(src_r, src_z, **SOURCE_KW)
+    ax.scatter(src_r_est, src_z_est, **SOURCE_EST_KW)
+    ax.invert_yaxis()
+    if i == 0:
         ax.set_xticklabels([])
-        if i == 0:
-            ax.set_ylim([75, 50])
-        else:
-            ax.set_ylim([200, 0])
-        ax.set_yticklabels([])
-        fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
+        ax.set_ylim([75, 50])
+    if i == 1:
+        ax.set_xlabel("Range [km]")
+        ax.set_ylim([200, 0])
+    ax.set_xlim(XLIM)
+    ax.set_ylabel("Depth [m]")
+    fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
+    if i == 0:
+        label = "Depth-constrained\nsearch space"
+    else:
+        label = "Full search space"
+    ax.text(-0.27, 0.5, label, transform=ax.transAxes, **LABEL_KW)
 
-        # Covariance function
-        ax = axrow[2]
-        vmin = 0
-        vmax = 0.08
-        vmid = vmax / 2
-        if i == 0:
-            ax.set_title("Covar. function $2\sigma(\mathbf{X})$", **TITLE_KW)
-        im = ax.contourf(
-            rvec, zvec, se["z"], levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
-        )
-        ax.scatter(x, y, **SCATTER_KW)
-        ax.scatter(src_r, src_z, **SOURCE_KW)
-        ax.scatter(src_r_est, src_z_est, **SOURCE_EST_KW)
-        ax.invert_yaxis()
-        ax.set_xlim(XLIM)
-        ax.set_xticklabels([])
-        if i == 0:
-            ax.set_ylim([75, 50])
-        else:
-            ax.set_ylim([200, 0])
-        ax.set_yticklabels([])
-        fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
+    # Mean function
+    ax = axrow[1]
+    if i == 0:
+        ax.set_title("Mean function $\mu(\mathbf{X})$", **TITLE_KW)
+    im = ax.contourf(
+        rvec, zvec, mean["z"], levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
+    )
+    ax.scatter(x, y, **SCATTER_KW)
+    ax.scatter(src_r, src_z, **SOURCE_KW)
+    ax.scatter(src_r_est, src_z_est, **SOURCE_EST_KW)
+    ax.invert_yaxis()
+    ax.set_xlim(XLIM)
+    ax.set_xticklabels([])
+    if i == 0:
+        ax.set_ylim([75, 50])
+    else:
+        ax.set_ylim([200, 0])
+    ax.set_yticklabels([])
+    fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
+
+    # Covariance function
+    ax = axrow[2]
+    vmin = 0
+    vmax = 0.08
+    vmid = vmax / 2
+    if i == 0:
+        ax.set_title("Covar. function $2\sigma(\mathbf{X})$", **TITLE_KW)
+    im = ax.contourf(
+        rvec, zvec, se["z"], levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
+    )
+    ax.scatter(x, y, **SCATTER_KW)
+    ax.scatter(src_r, src_z, **SOURCE_KW)
+    ax.scatter(src_r_est, src_z_est, **SOURCE_EST_KW)
+    ax.invert_yaxis()
+    ax.set_xlim(XLIM)
+    ax.set_xticklabels([])
+    if i == 0:
+        ax.set_ylim([75, 50])
+    else:
+        ax.set_ylim([200, 0])
+    ax.set_yticklabels([])
+    fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
 
     return fig
 
@@ -551,17 +522,11 @@ def plot_experimental_results(df, ylim_z=[80, 40], yticks_z=[40, 60, 80]):
         "High-res MFP",
         "Sobol",
         "Grid",
-        "SBL",
+        # "SBL",
         "Sobol+GP/EI",
-        "",
+        # "",
     ]
-    no_data = [
-        list(range(73, 85)),
-        list(range(95, 103)),
-        list(range(187, 199)),
-        list(range(287, 294)),
-        list(range(302, 309)),
-    ]
+    no_data = NO_DATA
     XLIM = [0, 351]
     XTICKS = list(range(0, 351, 50))
     YLIM_R = [0, 10]
@@ -605,8 +570,8 @@ def plot_experimental_results(df, ylim_z=[80, 40], yticks_z=[40, 60, 80]):
     fig = plt.figure(figsize=(12, 8), facecolor="white")
     sns.set_theme(style="darkgrid")
 
-    nrows, ncols = 3, 2
-    gs = gridspec.GridSpec(nrows, ncols, figure=fig, hspace=0.3, wspace=0.25)
+    nrows, ncols = 2, 2
+    gs = gridspec.GridSpec(nrows, ncols, figure=fig, hspace=0.4, wspace=0.25)
 
     k = 0
     for i in range(nrows):
@@ -616,7 +581,7 @@ def plot_experimental_results(df, ylim_z=[80, 40], yticks_z=[40, 60, 80]):
             # Range ====================================================
 
             sgs = gridspec.GridSpecFromSubplotSpec(
-                2, 1, subplot_spec=gs[i, j], hspace=0.05
+                2, 1, subplot_spec=gs[i, j], hspace=0.1
             )
 
             # Range Error
@@ -712,6 +677,7 @@ def plot_experimental_results(df, ylim_z=[80, 40], yticks_z=[40, 60, 80]):
             ax.set_xlabel(None)
             ax.set_xlim(XLIM)
             ax.set_ylim(ylim_z)
+            ax.set_ylabel("Depth [m]")
 
             # # Switch twin y-axes
             # if k > 0:
