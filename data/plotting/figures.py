@@ -36,7 +36,7 @@ SAVEFIG_KWARGS = {"dpi": 200, "facecolor": "white", "bbox_inches": "tight"}
 
 def main(figures: list):
     for figure in figures:
-        print(f"Producing Figure {figure:02d} " + 60 * "-")
+        print(f"Producing Figure {figure} " + 60 * "-")
         try:
             fig = eval(f"figure{figure}()")
             fig.savefig(FIGURE_PATH / f"figure{figure}.pdf", **SAVEFIG_KWARGS)
@@ -77,16 +77,31 @@ def figure7():
     return
 
 
-def figure8():
+def figure8a():
     return experimental_localization()
 
 
-def figure9():
+def figure8b():
+    print("Hello!")
+    # Reserved for error analysis
+    return
+
+def figure10():
     return experimental_posterior()
 
 
 def figure999():
     plot_training_2D()
+
+
+def set_rcparams():
+    params = {
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["cm"],
+        "font.size": 10,
+    }
+    mpl.rcParams.update(params)
 
 
 def adjust_subplotticklabels(ax, low=None, high=None):
@@ -108,7 +123,7 @@ def experimental_localization():
         / "collated_results.csv"
     )
     df = pd.read_csv(fname)
-    return plot_experimental_results(df, ylim_z=[100, 20], yticks_z=[20, 60, 100])
+    return plot_experimental_results(df)
 
 
 def experimental_posterior():
@@ -510,33 +525,22 @@ def plot_environment():
     return fig
 
 
-def plot_experimental_results(df, ylim_z=[80, 40], yticks_z=[40, 60, 80]):
-    params = {
-        "text.usetex": True,
-        "font.family": "serif",
-        "font.serif": ["cm"],
-        "font.size": 10,
-    }
-    mpl.rcParams.update(params)
+def plot_experimental_results(df):
     STRATEGY_KEY = [
         "High-res MFP",
         "Sobol",
         "Grid",
-        # "SBL",
+        "SBL",
         "Sobol+GP/EI",
-        # "",
+        "",
     ]
     no_data = NO_DATA
     XLIM = [0, 351]
     XTICKS = list(range(0, 351, 50))
     YLIM_R = [0, 10]
     YTICKS_R = [0, 5, 10]
-    YLIM_R_ERR = [1, 10000]
-    YTICKS_R_ERR = [1, 100, 10000]
-    YLIM_Z = [80, 40]
-    YTICKS_Z = [40, 60, 80]
-    YLIM_Z_ERR = [1e-2, 1e2]
-    YTICKS_Z_ERR = [0.01, 1, 100]
+    YLIM_Z = [100, 20]
+    YTICKS_Z = [20, 60, 100]
     GPS_KW = {"color": "k", "label": "GPS Range", "legend": None, "zorder": 15}
     RANGE_KW = {
         "x": "Time Step",
@@ -558,176 +562,62 @@ def plot_experimental_results(df, ylim_z=[80, 40], yticks_z=[40, 60, 80]):
         "linewidth": 0,
         "zorder": 20,
     }
-    ERROR_KW = {
-        "color": "tab:red",
-        # "legend": None,
-        "linewidth": 0.75,
-        "alpha": 0.5,
-        "zorder": 5,
-    }
     NO_DATA_KW = {"color": "black", "alpha": 0.25, "linewidth": 0, "label": None}
 
-    fig = plt.figure(figsize=(12, 8), facecolor="white")
+    fig = plt.figure(figsize=(12, 6), facecolor="white")
     sns.set_theme(style="darkgrid")
+    set_rcparams()
 
-    nrows, ncols = 2, 2
-    gs = gridspec.GridSpec(nrows, ncols, figure=fig, hspace=0.4, wspace=0.25)
+    nrows, ncols = 3, 2
+    gs = gridspec.GridSpec(nrows, ncols, figure=fig, hspace=0.4, wspace=0.1)
 
     k = 0
     for i in range(nrows):
         for j in range(ncols):
             strategy = STRATEGY_KEY[k]
 
-            # Range ====================================================
-
             sgs = gridspec.GridSpecFromSubplotSpec(
                 2, 1, subplot_spec=gs[i, j], hspace=0.1
             )
 
-            # Range Error
-            # if k > 0:
-            #     ax2 = fig.add_subplot(sgs[0])
-            #     # ax2.grid(False)
+            # Range ====================================================
+            ax1 = fig.add_subplot(sgs[0])
 
-            #     error, est_timesteps = get_error(
-            #         df[df["strategy"] == strategy], "rec_r", timesteps, ranges
-            #     )
-            #     error = np.abs(error)
-            #     error_plot = format_error(error, est_timesteps)
-            #     ax2.plot(list(range(350)), error_plot * 1000, **ERROR_KW)
+            [ax1.axvspan(l[0] - 1, l[-1] + 1, zorder=5, **NO_DATA_KW) for l in no_data]
+            sns.lineplot(data=df, x="Time Step", y="Range [km]", ax=ax1, **GPS_KW)
+            sns.scatterplot(data=df[df["strategy"] == strategy], ax=ax1, **RANGE_KW)
+            ax1.set_xlim(XLIM)
+            ax1.set_xticks(XTICKS)
+            ax1.set_xticklabels([])
+            ax1.set_xlabel(None)
+            ax1.set_ylim(YLIM_R)
+            ax1.set_yticks(YTICKS_R)
+            ax1.tick_params(length=0)
+            adjust_subplotticklabels(ax1, 0, -1)
+            ax1.set_title(strategy)
 
-            #     ax = ax2.twinx()
-            # else:
-            ax = fig.add_subplot(sgs[0])
+            # Depth ====================================================
+            ax2 = fig.add_subplot(sgs[1])
 
-            [ax.axvspan(l[0] - 1, l[-1] + 1, zorder=5, **NO_DATA_KW) for l in no_data]
-            sns.lineplot(data=df, x="Time Step", y="Range [km]", ax=ax, **GPS_KW)
-            sns.scatterplot(data=df[df["strategy"] == strategy], ax=ax, **RANGE_KW)
-            ax.set_xlim(XLIM)
-            ax.set_xticks(XTICKS)
-            ax.set_xticklabels([])
-            ax.set_xlabel(None)
-            ax.set_ylim(YLIM_R)
-            ax.set_title(strategy)
-            # continue
+            [ax2.axvspan(l[0] - 1, l[-1] + 1, zorder=1, **NO_DATA_KW) for l in no_data]
+            sns.scatterplot(data=df[df["strategy"] == strategy], ax=ax2, **DEPTH_KW)
+            ax2.set_xlim(XLIM)
+            ax1.set_xticks(XTICKS)
+            ax2.set_ylim(YLIM_Z)
+            ax2.set_yticks(YTICKS_Z)
+            ax2.set_ylabel("Depth [m]")
+            ax2.tick_params(length=0)
+            adjust_subplotticklabels(ax2, -1, 0)
 
-            # # Switch twin y-axes
-            # if k > 0:
-            #     primary_ticks = len(ax.yaxis.get_major_ticks())
-            #     ax2.yaxis.set_major_locator(ticker.LinearLocator(primary_ticks))
+            if k == 4:
+                ax1.set_ylabel("Range [km]", loc="bottom")
+                ax2.set_xlabel("Time Step")
+                ax2.set_ylabel("Depth [m]", loc="top")
+            else:
+                ax1.set_ylabel(None)
+                ax2.set_ylabel(None)
+                ax2.set_xlabel(None)
 
-            #     ax2.yaxis.tick_right()
-            #     ax2.yaxis.set_label_position("right")
-
-            #     ax.yaxis.tick_left()
-            #     ax.yaxis.set_label_position("left")
-
-            #     ax.grid(True)
-            #     ax2.set_xlabel(None)
-            #     ax2.set_yscale("log")
-            #     ax2.set_ylim(YLIM_R_ERR)
-            #     ax2.set_yticks(YTICKS_R_ERR)
-            #     ax2.tick_params(
-            #         axis="y", which="both", length=0, colors=ERROR_KW["color"]
-            #     )
-            #     adjust_subplotticklabels(ax2, low=0)
-
-            # ax.set_yticks(YTICKS_R)
-            # ax.tick_params(axis="both", which="both", length=0)
-            # adjust_subplotticklabels(ax, 0, -1)
-
-            # if k == 6:
-            #     ax.set_ylabel("Range [km]")
-            #     if k > 0:
-            #         ax2.set_ylabel(
-            #             "Error [m]",
-            #             color=ERROR_KW["color"],
-            #             rotation=0,
-            #             va="bottom",
-            #             ha="right",
-            #             # y=1.08,
-            #             labelpad=0,
-            #         )
-            #         ax2.yaxis.set_label_coords(1.05, 1.08)
-            # else:
-            #     ax.set_ylabel(None)
-            #     if k > 0:
-            #         ax2.set_ylabel(None)
-
-            # # Depth ====================================================
-
-            # # Depth Error
-            # if k > 0:
-            #     ax2 = fig.add_subplot(sgs[1])
-            #     # ax2.grid(False)
-
-            #     error, est_timesteps = get_error(
-            #         df[df["strategy"] == strategy], "src_z", timesteps, depths
-            #     )
-            #     error = np.abs(error)
-            #     error_plot = format_error(error, est_timesteps)
-            #     ax2.plot(list(range(350)), error_plot, **ERROR_KW)
-
-            #     ax = ax2.twinx()
-            # else:
-            ax = fig.add_subplot(sgs[1])
-
-            [ax.axvspan(l[0] - 1, l[-1] + 1, zorder=1, **NO_DATA_KW) for l in no_data]
-            sns.scatterplot(data=df[df["strategy"] == strategy], ax=ax, **DEPTH_KW)
-            ax.set_xlabel(None)
-            ax.set_xlim(XLIM)
-            ax.set_ylim(ylim_z)
-            ax.set_ylabel("Depth [m]")
-
-            # # Switch twin y-axes
-            # if k > 0:
-            #     primary_ticks = len(ax.yaxis.get_major_ticks())
-            #     ax2.yaxis.set_major_locator(ticker.LinearLocator(primary_ticks))
-
-            #     ax2.yaxis.tick_right()
-            #     ax2.yaxis.set_label_position("right")
-
-            #     ax.yaxis.tick_left()
-            #     ax.yaxis.set_label_position("left")
-
-            #     # ax.grid(True)
-            #     ax2.set_yscale("log")
-            #     ax2.set_ylim(YLIM_Z_ERR)
-            #     ax2.set_yticks(YTICKS_Z_ERR)
-            #     ax2.tick_params(axis="x", which="both", length=0)
-            #     ax2.tick_params(
-            #         axis="y", which="both", length=0, colors=ERROR_KW["color"]
-            #     )
-            #     adjust_subplotticklabels(ax2, low=0)
-
-            # ax.set_xticks(XTICKS)
-            # ax.set_yticks(yticks_z)
-            # ax.tick_params(axis="both", which="both", length=0)
-            # adjust_subplotticklabels(ax, -1, 0)
-
-            # if k == 6:
-            #     ax2.set_xlabel("Time Step")
-            #     ax.set_ylabel("Depth [m]")
-            #     if k > 0:
-            #         pass
-            #         # ax2.set_ylabel(
-            #         #     "Error [m]",
-            #         #     color=ERROR_KW["color"],
-            #         #     rotation=0,
-            #         #     va="top",
-            #         #     # ha="right",
-            #         #     x=-0.1,
-            #         #     y=-0.05,
-            #         #     labelpad=0,
-            #         # )
-            # else:
-            #     ax.set_ylabel(None)
-            #     if k > 0:
-            #         ax2.set_xlabel(None)
-            #         ax2.set_ylabel(None)
-
-            # # if k == 1:
-            # #     return fig
             k += 1
 
     return fig
@@ -1519,5 +1409,6 @@ if __name__ == "__main__":
     parser = ArgumentParser()
     parser.add_argument("--figures", type=str, default="10")
     args = parser.parse_args()
-    figures = list(map(lambda i: int(i.strip()), args.figures.split(",")))
+    # figures = list(map(lambda i: int(i.strip()), args.figures.split(",")))
+    figures = list(map(lambda i: i.strip(), args.figures.split(",")))
     main(figures)
