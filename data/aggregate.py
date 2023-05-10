@@ -60,7 +60,10 @@ class Aggregator:
                 path.parent / "configured.yaml"
             ).items():
                 df[k] = v # Add parameterization to dataframe
-            df = self.compute_error(df)
+            search_params = self.get_search_parameters(
+                path.parent / "configured.yaml"
+            )
+            df = self.compute_error(df, search_params)
             return df
 
         return self.remove_duplicate_columns(
@@ -68,11 +71,16 @@ class Aggregator:
         )
 
     @staticmethod
-    def compute_error(df) -> pd.DataFrame:
-        param_cols = [col for col in df.columns if col.startswith("param_")]
+    def compute_error(df: pd.DataFrame, param_cols: list[str]) -> pd.DataFrame:
         for param in param_cols:
-            df[f"best_error_{param[6:]}"] = abs(df[f"best_{param[6:]}"] - df[param])
+            df[f"best_error_{param}"] = abs(df[f"best_{param}"] - df[f"param_{param}"])
         return df
+
+    @staticmethod
+    def get_search_parameters(path: Path) -> list[str]:
+        cfg = load_from_yaml(path)["search_space"]
+        test = [d["name"] for d in cfg.bounds]
+        return test
 
     @staticmethod
     def get_parameterization(path: Path) -> dict:
