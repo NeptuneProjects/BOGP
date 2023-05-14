@@ -1358,6 +1358,7 @@ def plot_run_times():
         ax=ax,
         legend="auto",
     )
+    g.get_legend().set_title(None)
     ax.tick_params(length=0)
     ax.set_xlabel("Run time [s]")
     ax.set_ylabel("$\hat{f}(\mathbf{x})$")
