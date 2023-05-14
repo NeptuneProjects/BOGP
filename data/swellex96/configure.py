@@ -99,7 +99,6 @@ Config = make_config(
     defaults=[
         "_self_",
         {"parameterization": "simulation"},
-        # {"objective": "mfp"},
         {"problem": "localization"},
         {"metric": "bartlett"},
     ],
@@ -108,7 +107,6 @@ Config = make_config(
     frequencies=FREQ,
     parameterization=MISSING,
     optimizers=["grid", "sobol", "gpei"],
-    # objective=MISSING,
     problem=MISSING,
     monitor=None,
     formatter="noiseless",

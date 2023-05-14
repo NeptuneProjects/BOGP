@@ -183,10 +183,10 @@ LocalizationConf = sbuilds(
 )
 
 # strategy
-GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=12)
+GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=32)
 SobolStrategyConf = pbuilds(
     SobolStrategy,
-    num_trials=144,
+    num_trials=1024,
     max_parallelism=16,
     seed=MISSING,
 )
