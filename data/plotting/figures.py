@@ -5,11 +5,13 @@ from copy import deepcopy
 
 # import ast
 from pathlib import Path
+import string
 
 import sys
 import warnings
 
 from ax.service.ax_client import AxClient
+import jax.numpy as jnp
 import matplotlib as mpl
 from matplotlib import ticker
 from matplotlib.colors import LogNorm
@@ -19,13 +21,14 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
+from tinygp import GaussianProcess, kernels
 from tritonoa.io.profile import read_ssp
 from tritonoa.at.models.kraken.runner import run_kraken
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
-from conf.swellex96.optimization.common import SWELLEX96Paths
+from conf.swellex96.optimization.common import FREQ, SWELLEX96Paths
 from data.collate import load_mfp_results, NO_DATA
 import optimization.utils as utils
 
@@ -43,7 +46,6 @@ def main(figures: list):
         except NameError:
             warnings.warn(f"Figure {figure} is not implemented yet.")
             raise NotImplementedError(f"Figure {figure} is not implemented yet.")
-            # continue
 
 
 def figure1():
@@ -51,8 +53,7 @@ def figure1():
 
 
 def figure2():
-    # Reserved for GP model selection
-    return
+    return plot_model_selection()
 
 
 def figure3():
@@ -68,25 +69,18 @@ def figure5():
 
 
 def figure6():
-    # Reserved to show n_warmup tradeoff curves
-    return
+    return plot_run_times()
 
 
 def figure7():
-    # Reserved for showing CPU time
-    return
-
-
-def figure8a():
     return experimental_localization()
 
 
-def figure8b():
-    print("Hello!")
-    # Reserved for error analysis
-    return
+def figure8():
+    return experimental_error()
 
-def figure10():
+
+def figure9():
     return experimental_posterior()
 
 
@@ -112,6 +106,217 @@ def adjust_subplotticklabels(ax, low=None, high=None):
         ticklabels[high].set_va("top")
 
 
+def initialize_model_selection():
+    environment = utils.load_env_from_json(SWELLEX96Paths.environment_data) | {
+        "tmpdir": "."
+    }
+    freq = FREQ
+    rec_r_true = 5.0
+    src_z_true = 60.0
+    true_parameters = {
+        "rec_r": rec_r_true,
+        "src_z": src_z_true,
+    }
+
+    K = utils.simulate_covariance(
+        runner=run_kraken,
+        parameters=environment | true_parameters,
+        freq=freq,
+    )
+
+    MFP = MatchedFieldProcessor(
+        runner=run_kraken,
+        covariance_matrix=K,
+        freq=freq,
+        parameters=environment | {"src_z": src_z_true},
+        beamformer=beamformer,
+    )
+    num_rvec = 200
+    dr = 1.0
+    rec_r_lim = (rec_r_true - dr, rec_r_true + dr)
+    sigma_f = 0.1
+    x_test = np.linspace(rec_r_lim[0], rec_r_lim[1], num_rvec)
+    y_true = MFP({"rec_r": x_test})
+
+    n_samples = 50
+    random = np.random.default_rng(1)
+    x = random.uniform(rec_r_lim[0], rec_r_lim[1], size=n_samples)
+    y = MFP({"rec_r": x})
+
+    return x, y, x_test, y_true, sigma_f
+
+
+def neg_log_likelihood(X, y, sigma_f, length_scale, sigma_y):
+    gp = build_gp(X, jnp.exp(length_scale), sigma_f, jnp.exp(sigma_y))
+    return -gp.log_probability(y)
+
+
+def build_gp(x, length_scale, sigma_f, sigma_y):
+    kernel = (sigma_f**2) * kernels.ExpSquared(scale=length_scale)
+    # kernel = (sigma_f ** 2) * kernels.Matern52(scale=length_scale)
+    return GaussianProcess(kernel, x, diag=sigma_y**2)
+
+
+def plot_gp_pred(x, y, xtest, sigma_f, length_scale, sigma_y, ax=None):
+    if ax is None:
+        ax = plt.gca()
+    gp = build_gp(x, length_scale, sigma_f, sigma_y)
+    cond_gp = gp.condition(y, xtest).gp
+    mu, var = cond_gp.loc, cond_gp.variance
+    ax.scatter(x, y, s=50, c="k", marker="x", label="Data")
+    ax.plot(xtest, mu, color="k", label="Mean")
+    ax.fill_between(
+        xtest,
+        mu + 2 * jnp.sqrt(var),
+        mu - 2 * jnp.sqrt(var),
+        color="k",
+        alpha=0.3,
+        edgecolor="none",
+        label="Confidence",
+    )
+    sns.despine()
+    return ax
+
+
+def plot_marginal_likelihood_surface(
+    x, y, sigma_f, l_space, sigma_y_space, levels=None, ax=None
+):
+    if ax is None:
+        ax = plt.gca()
+    P = jnp.stack(jnp.meshgrid(l_space, sigma_y_space), axis=0)
+    Z = jnp.apply_along_axis(lambda p: neg_log_likelihood(x, y, sigma_f, *p), 0, P)
+    Z = Z - Z.min()
+    Z = Z.at[jnp.where(Z == 0)].set(0.01)
+    im = ax.contourf(
+        *jnp.exp(P),
+        Z,
+        levels,
+        cmap="bone_r",
+        locator=ticker.LogLocator(numticks=levels),
+    )
+
+    ax.contour(
+        *jnp.exp(P),
+        Z,
+        levels,
+        colors="k",
+        linewidths=0.5,
+        locator=ticker.LogLocator(numticks=levels),
+    )
+    return P, Z, im
+
+
+def add_subfigure_labels(axs, x=0.5, y=-0.2):
+    [
+        ax.text(
+            x,
+            y,
+            f"({string.ascii_lowercase[i]})",
+            ha="center",
+            va="top",
+            transform=ax.transAxes,
+            size=14,
+        )
+        for i, ax in enumerate(axs)
+    ]
+
+
+def plot_model_selection():
+    set_rcparams()
+    x, y, x_test, y_true, sigma_f = initialize_model_selection()
+
+    ngrid = 100
+    levels = 20
+    length_space = jnp.linspace(jnp.log(1.0e-2), jnp.log(1.0e0), ngrid)
+    sigma_y_space = jnp.linspace(jnp.log(1.0e-4), jnp.log(1.0e-1), ngrid)
+
+    fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(12, 3))
+
+    ax = axs[0]
+    P, Z, im = plot_marginal_likelihood_surface(
+        x, y, sigma_f, length_space, sigma_y_space, levels, ax=ax
+    )
+    fig.colorbar(im, ax=ax)
+    ind_x, ind_y = jnp.unravel_index(jnp.argmin(Z), Z.shape)
+
+    params_optim = [jnp.exp(P[0])[ind_x, ind_y], jnp.exp(P[1])[ind_x, ind_y]]
+    params_suboptim = [5e-1, 5e-2]
+
+    ax.scatter(marker="*", color="w", s=100, zorder=50, edgecolor="k", *params_optim)
+    ax.text(
+        4e-2,
+        params_optim[1],
+        "(b)",
+        ha="right",
+        va="center",
+        bbox=dict(alpha=0.85, facecolor="w", linewidth=0, pad=0.5),
+    )
+    ax.scatter(color="w", marker="*", s=100, zorder=50, edgecolor="k", *params_suboptim)
+    ax.text(
+        4e-1,
+        params_suboptim[1],
+        "(c)",
+        ha="right",
+        va="center",
+        bbox=dict(alpha=0.85, facecolor="w", linewidth=0, pad=0.5),
+    )
+    ax.set_xlabel("Length scale $l$ [km]")
+    ax.set_ylabel("Noise std. dev. $\sigma_y$")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
+    ax.set_title(
+        r"$-\log\left[p(\mathbf{y} \vert \mathbf{X}, l, \sigma_y)\right]$ (Normalized)"
+    )
+    sns.despine()
+
+    ax = axs[1]
+    ax = plot_gp(x, y, x_test, y_true, sigma_f, params_optim, ax=ax)
+    ax.set_xlabel("Range [km]")
+    ax.set_ylabel("$f(\mathbf{x})$")
+    ax.legend(loc="upper right", bbox_to_anchor=(1.1, 1.0))
+    title = rf"$l={{{format_sci_notation(f'{params_optim[0]:.2E}')}}}$, $\sigma_y={{{format_sci_notation(f'{params_optim[1]:.2E}')}}}$"
+    ax.set_title(title)
+
+    ax = axs[2]
+    ax = plot_gp(x, y, x_test, y_true, sigma_f, params_suboptim, ax=ax)
+    ax.set_xlabel("Range [km]")
+    ax.set_ylabel("$f(\mathbf{x})$")
+    # ax.legend()
+    title = rf"$l={{{format_sci_notation(f'{params_suboptim[0]:.2E}')}}}$, $\sigma_y={{{format_sci_notation(f'{params_suboptim[1]:.2E}')}}}$"
+    ax.set_title(title)
+    add_subfigure_labels(axs, x=0.5, y=-0.2)
+
+    return fig
+
+
+def format_sci_notation(float_str):
+    base, exponent = float_str.split("E")
+    return rf"{base} \times 10^{{{int(exponent)}}}"
+
+
+def plot_gp(x, y, x_test, y_true, sigma_f, params, ax=None):
+    if ax is None:
+        ax = plt.gca()
+    ax.plot(x_test, y_true, linestyle="--", c="k", label="True")
+    ax = plot_gp_pred(x, y, x_test, sigma_f, *params, ax=ax)
+    ax.set_ylim(0, 1.1)
+    return ax
+
+
+def experimental_error():
+    serial = "serial_001"
+    fname = (
+        SWELLEX96Paths.outputs
+        / "localization"
+        / "experimental"
+        / serial
+        / "results"
+        / "collated_results.csv"
+    )
+    df = pd.read_csv(fname)
+    return plot_experimental_error(df)
+
+
 def experimental_localization():
     serial = "serial_001"
     fname = (
@@ -126,13 +331,19 @@ def experimental_localization():
     return plot_experimental_results(df)
 
 
+def get_true_parameters_from(scenario):
+    true_rec_r = float(scenario.split("rec_r=")[1].split("_")[0])
+    true_src_z = float(scenario.split("src_z=")[1].split("_")[0])
+    return true_rec_r, true_src_z
+
+
 def experimental_posterior():
     AMBSURF_PATH = (
         SWELLEX96Paths.ambiguity_surfaces / "148-166-201-235-283-338-388_200x100"
     )
-    # TIMESTEP = 310
-    TIMESTEP = 100
+    TIMESTEP = 200
     STRATEGY = "gpei"
+    set_rcparams()
     CBAR_KW = {"location": "top", "pad": 0}
     CONTOUR_KW = {
         "origin": "lower",
@@ -166,24 +377,30 @@ def experimental_posterior():
     }
     TITLE_KW = {"y": 1.2, "fontsize": "large"}
     NLEVELS = 21
-    XLIM = [0, 10]
+
+    scenario = list(
+        (SWELLEX96Paths.outputs / "localization" / "experimental" / "serial_001").glob(
+            f"*time_step={TIMESTEP}*"
+        )
+    )[0]
 
     results = (
         SWELLEX96Paths.outputs
         / "localization"
         / "experimental"
         / "serial_001"
-        / "src_z=60.00__tilt=-1.00__time_step=100__rec_r=5.08"
-        / "gpei"
+        / scenario.name
+        / STRATEGY
         / "292288111"
         / "client.json"
     )
     client = AxClient(verbose_logging=False).load_from_json_file(results)
-    
-    return
-    rvec_f = np.linspace(0.01, 10, 500)
+
+    true_rec_r, true_src_z = get_true_parameters_from(scenario.name)
+
+    rvec_f = np.linspace(0.1, 8, 200)
     zvec_f = np.linspace(1, 200, 100)
-    f = np.load(AMBSURF_PATH / f"ambsurf_mf_t={TIMESTEP}.npy")
+    f = np.load(AMBSURF_PATH / f"surface_{TIMESTEP}.npy")
     src_z_ind, src_r_ind = np.unravel_index(np.argmax(f), (len(zvec_f), len(rvec_f)))
     src_r = rvec_f[src_r_ind]
     src_z = zvec_f[src_z_ind]
@@ -196,8 +413,7 @@ def experimental_posterior():
         figsize=(12, 3),
         gridspec_kw={"wspace": 0.1, "hspace": 0.1},
     )
-
-    # for i in range(nrows):
+    client.fit_model()
     data = client.get_contour_plot()
     best, _ = client.get_best_parameters()
     src_r_est = best["rec_r"]
@@ -209,41 +425,31 @@ def experimental_posterior():
     x = data.data["data"][3]["x"]
     y = data.data["data"][3]["y"]
 
-    axrow = axs[i]
+    XLIM = [true_rec_r - 1.0, true_rec_r + 1.0]
+    YLIM = [true_src_z + 40.0, true_src_z - 40.0]
 
     # Objective function
-    ax = axrow[0]
+    ax = axs[0]
     vmin = 0
-    vmax = 0.6
+    vmax = 1.0
     vmid = vmax / 2
-    if i == 0:
-        ax.set_title("Objective function $f(\mathbf{X})$", **TITLE_KW)
+    ax.set_title("Objective function $f(\mathbf{x})$", **TITLE_KW)
     im = ax.contourf(
         rvec_f, zvec_f, f, levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
     )
     ax.scatter(x, y, **SCATTER_KW)
     ax.scatter(src_r, src_z, **SOURCE_KW)
     ax.scatter(src_r_est, src_z_est, **SOURCE_EST_KW)
-    ax.invert_yaxis()
-    if i == 0:
-        ax.set_xticklabels([])
-        ax.set_ylim([75, 50])
-    if i == 1:
-        ax.set_xlabel("Range [km]")
-        ax.set_ylim([200, 0])
     ax.set_xlim(XLIM)
+    ax.set_xlabel("Range [km]")
+    ax.invert_yaxis()
+    ax.set_ylim(YLIM)
     ax.set_ylabel("Depth [m]")
     fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
-    if i == 0:
-        label = "Depth-constrained\nsearch space"
-    else:
-        label = "Full search space"
-    ax.text(-0.27, 0.5, label, transform=ax.transAxes, **LABEL_KW)
 
     # Mean function
-    ax = axrow[1]
-    if i == 0:
-        ax.set_title("Mean function $\mu(\mathbf{X})$", **TITLE_KW)
+    ax = axs[1]
+    ax.set_title("Mean $\mu(\mathbf{x})$", **TITLE_KW)
     im = ax.contourf(
         rvec, zvec, mean["z"], levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
     )
@@ -253,20 +459,16 @@ def experimental_posterior():
     ax.invert_yaxis()
     ax.set_xlim(XLIM)
     ax.set_xticklabels([])
-    if i == 0:
-        ax.set_ylim([75, 50])
-    else:
-        ax.set_ylim([200, 0])
+    ax.set_ylim(YLIM)
     ax.set_yticklabels([])
     fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
 
     # Covariance function
-    ax = axrow[2]
+    ax = axs[2]
     vmin = 0
     vmax = 0.08
     vmid = vmax / 2
-    if i == 0:
-        ax.set_title("Covar. function $2\sigma(\mathbf{X})$", **TITLE_KW)
+    ax.set_title("Standard error $2\sigma(\mathbf{x})$", **TITLE_KW)
     im = ax.contourf(
         rvec, zvec, se["z"], levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
     )
@@ -276,12 +478,11 @@ def experimental_posterior():
     ax.invert_yaxis()
     ax.set_xlim(XLIM)
     ax.set_xticklabels([])
-    if i == 0:
-        ax.set_ylim([75, 50])
-    else:
-        ax.set_ylim([200, 0])
+    ax.set_ylim(YLIM)
     ax.set_yticklabels([])
     fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
+
+    add_subfigure_labels(axs, x=0.5, y=-0.25)
 
     return fig
 
@@ -521,6 +722,99 @@ def plot_environment():
     ax.spines.left.set_linestyle((0, (5, 10)))
     ax.spines.left.set_linewidth(0.5)
     ax.spines.top.set_visible(False)
+
+    return fig
+
+
+def plot_experimental_error(df):
+    STRATEGY_KEY = [
+        "High-res MFP",
+        "Sobol",
+        "Grid",
+        "SBL",
+        "Sobol+GP/EI",
+        "",
+    ]
+    ERROR_KW = {"edgecolor": None, "s": 10}
+    NO_DATA_KW = {"color": "black", "alpha": 0.25, "linewidth": 0, "label": None}
+    no_data = NO_DATA
+    XLIM = [0, 351]
+    XTICKS = list(range(0, 351, 50))
+    YLIM_R = [-1, 1]
+    YTICKS_R = [-1, 0, 1]
+    YLIM_Z = [-40, 40]
+    YTICKS_Z = [-40, 0, 40]
+
+    df_mfp = df[df["strategy"] == STRATEGY_KEY.pop(0)]
+
+    fig = plt.figure(figsize=(12, 8), facecolor="white")
+    sns.set_theme(style="darkgrid")
+    set_rcparams()
+
+    nrows, ncols = 5, 2
+    gs = gridspec.GridSpec(nrows, ncols, figure=fig, hspace=0.4, wspace=0.1)
+
+    for i, strategy in enumerate(STRATEGY_KEY):
+        print(i)
+        try:
+            selection = df["strategy"] == strategy
+            df_selection = df[selection].copy()
+            df_selection["Range Error [km]"] = (
+                df_selection["best_rec_r"].values - df_mfp["best_rec_r"].values
+            )
+            df_selection["Depth Error [m]"] = (
+                df_selection["best_src_z"].values - df_mfp["best_src_z"].values
+            )
+        except ValueError:
+            selection = df["strategy"] == STRATEGY_KEY[-2]
+            df_selection = df[selection].copy()
+            df_selection["Range Error [km]"] = (
+                df_selection["best_rec_r"].values - df_mfp["best_rec_r"].values
+            )
+            df_selection["Depth Error [m]"] = (
+                df_selection["best_src_z"].values - df_mfp["best_src_z"].values
+            )
+
+        ax1 = fig.add_subplot(gs[i, 0])
+        [ax1.axvspan(l[0] - 1, l[-1] + 1, zorder=5, **NO_DATA_KW) for l in no_data]
+        sns.scatterplot(
+            data=df_selection, x="Time Step", y="Range Error [km]", ax=ax1, **ERROR_KW
+        )
+        ax1.set_xlim(XLIM)
+        ax1.set_xticks(XTICKS)
+        ax1.set_ylim(YLIM_R)
+        ax1.set_yticks(YTICKS_R)
+        ax1.set_ylabel(strategy)
+        ax1.tick_params(length=0)
+        adjust_subplotticklabels(ax1, 0, -1)
+
+        ax2 = fig.add_subplot(gs[i, 1])
+        [ax2.axvspan(l[0] - 1, l[-1] + 1, zorder=5, **NO_DATA_KW) for l in no_data]
+        sns.scatterplot(
+            data=df_selection,
+            x="Time Step",
+            y="Depth Error [m]",
+            ax=ax2,
+            color="green",
+            **ERROR_KW,
+        )
+        ax2.set_xlim(XLIM)
+        ax2.set_xticks(XTICKS)
+        ax2.set_ylim(YLIM_Z)
+        ax2.set_yticks(YTICKS_Z)
+        ax2.set_ylabel(None)
+        ax2.tick_params(length=0)
+        adjust_subplotticklabels(ax2, 0, -1)
+
+        if i == 0:
+            ax1.set_title("Range Error [km]")
+            ax2.set_title("Depth Error [m]")
+        if i == nrows - 1:
+            ax1.set_xlabel("Time Step")
+            ax2.set_xlabel(None)
+        else:
+            ax1.set_xlabel(None)
+            ax2.set_xlabel(None)
 
     return fig
 
@@ -1007,6 +1301,67 @@ def show_sampling_density():
             ax.set_ylabel("Depth [m]")
             ax_histx.set_ylabel("Count")
 
+        ax.text(
+            0.5,
+            -0.2,
+            f"({string.ascii_lowercase[i]})",
+            ha="center",
+            va="top",
+            transform=ax.transAxes,
+            size=14,
+        )
+
+    return fig
+
+
+def plot_run_times():
+    PAPER = False
+    SMOKE_TEST = False
+    sns.set_theme(style="darkgrid")
+    params = {
+        "text.usetex": True,
+        "font.family": "serif",
+        "font.serif": ["cm"],
+        "font.size": 12 if PAPER else 16,
+    }
+    mpl.rcParams.update(params)
+
+    serial = "serial_000"
+    results_dir = (
+        ROOT
+        / "data"
+        / "swellex96_S5_VLA"
+        / "outputs"
+        / "localization"
+        / "simulation"
+        / serial
+        / "results"
+    )
+
+    if not SMOKE_TEST:
+        df = pd.read_csv(results_dir / "aggregated_results.csv")
+        df["strategy"] = df["strategy"].map(
+            {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI"}
+        )
+
+    df["run_time"] = df["run_time"].round(0)
+    selection = df["param_rec_r"] == 3.0
+    df_plot = df[selection]
+
+    fig = plt.figure(figsize=(6, 4))
+    ax = plt.gca()
+    g = sns.lineplot(
+        data=df_plot,
+        x="run_time",
+        y="best_value",
+        hue="strategy",
+        ax=ax,
+        legend="auto",
+    )
+    ax.tick_params(length=0)
+    ax.set_xlabel("Run time [s]")
+    ax.set_ylabel("$\hat{f}(\mathbf{x})$")
+
     return fig
 
 
@@ -1256,153 +1611,6 @@ def simulations_localization():
     axcol[0].set_title(TITLE, **TITLE_KW)
 
     return fig
-
-
-# def simulations_range_est():
-#     SMOKE_TEST = False
-
-#     sim_dir = ROOT / "Data" / "range_estimation" / "simulation"
-#     serial = "serial_230217"
-#     if not SMOKE_TEST:
-#         df = pd.read_csv(sim_dir / serial / "results" / "collated.csv")
-
-#     RANGES = [1.0, 3.0, 5.0, 7.0]
-#     TITLE_KW = {"ha": "left", "va": "top", "x": 0}
-
-#     fig, axs = plt.subplots(
-#         figsize=(12, 6), nrows=4, ncols=3, gridspec_kw={"wspace": 0.15}
-#     )
-
-#     # Column 1 - Objective Function ============================================
-#     # TODO: Read in high-res objective function
-#     TITLE = "Ambiguity surface: $f(\mathbf{x})$"
-#     XLIM = [0, 10]
-#     XLABEL = "Range [km]"
-#     YLIM = [0, 1.2]
-
-#     axcol = axs[:, 0]
-#     # Set ranges
-#     [
-#         axcol[i].text(
-#             -0.52,
-#             0.5,
-#             f"$R_\mathrm{{src}} = {r}$ km",
-#             transform=axcol[i].transAxes,
-#             fontsize="large",
-#             ha="left",
-#         )
-#         for i, r in enumerate(RANGES)
-#     ]
-
-#     for ax, r in zip(axcol, RANGES):
-#         # fname = (
-#         #     ROOT
-#         #     / "Data"
-#         #     / "range_estimation"
-#         #     / "simulation"
-#         #     / "serial_230217"
-#         #     / f"rec_r={r:.1f}__src_z=60.0__snr=20"
-#         #     / "grid"
-#         #     / "seed_0002406475"
-#         #     / "results.json"
-#         # )
-
-#         if not SMOKE_TEST:
-#             selection = (
-#                 (df["seed"] == int("0002406475"))
-#                 & (df["strategy"] == "Grid")
-#                 & (df["range"] == r)
-#             )
-#             df_obj = df[selection].sort_values("rec_r")
-#             g = sns.lineplot(data=df_obj, x="rec_r", y="bartlett", ax=ax)
-#             g.set(xlabel=None, ylabel=None)
-#             ax.axvline(r, color="r")
-
-#     # Set x axis
-#     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
-#     [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
-#     # [axcol[-1].set_xlabel(None) for i in range(len(RANGES) - 1)]
-#     [axcol[-1].set_xlabel(XLABEL)]
-
-#     # Set y axis
-#     [axcol[i].set_ylim(YLIM) for i, _ in enumerate(RANGES)]
-
-#     # Set title
-#     axcol[0].set_title(TITLE, **TITLE_KW)
-
-#     # Column 2 - Performance History ===========================================
-#     TITLE = "Best observed: $\hat{f}(\mathbf{x})$"
-#     XLIM = [0, 201]
-#     XLABEL = "Evaluation"
-#     YLIM = [0, 1.2]
-
-#     axcol = axs[:, 1]
-
-#     count = 0
-#     for ax, r in zip(axcol, RANGES):
-#         if not SMOKE_TEST:
-#             selection = df["range"] == r
-#             g = sns.lineplot(
-#                 data=df[selection],
-#                 x="trial_index",
-#                 y="best_values",
-#                 hue="strategy",
-#                 ax=ax,
-#                 legend="auto" if count == 3 else None,
-#             )
-#             g.set(xlabel=None, ylabel=None)
-#             if count == 3:
-#                 sns.move_legend(
-#                     ax,
-#                     "upper center",
-#                     bbox_to_anchor=(1.1, -0.5),
-#                     ncol=7,
-#                     title="Strategy",
-#                 )
-#             count += 1
-
-#     # Set x axis
-#     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
-#     [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
-#     [axcol[-1].set_xlabel(XLABEL)]
-
-#     # Set y axis
-#     [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
-
-#     # Set title
-#     axcol[0].set_title(TITLE, **TITLE_KW)
-
-#     # Column 3 - Error History =================================================
-#     TITLE = "Error history: $\\vert\hat{R}_{src} - R_{src}\\vert$ [km]"
-#     YLIM = [0, 8]
-
-#     axcol = axs[:, 2]
-
-#     for ax, r in zip(axcol, RANGES):
-#         if not SMOKE_TEST:
-#             selection = df["range"] == r
-#             g = sns.lineplot(
-#                 data=df[selection],
-#                 x="trial_index",
-#                 y="best_range_error",
-#                 hue="strategy",
-#                 ax=ax,
-#                 legend=None,
-#             )
-#             g.set(xlabel=None, ylabel=None)
-
-#     # Set x axis
-#     [axcol[i].set_xlim(XLIM) for i in range(len(RANGES))]
-#     [axcol[i].set_xticklabels([]) for i in range(len(RANGES) - 1)]
-#     [axcol[-1].set_xlabel(XLABEL)]
-
-#     # Set y axis
-#     [axcol[i].set_ylim(YLIM) for i in range(len(RANGES))]
-
-#     # Set title
-#     axcol[0].set_title(TITLE, **TITLE_KW)
-
-#     return fig
 
 
 if __name__ == "__main__":
