@@ -64,6 +64,7 @@ class Aggregator:
                 path.parent / "configured.yaml"
             )
             df = self.compute_error(df, search_params)
+            df = self.compute_run_time(df)
             return df
 
         return self.remove_duplicate_columns(
@@ -74,6 +75,15 @@ class Aggregator:
     def compute_error(df: pd.DataFrame, param_cols: list[str]) -> pd.DataFrame:
         for param in param_cols:
             df[f"best_error_{param}"] = abs(df[f"best_{param}"] - df[f"param_{param}"])
+        return df
+
+    @staticmethod
+    def compute_run_time(df):
+        for time in df["time"].unique():
+            selection = df["time"] == time
+            if sum(selection) > 1:
+                df.loc[selection, "time"] = df[selection]["time"].values / sum(selection)
+        df["run_time"] = df["time"].cumsum()
         return df
 
     @staticmethod
