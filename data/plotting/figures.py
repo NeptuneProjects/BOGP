@@ -1326,7 +1326,7 @@ def plot_run_times():
     }
     mpl.rcParams.update(params)
 
-    serial = "serial_000"
+    serial = "serial_001"
     results_dir = (
         ROOT
         / "data"
@@ -1344,24 +1344,48 @@ def plot_run_times():
             {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI"}
         )
 
-    df["run_time"] = df["run_time"].round(0)
-    selection = df["param_rec_r"] == 3.0
-    df_plot = df[selection]
-
     fig = plt.figure(figsize=(6, 4))
     ax = plt.gca()
-    g = sns.lineplot(
-        data=df_plot,
-        x="run_time",
-        y="best_value",
-        hue="strategy",
-        ax=ax,
-        legend="auto",
+    selected_df = df[df["strategy"] == "GP-EI"]
+    for seed in selected_df["seed"].unique():
+        sns.lineplot(
+            data=selected_df[selected_df["seed"] == seed],
+            x="run_time",
+            y="best_value",
+            color="tab:blue",
+            alpha=0.1,
+            ax=ax,
+        )
+
+    selected_df = df[df["strategy"] == "Sobol Sequence"]
+    for seed in selected_df["seed"].unique():
+        sns.lineplot(
+            data=selected_df[selected_df["seed"] == seed],
+            x="run_time",
+            y="best_value",
+            color="tab:orange",
+            alpha=0.1,
+            ax=ax,
+        )
+
+    selected_df = df[df["strategy"] == "Grid Search"]
+    sns.lineplot(
+        data=selected_df, x="run_time", y="best_value", color="tab:green", ax=ax
     )
-    g.get_legend().set_title(None)
+    ax.set_xlim(-5, 400)
+    ax.set_ylim(0, 1.01)
     ax.tick_params(length=0)
     ax.set_xlabel("Run time [s]")
     ax.set_ylabel("$\hat{f}(\mathbf{x})$")
+
+    legend_entries = [
+        mpl.lines.Line2D([0], [0], color="tab:blue", lw=4),
+        mpl.lines.Line2D([0], [0], color="tab:orange", lw=4),
+        mpl.lines.Line2D([0], [0], color="tab:green", lw=4),
+    ]
+    plt.legend(
+        legend_entries, ["GP-EI", "Sobol Sequence", "Grid Search"], loc="lower right"
+    )
 
     return fig
 
