@@ -1224,9 +1224,9 @@ def show_sampling_density():
     rec_r = 5.0
     src_z = 60.0
     strategies = {
-        "grid": "Grid Search (144)",
-        "sobol": "Sobol Sequence (144)",
-        "gpei": "Sobol (128) + GP-EI (16)",
+        "grid": "Grid Search (144 trials)",
+        "sobol": "Sobol Sequence (144 trials)",
+        "gpei": "Sobol (128 trials) + GP-EI (16 trials)",
     }
     seed = int("002406475")
 
@@ -1277,7 +1277,7 @@ def show_sampling_density():
         ax_histx.hist(df[selection]["rec_r"], bins=100, color="k")
         ax_histx.set_ylim(0, 13)
         plt.setp(ax_histx.get_xticklabels(), visible=False)
-        ax_histx.set_title(strat_name.upper())
+        ax_histx.set_title(strat_name)
 
         ax_histy = fig.add_subplot(inner_gs[1, 1], sharey=ax)
         ax_histy.hist(
@@ -1344,7 +1344,7 @@ def plot_run_times():
             {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI"}
         )
 
-    fig = plt.figure(figsize=(6, 4))
+    fig = plt.figure(figsize=(4, 3))
     ax = plt.gca()
     selected_df = df[df["strategy"] == "GP-EI"]
     for seed in selected_df["seed"].unique():
