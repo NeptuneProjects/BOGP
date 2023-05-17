@@ -70,8 +70,8 @@ bash ./scripts/process.sh
 ```
 
 ### High-resolution Matched Field Processing (MFP)
-High-resolution MFP is performed to serve as a baseline comparison for other optimization methods.
-To edit the MFP configuration, edit the following file:  
+High-resolution MFP is performed to serve as a baseline comparison for the other optimization methods.
+To configure MFP, edit the following file:  
 `conf/swellex96/data/mfp.yaml`
 
 To run MFP, run the following from the `src` directory:
