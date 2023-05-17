@@ -13,10 +13,8 @@ dependencies:
   - pytorch
   - seaborn
   - pip:
-    - aim-mlflow
     - ax-platform
     - hydra-core
-    - tomli-w
     - git+https://github.com/NeptuneProjects/TritonOA.git
     - git+https://github.com/NeptuneProjects/OAOptimization.git
   
