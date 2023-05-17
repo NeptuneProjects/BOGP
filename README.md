@@ -55,9 +55,7 @@ The following steps are taken in pre-processing:
 
 To configure the data preparation steps, make changes to the following file:  
 `conf/swellex96/data/acoustics.yaml`  
-The first lines of `acoustics.yaml` contorl which pre-processing steps to take. Comment out the steps that you wish to skip.
-<h5 a><strong><code>conf/swellex96/data/acoustics.yaml</code></strong></h5>
-
+The first lines of `acoustics.yaml` control which pre-processing steps to take. Comment out the steps that you wish to skip.
 ```yaml
 run:
   - convert  # Step 1
