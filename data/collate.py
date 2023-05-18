@@ -75,7 +75,6 @@ def build_mfp_df(path: Path) -> pd.DataFrame:
 
 def load_sbl_results(path: Path):
     data = loadmat(path)["snapshotPeak"]
-    data[:, 1:] = np.flipud(data[:, 1:])
     data[:, 1] = data[:, 1] / 1000
     return data
 
