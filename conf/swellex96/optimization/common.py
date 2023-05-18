@@ -16,4 +16,4 @@ class SWELLEX96Paths:
     acoustic_path = SWELLEX96PATH / "acoustic" / "processed"
     outputs = SWELLEX96PATH / "outputs"
     ambiguity_surfaces = SWELLEX96PATH / "acoustic" / "ambiguity_surfaces"
-    sbl_data = SWELLEX96PATH / "acoustic" / "processed" / "SBL" / "results_constrained.mat"
+    sbl_data = SWELLEX96PATH / "acoustic" / "processed" / "SBL" / "results_peak.mat"
