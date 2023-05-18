@@ -1,3 +1,5 @@
+
+---
 ## Installation
 
 In your desired target directory, run the following command:
@@ -17,6 +19,7 @@ Activate the environment:
 conda activate gp310
 ```
 
+---
 ## Usage
 
 This workflow has been broken into multiple steps with corresponding scripts.
@@ -45,6 +48,46 @@ These modules are used to configure the optimization workflow.
 
 Both the `Hydra` and `hydra-zen` frameworks are implemented as I was interested in comparing the two.
 
+### Source Data Directories
+Experimental data directories are organized as follows:
+```
+.
++-- data
+|   +-- swellex96_S5_VLA
+|   |   +-- acoustic
+|   |   |   +-- ambiguity_surfaces
+|   |   |   |   +-- 148-166-201-235-283-338-388_200x100
+|   |   |   |   |   +-- grid_parameters.pkl
+|   |   |   |   |   +-- parameterization.json
+|   |   |   |   |   +-- surface_000.npy
+|   |   |   |   |   +-- ...
+|   |   |   |   |   +-- surface_349.npy
+|   |   |   +-- processed
+|   |   |   |   +-- 49.0Hz
+|   |   |   |   |   +-- covariance.npy
+|   |   |   |   |   +-- data_49Hz.mat
+|   |   |   |   |   +-- data.npy
+|   |   |   |   |   +-- f_hist.npy
+|   |   |   |   +-- ...
+|   |   |   |   +-- 388.0Hz
+|   |   |   |   +-- SBL
+|   |   |   |   +-- merged.npz
+|   |   |   +-- raw
+|   |   |   |   +-- mat
+|   |   |   |   +-- npy
+|   |   |   |   +-- sio
+|   |   |   |   |   +-- J131
+|   |   |   |   |   +-- J132
+|   |   +-- ctd
+|   |   |   +-- i9601.prn
+|   |   |   +-- ...
+|   |   +-- env_models
+|   |   |   +-- swellex96.json
+|   |   +-- geoacoustic
+|   |   +-- gps
+|   |   |   +-- gps_range.csv
+```
+
 ### Data Preparation
 Acoustic source localization is performed using experimental data from the [SWellEx-96 experiment](http://swellex96.ucsd.edu).
 The following steps are taken in pre-processing:
@@ -66,7 +109,13 @@ run:
 
 To perform pre-processing, run the following script from the `src` directory:
 ```bash
-bash ./scripts/process.sh
+bash ./scripts/swellex96/process.sh
+```
+
+### Building the Environment Model `json` File
+The environment model for SWellEx-96 is built by running the following script from the `src` directory:
+```bash
+bash ./scripts/swellex96/build_at_env.sh
 ```
 
 ### High-resolution Matched Field Processing (MFP)
@@ -80,3 +129,44 @@ python3 ./data/swellex96/mfp.py
 ```
 
 ### Optimization
+There are two primary optimization configuration files.
+- In `conf/swellex96/optimization/run.py`, the individual optimization strategies are configured.
+- In `conf/swellex96/optimization/configure.py`, an entire optimization workflow is configured.
+
+The file `conf/swellex96/optimization/common.py` contains configurations common to individual optimization strategies and the broader experiment.
+
+To generate a queue of optimization configurations that can be run sequentially or in parallel, run the following from the `src` directory:
+```bash
+bash ./scripts/swellex96/config.sh <serial name> <mode | experimental,simulation>
+```
+
+To run an optimization serial (a batch of configurations), run the following from the `src` directory:
+```bash
+bash ./scripts/swellex96/optimization/run.sh <path to queue> <num jobs>
+```
+The queue can be run in parallel by specifying `<num jobs>`.
+
+### Aggregate Optimization Results
+To aggregate the results of an optimization serial, run the following from the `src` directory:
+```bash
+bash ./scripts/swellex96/agg.sh <path to queue>
+```
+Edit `agg.sh` directly to specify which serial to aggregate.
+The output of this script results in two `.csv` files:
+- `aggregated_results.csv` contains the results of each step of all optimization configurations concatenated into one `csv` file.
+- `best_results.csv` contains only the optimal results from each optimization configuration.
+
+### Collate Results
+For use in producing figures, a final, collated `.csv` is created by collating data and metadata from various sources in the epxerimental data.
+To collate results, run the following from the `src` directory:
+```bash
+bash ./scripts/swellex96/collate.sh
+```
+Edit `collate.sh` directly to specify which serial to aggregate.
+
+### Plotting Results
+To plot results, run the following from the `src` directory:
+```bash
+python3 ./data/plotting/figures.py --figures=<1,2,5,...>
+```
+The `--figures` argument is a comma-separated list of figures to plot.
