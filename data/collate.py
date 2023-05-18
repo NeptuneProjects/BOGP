@@ -111,6 +111,7 @@ def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
     df = df.replace({"strategy": "grid"}, "Grid")
     df = df.replace({"strategy": "sbl"}, "SBL")
     df = df.replace({"strategy": "gpei"}, "Sobol+GP/EI")
+    df = df.replace({"strategy": "qgpei"}, "Sobol+GP/qEI")
     return df
 
 

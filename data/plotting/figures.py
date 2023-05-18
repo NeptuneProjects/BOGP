@@ -733,7 +733,7 @@ def plot_experimental_error(df):
         "Grid",
         "SBL",
         "Sobol+GP/EI",
-        "",
+        "Sobol+GP/qEI",
     ]
     ERROR_KW = {"edgecolor": None, "s": 10}
     NO_DATA_KW = {"color": "black", "alpha": 0.25, "linewidth": 0, "label": None}
@@ -755,25 +755,24 @@ def plot_experimental_error(df):
     gs = gridspec.GridSpec(nrows, ncols, figure=fig, hspace=0.4, wspace=0.1)
 
     for i, strategy in enumerate(STRATEGY_KEY):
-        print(i)
-        try:
-            selection = df["strategy"] == strategy
-            df_selection = df[selection].copy()
-            df_selection["Range Error [km]"] = (
-                df_selection["best_rec_r"].values - df_mfp["best_rec_r"].values
-            )
-            df_selection["Depth Error [m]"] = (
-                df_selection["best_src_z"].values - df_mfp["best_src_z"].values
-            )
-        except ValueError:
-            selection = df["strategy"] == STRATEGY_KEY[-2]
-            df_selection = df[selection].copy()
-            df_selection["Range Error [km]"] = (
-                df_selection["best_rec_r"].values - df_mfp["best_rec_r"].values
-            )
-            df_selection["Depth Error [m]"] = (
-                df_selection["best_src_z"].values - df_mfp["best_src_z"].values
-            )
+        # try:
+        selection = df["strategy"] == strategy
+        df_selection = df[selection].copy()
+        df_selection["Range Error [km]"] = (
+            df_selection["best_rec_r"].values - df_mfp["best_rec_r"].values
+        )
+        df_selection["Depth Error [m]"] = (
+            df_selection["best_src_z"].values - df_mfp["best_src_z"].values
+        )
+        # except ValueError:
+        #     selection = df["strategy"] == STRATEGY_KEY[-2]
+        #     df_selection = df[selection].copy()
+        #     df_selection["Range Error [km]"] = (
+        #         df_selection["best_rec_r"].values - df_mfp["best_rec_r"].values
+        #     )
+        #     df_selection["Depth Error [m]"] = (
+        #         df_selection["best_src_z"].values - df_mfp["best_src_z"].values
+        #     )
 
         ax1 = fig.add_subplot(gs[i, 0])
         [ax1.axvspan(l[0] - 1, l[-1] + 1, zorder=5, **NO_DATA_KW) for l in no_data]
@@ -826,7 +825,7 @@ def plot_experimental_results(df):
         "Grid",
         "SBL",
         "Sobol+GP/EI",
-        "",
+        "Sobol+GP/qEI",
     ]
     no_data = NO_DATA
     XLIM = [0, 351]
@@ -1341,12 +1340,15 @@ def plot_run_times():
     if not SMOKE_TEST:
         df = pd.read_csv(results_dir / "aggregated_results.csv")
         df["strategy"] = df["strategy"].map(
-            {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI"}
+            {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI", "qgpei": "GP-qEI"}
         )
 
     fig = plt.figure(figsize=(4, 3))
     ax = plt.gca()
-    selected_df = df[df["strategy"] == "GP-EI"]
+
+    strategies = {"GP-EI \& GP-qEI": "tab:blue", "Sobol Sequence": "tab:orange", "Grid Search": "tab:green"}
+
+    selected_df = df[(df["strategy"] == "GP-EI") | (df["strategy"] == "GP-qEI")]
     for seed in selected_df["seed"].unique():
         sns.lineplot(
             data=selected_df[selected_df["seed"] == seed],
@@ -1379,12 +1381,13 @@ def plot_run_times():
     ax.set_ylabel("$\hat{f}(\mathbf{x})$")
 
     legend_entries = [
-        mpl.lines.Line2D([0], [0], color="tab:blue", lw=4),
-        mpl.lines.Line2D([0], [0], color="tab:orange", lw=4),
-        mpl.lines.Line2D([0], [0], color="tab:green", lw=4),
-    ]
+        mpl.lines.Line2D([0], [0], color=color, lw=4)
+        # mpl.lines.Line2D([0], [0], color="tab:orange", lw=4),
+        # mpl.lines.Line2D([0], [0], color="tab:green", lw=4),
+        # mpl.lines.Line2D([0], [0], color="tab:red", lw=4),
+    for color in strategies.values()]
     plt.legend(
-        legend_entries, ["GP-EI", "Sobol Sequence", "Grid Search"], loc="lower right"
+        legend_entries, strategies.keys(), loc="lower right"
     )
 
     return fig
@@ -1416,7 +1419,7 @@ def simulations_localization():
     if not SMOKE_TEST:
         df = pd.read_csv(results_dir / "aggregated_results.csv")
         df["strategy"] = df["strategy"].map(
-            {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI"}
+            {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI", "qgpei": "GP-qEI"}
         )
 
     FREQUENCIES = [148, 166, 201, 235, 283, 338, 388]
