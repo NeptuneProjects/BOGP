@@ -102,8 +102,8 @@ SimulationParameterizationConf = builds(
         Parameterization,
         permuted=builds(
             PermutedParameterization,
-            # scenario=builds(dict, rec_r=[1.0, 3.0, 5.0, 7.0]),
-            scenario=builds(dict, rec_r=[3.0]),
+            scenario=builds(dict, rec_r=[1.0, 3.0, 5.0, 7.0]),
+            # scenario=builds(dict, rec_r=[3.0]),
         ),
         fixed=builds(dict, src_z=60.0),
     ),

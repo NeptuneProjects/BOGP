@@ -198,6 +198,14 @@ GPEIStrategyConf = pbuilds(
     max_parallelism=1,
     seed=MISSING,
 )
+qGPEIStrategyConf = pbuilds(
+    GPEIStrategy,
+    warmup_trials=128,
+    warmup_parallelism=16,
+    num_trials=16,
+    max_parallelism=4,
+    seed=MISSING,
+)
 
 # optimizer
 GridSearchOptimizationConf = pbuilds(
@@ -214,6 +222,12 @@ GPEIOptimizationConf = pbuilds(
     objective=MISSING,
     search_space=MISSING,
     strategy=GPEIStrategyConf,
+)
+qGPEIOptimizationConf = pbuilds(
+    BayesianOptimization,
+    objective=MISSING,
+    search_space=MISSING,
+    strategy=qGPEIStrategyConf,
 )
 
 # Configuration Store
@@ -236,3 +250,4 @@ cs.store(group="search_space", name="localization", node=LocalizationConf)
 cs.store(group="optimizer", name="grid", node=GridSearchOptimizationConf)
 cs.store(group="optimizer", name="sobol", node=SobolOptimizationConf)
 cs.store(group="optimizer", name="gpei", node=GPEIOptimizationConf)
+cs.store(group="optimizer", name="qgpei", node=qGPEIOptimizationConf)
