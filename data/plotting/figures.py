@@ -17,6 +17,7 @@ from matplotlib import ticker
 from matplotlib.colors import LogNorm
 import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
+import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -462,6 +463,30 @@ def experimental_posterior():
     ax.set_ylim(YLIM)
     ax.set_yticklabels([])
     fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
+
+    # Inset mean function
+    axins = ax.inset_axes([0.05, 0.55, 0.4, 0.4], zorder=100)
+    axins.scatter(x, y, s=3, c="k")
+    axins.scatter(src_r, src_z, s=10, c="tab:green", marker="s")
+    axins.scatter(src_r_est, src_z_est, s=10, c="tab:red", marker="*")
+    axins.invert_yaxis()
+    xlim_ins = [src_r - 0.1, src_r + 0.1]
+    ylim_ins = [src_z + 5, src_z - 5]
+    axins.set_xlim(xlim_ins)
+    axins.set_ylim(ylim_ins)
+    axins.set_xticks([])
+    axins.set_yticks([])
+    axins.set_xticklabels([])
+    axins.set_yticklabels([])
+    _, connector_lines = ax.indicate_inset_zoom(axins, edgecolor="w")
+    [con.set_visible(False) for con in connector_lines]
+
+    for i in range(2):
+        xy_inset = (i, i)
+        xy_parent = (xlim_ins[i], ylim_ins[i])
+        connect = mpatches.ConnectionPatch(xy_inset, xy_parent, "axes fraction", "data", color="w", alpha=0.5, axesA=axins, axesB=ax)
+        ax.add_patch(connect)
+    
 
     # Covariance function
     ax = axs[2]
@@ -1314,14 +1339,14 @@ def show_sampling_density():
 
 
 def plot_run_times():
-    PAPER = False
+    PAPER = True
     SMOKE_TEST = False
     sns.set_theme(style="darkgrid")
     params = {
         "text.usetex": True,
         "font.family": "serif",
         "font.serif": ["cm"],
-        "font.size": 12 if PAPER else 16,
+        "font.size": 10 if PAPER else 16,
     }
     mpl.rcParams.update(params)
 
@@ -1343,10 +1368,10 @@ def plot_run_times():
             {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI", "qgpei": "GP-qEI"}
         )
 
-    fig = plt.figure(figsize=(4, 3))
+    fig = plt.figure(figsize=(4, 2))
     ax = plt.gca()
 
-    strategies = {"GP-EI \& GP-qEI": "tab:blue", "Sobol Sequence": "tab:orange", "Grid Search": "tab:green"}
+    strategies = {"Sobol+GP/EI \&\nSobol+GP/qEI": "tab:blue", "Sobol Sequence": "tab:orange", "Grid Search": "tab:green"}
 
     selected_df = df[(df["strategy"] == "GP-EI") | (df["strategy"] == "GP-qEI")]
     for seed in selected_df["seed"].unique():
@@ -1387,7 +1412,7 @@ def plot_run_times():
         # mpl.lines.Line2D([0], [0], color="tab:red", lw=4),
     for color in strategies.values()]
     plt.legend(
-        legend_entries, strategies.keys(), loc="lower right"
+        legend_entries, strategies.keys(), loc="lower right", facecolor="white"
     )
 
     return fig
@@ -1419,7 +1444,7 @@ def simulations_localization():
     if not SMOKE_TEST:
         df = pd.read_csv(results_dir / "aggregated_results.csv")
         df["strategy"] = df["strategy"].map(
-            {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI", "qgpei": "GP-qEI"}
+            {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "Sobol+GP/EI", "qgpei": "Sobol+GP/qEI"}
         )
 
     FREQUENCIES = [148, 166, 201, 235, 283, 338, 388]
