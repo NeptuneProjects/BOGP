@@ -1038,7 +1038,7 @@ def plot_training_1D():
         ax.set_xlim(xlim)
         ax.set_xlabel(None)
         ax.set_ylim(ylim)
-        ax.set_ylabel("$f(\mathbf{X})$", rotation=0, ha="center", va="center")
+        ax.set_ylabel("$f(\mathbf{x})$", rotation=0, ha="center", va="center")
 
         ax = axs[1]
         ax = plot_acqf_1D(
@@ -1050,7 +1050,7 @@ def plot_training_1D():
         ax.set_ylim(ylim)
         ax.yaxis.tick_right()
         ax.yaxis.set_label_position("right")
-        ax.set_ylabel("$\\alpha(\mathbf{X})$", rotation=0, ha="center", va="center")
+        ax.set_ylabel("$\\alpha(\mathbf{x})$", rotation=0, ha="center", va="center")
 
     del handles[4], labels[4]
     handles[-1] = Line2D([0], [0], color="r", marker="x", linestyle=":")
@@ -1064,7 +1064,7 @@ def plot_training_1D():
         ncols=4,
     )
 
-    ax.set_xlabel("$\mathbf{X}\ (R_{src}$ [km])")
+    ax.set_xlabel("$\mathbf{x}\ (R_{src}$ [km])")
 
     return fig
 
