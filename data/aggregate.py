@@ -123,49 +123,6 @@ class Aggregator:
         df_best.to_csv(self.savename_best)
         logger.warning(f"Saved best results dataframe to {self.savename_best}")
 
-    # COLUMNS = ["optimization", "mode", "serial", "scenario", "strategy", "seed"]
-    # @classmethod
-    # def extract_results(cls, fname):
-    #     client = AxClient.load_from_json_file(fname, verbose_logging=False)
-    #     values_to_append = client.experiment.name.split(";")
-    #     df = client.get_trials_data_frame()
-    #     df = cls.get_best_results(df, client)
-    #     for k, v in zip(COLUMNS, values_to_append):
-    #         df[k] = v
-    #     cols = df.columns.to_list()
-    #     cols = cols[-6:] + cols[:-6]
-    #     df = df[cols]
-
-    #     best_index = df.iloc[-1]["best_trial"]
-    #     df_best = df.iloc[[best_index]]
-    #     df_best = df_best.drop(columns=["best_trial", "best_parameters", "best_values"])
-
-    #     return df, df_best
-
-    # @staticmethod
-    # def get_best_results(df, client):
-    #     best_value = 0
-    #     best_i = 0
-    #     best_trial = []
-    #     best_values = []
-    #     best_params = []
-    #     for i, row in df.iterrows():
-    #         value = row[client.objective_name]
-
-    #         if value > best_value:
-    #             best_i = i
-    #             best_value = value
-    #             best_param = client.get_trial_parameters(i)
-
-    #         best_trial.append(best_i)
-    #         best_params.append(best_param)
-    #         best_values.append(best_value)
-
-    #     df["best_trial"] = best_i
-    #     df["best_parameters"] = best_params
-    #     df["best_values"] = best_values
-    #     return df
-
 
 def main(args):
     agg = Aggregator(args.path)
