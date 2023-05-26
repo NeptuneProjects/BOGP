@@ -353,10 +353,10 @@ def experimental_posterior():
     LABEL_KW = {"ha": "center", "va": "center", "rotation": 90, "fontsize": "large"}
     SCATTER_KW = {
         "marker": "o",
-        "facecolors": "none",
-        "edgecolors": "white",
-        "linewidth": 0.1,
-        # "alpha": 1,
+        "facecolors": "tab:orange",
+        # "edgecolors": "white",
+        # "linewidth": 0.1,
+        "alpha": 1,
         "s": 5,
         "zorder": 40,
     }
@@ -465,10 +465,13 @@ def experimental_posterior():
     fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
 
     # Inset mean function
-    axins = ax.inset_axes([0.05, 0.55, 0.4, 0.4], zorder=100)
-    axins.scatter(x, y, s=3, c="k")
-    axins.scatter(src_r, src_z, s=10, c="tab:green", marker="s")
-    axins.scatter(src_r_est, src_z_est, s=10, c="tab:red", marker="*")
+    axins = ax.inset_axes([0.05, 0.45, 0.5, 0.5], zorder=100)
+    im = axins.contourf(
+        rvec, zvec, mean["z"], levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
+    )
+    axins.scatter(x, y, s=10, c="tab:orange")
+    axins.scatter(src_r, src_z, s=10, c="lime", marker="s")
+    axins.scatter(src_r_est, src_z_est, s=15, c="red", marker="*")
     axins.invert_yaxis()
     xlim_ins = [src_r - 0.1, src_r + 0.1]
     ylim_ins = [src_z + 5, src_z - 5]
@@ -484,9 +487,17 @@ def experimental_posterior():
     for i in range(2):
         xy_inset = (i, i)
         xy_parent = (xlim_ins[i], ylim_ins[i])
-        connect = mpatches.ConnectionPatch(xy_inset, xy_parent, "axes fraction", "data", color="w", alpha=0.5, axesA=axins, axesB=ax)
+        connect = mpatches.ConnectionPatch(
+            xy_inset,
+            xy_parent,
+            "axes fraction",
+            "data",
+            color="w",
+            alpha=0.5,
+            axesA=axins,
+            axesB=ax,
+        )
         ax.add_patch(connect)
-    
 
     # Covariance function
     ax = axs[2]
@@ -583,7 +594,7 @@ def plot_acqf_1D(X_test, alpha, alpha_prev=None, ax=None):
 
     max_alpha, max_alpha_prev = get_candidates(alpha, alpha_prev)
 
-    ax.plot(X_test, alpha, color="tab:red", label="$\\alpha(\mathbf{X})$")
+    ax.plot(X_test, alpha, color="tab:red", label="$\\alpha(\mathbf{x})$")
     ax.axvline(X_test[max_alpha], color="k", linestyle="-")
     if max_alpha_prev:
         ax.axvline(X_test[max_alpha_prev], color="r", linestyle=":")
@@ -958,10 +969,10 @@ def plot_gp_1D(
 
     max_alpha, max_alpha_prev = get_candidates(alpha, alpha_prev)
 
-    ax.plot(X_test, y_actual, color="tab:green", label="$f(\mathbf{X})$")
-    ax.plot(X_test, mean, label="$\mu(\mathbf{X})$")
+    ax.plot(X_test, y_actual, color="tab:green", label="$f(\mathbf{x})$")
+    ax.plot(X_test, mean, label="$\mu(\mathbf{x})$")
     ax.fill_between(
-        X_test.squeeze(), lcb, ucb, alpha=0.25, label="$\pm2\sigma(\mathbf{X})$"
+        X_test.squeeze(), lcb, ucb, alpha=0.25, label="$\pm2\sigma(\mathbf{x})$"
     )
     if not max_alpha_prev:
         ax.scatter(X_train, y_train, c="k", marker="x", label="Samples", zorder=40)
@@ -989,7 +1000,7 @@ def plot_training_1D():
         "text.usetex": True,
         "font.family": "serif",
         "font.serif": ["cm"],
-        "font.size": 10,
+        "font.size": 14,
     }
     mpl.rcParams.update(params)
     loadpath = (
@@ -1005,9 +1016,9 @@ def plot_training_1D():
     xlim = [0, 10]
     ylim = [-0.1, 1.1]
 
-    trials_to_plot = [0, 1, 2, 10, 20, 30, 50, 60, 70]
+    trials_to_plot = [0, 50, 51, 80]
 
-    fig = plt.figure(figsize=(6, 12))
+    fig = plt.figure(figsize=(8, 12))
     outer_grid = fig.add_gridspec(len(trials_to_plot), 1, hspace=0.1)
 
     for i, trial in enumerate(trials_to_plot):
@@ -1038,7 +1049,7 @@ def plot_training_1D():
         ax.set_xlim(xlim)
         ax.set_xlabel(None)
         ax.set_ylim(ylim)
-        ax.set_ylabel("$f(\mathbf{x})$", rotation=0, ha="center", va="center")
+        ax.set_ylabel("$f(\mathbf{x})$", rotation=0, ha="right", va="center")
 
         ax = axs[1]
         ax = plot_acqf_1D(
@@ -1060,7 +1071,7 @@ def plot_training_1D():
         handles + handles2,
         labels + labels2,
         loc="upper center",
-        bbox_to_anchor=(0.5, -1.0),
+        bbox_to_anchor=(0.5, -0.7),
         ncols=4,
     )
 
@@ -1240,7 +1251,6 @@ def show_sampling_density():
         / serial
         / "results"
     )
-    print(results_dir)
 
     if not SMOKE_TEST:
         df = pd.read_csv(results_dir / "aggregated_results.csv")
@@ -1262,10 +1272,42 @@ def show_sampling_density():
     }
     mpl.rcParams.update(params)
 
+    AMBSURF_KW = {"vmin": 0, "vmax": 1, "marker": None}
+
     # sns.set_theme(style="darkgrid")
     fig = plt.figure(figsize=(12, 4))
     outer_gs = gridspec.GridSpec(nrows=1, ncols=3, wspace=0.16)
     margin = 1.1
+
+    environment = utils.load_env_from_json(
+        ROOT / "data" / "swellex96_S5_VLA" / "env_models" / "swellex96.json"
+    )
+    env_parameters = environment | {"tmpdir": "."}
+    NUM_RVEC = 100
+    NUM_ZVEC = 100
+    true_parameters = {
+        "rec_r": rec_r,
+        "src_z": src_z,
+    }
+    rvec = np.linspace(rec_r - margin * 1.0, rec_r + margin * 1.0, NUM_RVEC)
+    zvec = np.linspace(src_z - margin * 40, src_z + margin * 40, NUM_ZVEC)
+    K = utils.simulate_covariance(
+        runner=run_kraken,
+        parameters=env_parameters | true_parameters,
+        freq=FREQ,
+    )
+
+    MFP = MatchedFieldProcessor(
+        runner=run_kraken,
+        covariance_matrix=K,
+        freq=FREQ,
+        parameters=env_parameters,
+        beamformer=beamformer,
+    )
+
+    amb_surf = np.zeros((len(zvec), len(rvec)))
+    for zz, z in enumerate(zvec):
+        amb_surf[zz, :] = MFP({"src_z": z, "rec_r": rvec})
 
     for i, (strat, strat_name) in enumerate(strategies.items()):
         selection = (
@@ -1285,12 +1327,15 @@ def show_sampling_density():
         )
 
         ax = fig.add_subplot(inner_gs[1, 0])
+
+        ax, _ = plot_ambiguity_surface(amb_surf, rvec, zvec, ax=ax, **AMBSURF_KW)
+
         ax.scatter(
             x=df[selection]["rec_r"],
             y=df[selection]["src_z"],
-            s=25,
-            alpha=0.5,
-            color="k",
+            s=10,
+            alpha=0.95,
+            color="tab:orange",
             edgecolors="none",
         )
         ax.set_xlim(rec_r - margin * 1, rec_r + margin * 1)
@@ -1365,13 +1410,22 @@ def plot_run_times():
     if not SMOKE_TEST:
         df = pd.read_csv(results_dir / "aggregated_results.csv")
         df["strategy"] = df["strategy"].map(
-            {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "GP-EI", "qgpei": "GP-qEI"}
+            {
+                "grid": "Grid Search",
+                "sobol": "Sobol Sequence",
+                "gpei": "GP-EI",
+                "qgpei": "GP-qEI",
+            }
         )
 
     fig = plt.figure(figsize=(4, 2))
     ax = plt.gca()
 
-    strategies = {"Sobol+GP/EI \&\nSobol+GP/qEI": "tab:blue", "Sobol Sequence": "tab:orange", "Grid Search": "tab:green"}
+    strategies = {
+        "Sobol+GP/EI \&\nSobol+GP/qEI": "tab:blue",
+        "Sobol Sequence": "tab:orange",
+        "Grid Search": "tab:green",
+    }
 
     selected_df = df[(df["strategy"] == "GP-EI") | (df["strategy"] == "GP-qEI")]
     for seed in selected_df["seed"].unique():
@@ -1410,10 +1464,9 @@ def plot_run_times():
         # mpl.lines.Line2D([0], [0], color="tab:orange", lw=4),
         # mpl.lines.Line2D([0], [0], color="tab:green", lw=4),
         # mpl.lines.Line2D([0], [0], color="tab:red", lw=4),
-    for color in strategies.values()]
-    plt.legend(
-        legend_entries, strategies.keys(), loc="lower right", facecolor="white"
-    )
+        for color in strategies.values()
+    ]
+    plt.legend(legend_entries, strategies.keys(), loc="lower right", facecolor="white")
 
     return fig
 
@@ -1444,7 +1497,12 @@ def simulations_localization():
     if not SMOKE_TEST:
         df = pd.read_csv(results_dir / "aggregated_results.csv")
         df["strategy"] = df["strategy"].map(
-            {"grid": "Grid Search", "sobol": "Sobol Sequence", "gpei": "Sobol+GP/EI", "qgpei": "Sobol+GP/qEI"}
+            {
+                "grid": "Grid Search",
+                "sobol": "Sobol Sequence",
+                "gpei": "Sobol+GP/EI",
+                "qgpei": "Sobol+GP/qEI",
+            }
         )
 
     FREQUENCIES = [148, 166, 201, 235, 283, 338, 388]
