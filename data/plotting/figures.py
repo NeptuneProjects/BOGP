@@ -659,7 +659,7 @@ def plot_environment():
     upper_clim = [1800, 3400]
 
     fig, axs = plt.subplots(
-        figsize=(4, 5),
+        figsize=(4, 4),
         nrows=2,
         ncols=2,
         gridspec_kw={"wspace": 0.05, "hspace": 0, "width_ratios": [0.67, 0.33]},
@@ -691,7 +691,7 @@ def plot_environment():
         "Sediment layer\n$\\rho = 1.76\ \mathrm{g\ cm^{-3}}$\n$a=0.2\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
         xy=(2500, 235),
         xycoords="data",
-        xytext=(800, 185),
+        xytext=(800, 150),
         textcoords="data",
         bbox=props,
         arrowprops=dict(arrowstyle="->"),
@@ -712,16 +712,16 @@ def plot_environment():
     ax.fill_between(lower_clim, 1040, 1100, color="gray", alpha=0.15, linewidth=0)
     ax.text(
         1460,
-        450,
+        400,
         "Mudrock layer\n$\\rho = 2.06\ \mathrm{g\ cm^{-3}}$\n$a=0.06\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
         bbox=props,
         va="center",
     )
     ax.annotate(
         "Bedrock halfspace\n$c = 5200\ \mathrm{m\ s^{-1}}$\n$\\rho = 2.66\ \mathrm{g\ cm^{-3}}$\n$a=0.02\ \mathrm{dB \ km^{-1}\ Hz^{-1}}$",
-        xy=(1500, 1090),
+        xy=(1500, 1100),
         xycoords="data",
-        xytext=(1460, 940),
+        xytext=(1460, 900),
         textcoords="data",
         bbox=props,
         arrowprops=dict(arrowstyle="->"),
