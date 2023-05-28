@@ -13,7 +13,6 @@ import warnings
 from ax.service.ax_client import AxClient
 import jax.numpy as jnp
 import matplotlib as mpl
-from matplotlib import ticker
 from matplotlib import colors
 from matplotlib.colors import LogNorm
 import matplotlib.gridspec as gridspec
@@ -166,12 +165,12 @@ def plot_gp_pred(x, y, xtest, sigma_f, length_scale, sigma_y, ax=None):
     cond_gp = gp.condition(y, xtest).gp
     mu, var = cond_gp.loc, cond_gp.variance
     ax.scatter(x, y, s=50, c="k", marker="x", label="Data")
-    ax.plot(xtest, mu, color="k", label="$\mu(\mathbf{x})$")
+    ax.plot(xtest, mu, color="tab:blue", label="$\mu(\mathbf{x})$")
     ax.fill_between(
         xtest,
         mu + 2 * jnp.sqrt(var),
         mu - 2 * jnp.sqrt(var),
-        color="k",
+        color="tab:blue",
         alpha=0.3,
         edgecolor="none",
         label="$\pm 2\sigma(\mathbf{x})$",
@@ -345,7 +344,7 @@ def format_sci_notation(float_str):
 def plot_gp(x, y, x_test, y_true, sigma_f, params, ax=None):
     if ax is None:
         ax = plt.gca()
-    ax.plot(x_test, y_true, linestyle="--", c="k", label="True")
+    ax.plot(x_test, y_true, linestyle="--", c="k", label="$f(\mathbf{x})$")
     ax = plot_gp_pred(x, y, x_test, sigma_f, *params, ax=ax)
     ax.set_ylim(0, 1.1)
     return ax
@@ -513,6 +512,11 @@ def experimental_posterior():
 
     # Inset mean function
     axins = ax.inset_axes([0.05, 0.45, 0.5, 0.5], zorder=100)
+    axins.spines["bottom"].set_color("w")
+    axins.spines["top"].set_color("w")
+    axins.spines["left"].set_color("w")
+    axins.spines["right"].set_color("w")
+
     im = axins.contourf(
         rvec, zvec, mean["z"], levels=np.linspace(vmin, vmax, NLEVELS), **CONTOUR_KW
     )
@@ -1016,10 +1020,10 @@ def plot_gp_1D(
 
     max_alpha, max_alpha_prev = get_candidates(alpha, alpha_prev)
 
-    ax.plot(X_test, y_actual, color="tab:green", label="$f(\mathbf{x})$")
+    ax.plot(X_test, y_actual, color="k", linestyle="--", label="$f(\mathbf{x})$")
     ax.plot(X_test, mean, label="$\mu(\mathbf{x})$")
     ax.fill_between(
-        X_test.squeeze(), lcb, ucb, alpha=0.25, label="$\pm2\sigma(\mathbf{x})$"
+        X_test.squeeze(), lcb, ucb, alpha=0.3, label="$\pm2\sigma(\mathbf{x})$"
     )
     if not max_alpha_prev:
         ax.scatter(X_train, y_train, c="k", marker="x", label="Samples", zorder=40)
@@ -1069,7 +1073,7 @@ def plot_training_1D():
     outer_grid = fig.add_gridspec(len(trials_to_plot), 1, hspace=0.1)
 
     for i, trial in enumerate(trials_to_plot):
-        inner_grid = outer_grid[i].subgridspec(2, 1, hspace=0, height_ratios=[3, 2])
+        inner_grid = outer_grid[i].subgridspec(2, 1, hspace=0, height_ratios=[3, 1])
         axs = inner_grid.subplots()
 
         ax = axs[0]
@@ -1118,7 +1122,7 @@ def plot_training_1D():
         handles + handles2,
         labels + labels2,
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.7),
+        bbox_to_anchor=(0.5, -0.9),
         ncols=4,
     )
 
