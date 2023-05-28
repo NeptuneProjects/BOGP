@@ -14,6 +14,7 @@ from ax.service.ax_client import AxClient
 import jax.numpy as jnp
 import matplotlib as mpl
 from matplotlib import ticker
+from matplotlib import colors
 from matplotlib.colors import LogNorm
 import matplotlib.gridspec as gridspec
 from matplotlib.lines import Line2D
@@ -135,7 +136,7 @@ def initialize_model_selection():
     num_rvec = 200
     dr = 1.0
     rec_r_lim = (rec_r_true - dr, rec_r_true + dr)
-    sigma_f = 0.1
+    sigma_f = 1.0
     x_test = np.linspace(rec_r_lim[0], rec_r_lim[1], num_rvec)
     y_true = MFP({"rec_r": x_test})
 
@@ -153,8 +154,8 @@ def neg_log_likelihood(X, y, sigma_f, length_scale, sigma_y):
 
 
 def build_gp(x, length_scale, sigma_f, sigma_y):
-    kernel = (sigma_f**2) * kernels.ExpSquared(scale=length_scale)
-    # kernel = (sigma_f ** 2) * kernels.Matern52(scale=length_scale)
+    # kernel = (sigma_f**2) * kernels.ExpSquared(scale=length_scale)
+    kernel = (sigma_f**2) * kernels.Matern52(scale=length_scale)
     return GaussianProcess(kernel, x, diag=sigma_y**2)
 
 
@@ -165,7 +166,7 @@ def plot_gp_pred(x, y, xtest, sigma_f, length_scale, sigma_y, ax=None):
     cond_gp = gp.condition(y, xtest).gp
     mu, var = cond_gp.loc, cond_gp.variance
     ax.scatter(x, y, s=50, c="k", marker="x", label="Data")
-    ax.plot(xtest, mu, color="k", label="Mean")
+    ax.plot(xtest, mu, color="k", label="$\mu(\mathbf{x})$")
     ax.fill_between(
         xtest,
         mu + 2 * jnp.sqrt(var),
@@ -173,27 +174,37 @@ def plot_gp_pred(x, y, xtest, sigma_f, length_scale, sigma_y, ax=None):
         color="k",
         alpha=0.3,
         edgecolor="none",
-        label="Confidence",
+        label="$\pm 2\sigma(\mathbf{x})$",
     )
     sns.despine()
     return ax
 
 
 def plot_marginal_likelihood_surface(
-    x, y, sigma_f, l_space, sigma_y_space, levels=None, ax=None
+    x,
+    y,
+    sigma_f,
+    l_space,
+    sigma_y_space,
+    levels=None,
+    ax=None,
+    cmap=None,
+    vmin=None,
+    vmax=None,
 ):
     if ax is None:
         ax = plt.gca()
     P = jnp.stack(jnp.meshgrid(l_space, sigma_y_space), axis=0)
     Z = jnp.apply_along_axis(lambda p: neg_log_likelihood(x, y, sigma_f, *p), 0, P)
-    Z = Z - Z.min()
-    Z = Z.at[jnp.where(Z == 0)].set(0.01)
     im = ax.contourf(
         *jnp.exp(P),
         Z,
         levels,
-        cmap="bone_r",
-        locator=ticker.LogLocator(numticks=levels),
+        cmap=cmap,
+        # locator=ticker.LogLocator(numticks=levels),
+        vmin=vmin,
+        vmax=vmax,
+        extend="max",
     )
 
     ax.contour(
@@ -202,7 +213,9 @@ def plot_marginal_likelihood_surface(
         levels,
         colors="k",
         linewidths=0.5,
-        locator=ticker.LogLocator(numticks=levels),
+        # locator=ticker.LogLocator(numticks=levels),
+        vmin=vmin,
+        vmax=vmax,
     )
     return P, Z, im
 
@@ -222,37 +235,70 @@ def add_subfigure_labels(axs, x=0.5, y=-0.2):
     ]
 
 
+def truncate_colormap(cmap, minval=0.0, maxval=1.0, n=100):
+    return colors.LinearSegmentedColormap.from_list(
+        f"trunc({cmap.name},{minval},{maxval})", cmap(np.linspace(minval, maxval, n))
+    )
+
+
 def plot_model_selection():
     set_rcparams()
     x, y, x_test, y_true, sigma_f = initialize_model_selection()
 
     ngrid = 100
-    levels = 20
-    length_space = jnp.linspace(jnp.log(1.0e-2), jnp.log(1.0e0), ngrid)
-    sigma_y_space = jnp.linspace(jnp.log(1.0e-4), jnp.log(1.0e-1), ngrid)
+    vmin = -70
+    vmax = 30
+    levels = np.linspace(vmin, vmax, 11)
+    cmap = plt.get_cmap("bone_r")
+    new_cmap = truncate_colormap(cmap, 0.0, 0.8)
+
+    length_space = jnp.linspace(jnp.log(1.0e-2), jnp.log(1.1e0), ngrid)
+    sigma_y_space = jnp.linspace(jnp.log(1.0e-2), jnp.log(1.0e0), ngrid)
 
     fig, axs = plt.subplots(nrows=1, ncols=3, figsize=(12, 3))
 
     ax = axs[0]
     P, Z, im = plot_marginal_likelihood_surface(
-        x, y, sigma_f, length_space, sigma_y_space, levels, ax=ax
+        x,
+        y,
+        sigma_f,
+        length_space,
+        sigma_y_space,
+        levels,
+        ax=ax,
+        cmap=new_cmap,
+        vmin=vmin,
+        vmax=vmax,
     )
-    fig.colorbar(im, ax=ax)
+    cax = ax.inset_axes([0, 1.05, 1.0, 0.05])
+    fig.colorbar(
+        im,
+        ax=ax,
+        cax=cax,
+        location="top",
+        label=r"$-\log\left[p(\mathbf{y} \vert \mathbf{X}, l, \sigma_y)\right]$",
+    )
+
     ind_x, ind_y = jnp.unravel_index(jnp.argmin(Z), Z.shape)
-
     params_optim = [jnp.exp(P[0])[ind_x, ind_y], jnp.exp(P[1])[ind_x, ind_y]]
-    params_suboptim = [5e-1, 5e-2]
+    params_optim_plot = [
+        jnp.exp(P[0])[ind_x, ind_y],
+        jnp.exp(P[1])[ind_x, ind_y] + 0.1e-2,
+    ]
+    params_suboptim = [5e-1, 2e-1]
 
-    ax.scatter(marker="*", color="w", s=100, zorder=50, edgecolor="k", *params_optim)
+    ax.scatter(
+        marker="*", color="w", s=100, zorder=50, edgecolor="k", *params_optim_plot
+    )
     ax.text(
-        4e-2,
-        params_optim[1],
+        1.8e-1,
+        params_optim_plot[1] + 0.1e-2,
         "(b)",
         ha="right",
         va="center",
         bbox=dict(alpha=0.85, facecolor="w", linewidth=0, pad=0.5),
     )
-    ax.scatter(color="w", marker="*", s=100, zorder=50, edgecolor="k", *params_suboptim)
+    ax.scatter(marker="*", color="w", s=100, zorder=50, edgecolor="k", *params_suboptim)
     ax.text(
         4e-1,
         params_suboptim[1],
@@ -261,17 +307,18 @@ def plot_model_selection():
         va="center",
         bbox=dict(alpha=0.85, facecolor="w", linewidth=0, pad=0.5),
     )
-    ax.set_xlabel("Length scale $l$ [km]")
-    ax.set_ylabel("Noise std. dev. $\sigma_y$")
+    ax.set_xlabel("Length scale $l$")
+    ax.set_ylabel("Noise standard deviation $\sigma_y$")
     ax.set_xscale("log")
     ax.set_yscale("log")
-    ax.set_title(
-        r"$-\log\left[p(\mathbf{y} \vert \mathbf{X}, l, \sigma_y)\right]$ (Normalized)"
-    )
+    # ax.set_title(
+    #     r"$-\log\left[p(\mathbf{y} \vert \mathbf{X}, l, \sigma_y)\right]$"
+    # )
     sns.despine()
 
     ax = axs[1]
     ax = plot_gp(x, y, x_test, y_true, sigma_f, params_optim, ax=ax)
+    ax.set_xlim(3.98, 6.02)
     ax.set_xlabel("Range [km]")
     ax.set_ylabel("$f(\mathbf{x})$")
     ax.legend(loc="upper right", bbox_to_anchor=(1.1, 1.0))
@@ -280,9 +327,9 @@ def plot_model_selection():
 
     ax = axs[2]
     ax = plot_gp(x, y, x_test, y_true, sigma_f, params_suboptim, ax=ax)
+    ax.set_xlim(3.98, 6.02)
     ax.set_xlabel("Range [km]")
     ax.set_ylabel("$f(\mathbf{x})$")
-    # ax.legend()
     title = rf"$l={{{format_sci_notation(f'{params_suboptim[0]:.2E}')}}}$, $\sigma_y={{{format_sci_notation(f'{params_suboptim[1]:.2E}')}}}$"
     ax.set_title(title)
     add_subfigure_labels(axs, x=0.5, y=-0.2)
