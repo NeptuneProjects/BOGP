@@ -647,7 +647,7 @@ def plot_acqf_1D(X_test, alpha, alpha_prev=None, ax=None):
 
     ax.plot(X_test, alpha, color="tab:red", label="$\\alpha(\mathbf{x})$")
     ax.axvline(X_test[max_alpha], color="k", linestyle="-")
-    if max_alpha_prev:
+    if max_alpha_prev is not None:
         ax.axvline(X_test[max_alpha_prev], color="r", linestyle=":")
     return ax
 
@@ -1025,14 +1025,14 @@ def plot_gp_1D(
     ax.fill_between(
         X_test.squeeze(), lcb, ucb, alpha=0.3, label="$\pm2\sigma(\mathbf{x})$"
     )
-    if not max_alpha_prev:
+    if max_alpha_prev is None:
         ax.scatter(X_train, y_train, c="k", marker="x", label="Samples", zorder=40)
     else:
         ax.scatter(
             X_train[:-1], y_train[:-1], c="k", marker="x", label="Samples", zorder=40
         )
         ax.scatter(
-            X_train[-1], y_train[-1], c="r", marker="x", label="Samples", zorder=50
+            X_train[-1], y_train[-1], c="r", s=100, linewidth=3, marker="x", label="Samples", zorder=50
         )
     if max_alpha is not None:
         ax.axvline(
@@ -1055,7 +1055,7 @@ def plot_training_1D():
     }
     mpl.rcParams.update(params)
     loadpath = (
-        ROOT / "data" / "swellex96_S5_VLA" / "outputs" / "range_estimation" / "demo"
+        ROOT / "data" / "swellex96_S5_VLA" / "outputs" / "range_estimation" / "demo3"
     )
     X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha = load_training_data(
         loadpath
@@ -1064,12 +1064,12 @@ def plot_training_1D():
     alpha[alpha < 0] = 0
 
     num_rand = X_train.shape[0] - mean.shape[0]
-    xlim = [0, 10]
+    xlim = [3.98, 6.02]
     ylim = [-0.1, 1.1]
 
-    trials_to_plot = [0, 50, 51, 80]
+    trials_to_plot = [0, 1, 5, 10]
 
-    fig = plt.figure(figsize=(8, 12))
+    fig = plt.figure(figsize=(7, 9))
     outer_grid = fig.add_gridspec(len(trials_to_plot), 1, hspace=0.1)
 
     for i, trial in enumerate(trials_to_plot):
@@ -1092,9 +1092,9 @@ def plot_training_1D():
         if trial == trials_to_plot[-1]:
             handles, labels = ax.get_legend_handles_labels()
         if i == 0:
-            ax.text(0.1, 0.9, "Initialization", va="top")
+            ax.text(0.98, 0.9, "Initialization", ha="right", va="top", transform=ax.transAxes)
         else:
-            ax.text(0.1, 0.9, f"Trial {trial}", va="top")
+            ax.text(0.98, 0.9, f"Trial {trial}", ha="right", va="top", transform=ax.transAxes)
 
         ax.set_xticklabels([])
         ax.set_xlim(xlim)
@@ -1115,14 +1115,14 @@ def plot_training_1D():
         ax.set_ylabel("$\\alpha(\mathbf{x})$", rotation=0, ha="center", va="center")
 
     del handles[4], labels[4]
-    handles[-1] = Line2D([0], [0], color="r", marker="x", linestyle=":")
+    handles[-1] = Line2D([0], [0], color="r", marker="x", markersize=10, markeredgewidth=3, linestyle=":")
 
     handles2, labels2 = ax.get_legend_handles_labels()
     ax.legend(
         handles + handles2,
         labels + labels2,
         loc="upper center",
-        bbox_to_anchor=(0.5, -0.9),
+        bbox_to_anchor=(0.5, -1.2),
         ncols=4,
     )
 
