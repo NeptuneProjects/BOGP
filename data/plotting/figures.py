@@ -834,15 +834,14 @@ def plot_experimental_error(df):
 
     df_mfp = df[df["strategy"] == STRATEGY_KEY.pop(0)]
 
-    fig = plt.figure(figsize=(12, 8), facecolor="white")
+    fig = plt.figure(figsize=(6, 12), facecolor="white")
     sns.set_theme(style="darkgrid")
     set_rcparams()
 
-    nrows, ncols = 5, 2
-    gs = gridspec.GridSpec(nrows, ncols, figure=fig, hspace=0.4, wspace=0.1)
+    nrows, ncols = 5, 1
+    gs = gridspec.GridSpec(nrows, ncols, figure=fig, hspace=0.3, wspace=0.1)
 
     for i, strategy in enumerate(STRATEGY_KEY):
-        # try:
         selection = df["strategy"] == strategy
         df_selection = df[selection].copy()
         df_selection["Range Error [km]"] = (
@@ -851,30 +850,26 @@ def plot_experimental_error(df):
         df_selection["Depth Error [m]"] = (
             df_selection["best_src_z"].values - df_mfp["best_src_z"].values
         )
-        # except ValueError:
-        #     selection = df["strategy"] == STRATEGY_KEY[-2]
-        #     df_selection = df[selection].copy()
-        #     df_selection["Range Error [km]"] = (
-        #         df_selection["best_rec_r"].values - df_mfp["best_rec_r"].values
-        #     )
-        #     df_selection["Depth Error [m]"] = (
-        #         df_selection["best_src_z"].values - df_mfp["best_src_z"].values
-        #     )
 
-        ax1 = fig.add_subplot(gs[i, 0])
+        sgs = gridspec.GridSpecFromSubplotSpec(2, 1, subplot_spec=gs[i], hspace=0.1)
+
+        ax1 = fig.add_subplot(sgs[0])
         [ax1.axvspan(l[0] - 1, l[-1] + 1, zorder=5, **NO_DATA_KW) for l in no_data]
         sns.scatterplot(
             data=df_selection, x="Time Step", y="Range Error [km]", ax=ax1, **ERROR_KW
         )
         ax1.set_xlim(XLIM)
         ax1.set_xticks(XTICKS)
+        ax1.set_xticklabels([])
+        ax1.set_xlabel(None)
         ax1.set_ylim(YLIM_R)
         ax1.set_yticks(YTICKS_R)
-        ax1.set_ylabel(strategy)
+        ax1.set_ylabel(None) if i != nrows - 1 else ax1.set_ylabel("Range\nError [km]")
+        ax1.set_title(strategy)
         ax1.tick_params(length=0)
         adjust_subplotticklabels(ax1, 0, -1)
 
-        ax2 = fig.add_subplot(gs[i, 1])
+        ax2 = fig.add_subplot(sgs[1])
         [ax2.axvspan(l[0] - 1, l[-1] + 1, zorder=5, **NO_DATA_KW) for l in no_data]
         sns.scatterplot(
             data=df_selection,
@@ -886,21 +881,12 @@ def plot_experimental_error(df):
         )
         ax2.set_xlim(XLIM)
         ax2.set_xticks(XTICKS)
+        ax2.set_xlabel(None) if i != nrows - 1 else ax2.set_xlabel("Time Step")
         ax2.set_ylim(YLIM_Z)
         ax2.set_yticks(YTICKS_Z)
-        ax2.set_ylabel(None)
+        ax2.set_ylabel(None) if i != nrows - 1 else ax2.set_ylabel("Depth\nError [m]")
         ax2.tick_params(length=0)
         adjust_subplotticklabels(ax2, 0, -1)
-
-        if i == 0:
-            ax1.set_title("Range Error [km]")
-            ax2.set_title("Depth Error [m]")
-        if i == nrows - 1:
-            ax1.set_xlabel("Time Step")
-            ax2.set_xlabel(None)
-        else:
-            ax1.set_xlabel(None)
-            ax2.set_xlabel(None)
 
     return fig
 
@@ -1032,7 +1018,14 @@ def plot_gp_1D(
             X_train[:-1], y_train[:-1], c="k", marker="x", label="Samples", zorder=40
         )
         ax.scatter(
-            X_train[-1], y_train[-1], c="r", s=100, linewidth=3, marker="x", label="Samples", zorder=50
+            X_train[-1],
+            y_train[-1],
+            c="r",
+            s=100,
+            linewidth=3,
+            marker="x",
+            label="Samples",
+            zorder=50,
         )
     if max_alpha is not None:
         ax.axvline(
@@ -1092,9 +1085,23 @@ def plot_training_1D():
         if trial == trials_to_plot[-1]:
             handles, labels = ax.get_legend_handles_labels()
         if i == 0:
-            ax.text(0.98, 0.9, "Initialization", ha="right", va="top", transform=ax.transAxes)
+            ax.text(
+                0.98,
+                0.9,
+                "Initialization",
+                ha="right",
+                va="top",
+                transform=ax.transAxes,
+            )
         else:
-            ax.text(0.98, 0.9, f"Trial {trial}", ha="right", va="top", transform=ax.transAxes)
+            ax.text(
+                0.98,
+                0.9,
+                f"Trial {trial}",
+                ha="right",
+                va="top",
+                transform=ax.transAxes,
+            )
 
         ax.set_xticklabels([])
         ax.set_xlim(xlim)
@@ -1115,7 +1122,9 @@ def plot_training_1D():
         ax.set_ylabel("$\\alpha(\mathbf{x})$", rotation=0, ha="center", va="center")
 
     del handles[4], labels[4]
-    handles[-1] = Line2D([0], [0], color="r", marker="x", markersize=10, markeredgewidth=3, linestyle=":")
+    handles[-1] = Line2D(
+        [0], [0], color="r", marker="x", markersize=10, markeredgewidth=3, linestyle=":"
+    )
 
     handles2, labels2 = ax.get_legend_handles_labels()
     ax.legend(
