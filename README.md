@@ -1,3 +1,9 @@
+# Bayesian optimization with Gaussian process surrogate model for acoustic source localization
+
+This repository contains the code used to perform acoustic source localization using Bayesian optimization with a Gaussian process surrogate model. This work was submitted to the Journal of the Acoustical Society of America:
+
+William Jenkins, Peter Gerstoft, and Yongsung Park. "Bayesian optimization with Gaussian process surrogate model for acoustic source localization," submitted to the Journal of the Acoustical Society of America, 31 May 2023.
+
 
 ---
 ## Installation
