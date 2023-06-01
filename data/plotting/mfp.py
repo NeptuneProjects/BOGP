@@ -88,6 +88,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-# ../data/swellex96_S5_VLA/acoustic/ambiguity_surfaces/148-166-201-235-283-338-388_40x40
