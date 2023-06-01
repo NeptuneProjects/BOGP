@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
+# -*- coding: utf-8 -*-
 
 from argparse import ArgumentParser
 from copy import deepcopy
-
-# import ast
 from pathlib import Path
 import string
-
 import sys
 import warnings
 
