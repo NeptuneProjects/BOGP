@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
-"""Usage:
+"""Reads ambiguity surfaces in specified directory and saves plots to file.
+
+Usage:
 python3 ./data/plotting/mfp.py \
-    ../data/swellex96_S5_VLA/acoustic/ambiguity_surfaces/49-64-79-94-112-130-148-166-201-235-283-338-388_200x100 \
+    ../data/swellex96_S5_VLA/acoustic/ambiguity_surfaces/148-166-201-235-283-338-388_200x100 \
     --glob "*.npy"
 """
 
