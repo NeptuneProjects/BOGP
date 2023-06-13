@@ -28,11 +28,11 @@ from tritonoa.sp.mfp import MatchedFieldProcessor
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from conf.swellex96.optimization.common import FREQ, SWELLEX96Paths
-from data.collate import load_mfp_results, NO_DATA
+from data.swellex96.collate import load_mfp_results, NO_DATA
 import optimization.utils as utils
 
 ROOT = Path(__file__).parents[3]
-FIGURE_PATH = ROOT / "reports" / "manuscripts" / "JASA" / "figures"
+FIGURE_PATH = ROOT / "reports" / "manuscripts" / "202305_JASA" / "figures"
 SAVEFIG_KWARGS = {"dpi": 200, "facecolor": "white", "bbox_inches": "tight"}
 
 
