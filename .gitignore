@@ -168,7 +168,7 @@ cython_debug/
 *.prt
 *.npy
 .vscode
-docs/
+# docs/
 deprecated/
 outputs/
 tests/
