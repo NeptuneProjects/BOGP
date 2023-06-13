@@ -1,10 +1,5 @@
 #!/usr/bin/env python3
-# Copyright 2023 by William Jenkins
-# Scripps Institution of Oceanography
-# University of California San Diego
-#
-# This source code is licensed under the MIT license found in the LICENSE
-# file in the root directory of this source tree.
+# -*- coding: utf-8 -*-
 
 """This script collates data from disparate locations in the project 
 directory for convenient analysis and plotting.
