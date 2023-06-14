@@ -16,6 +16,7 @@ dependencies:
   - pip:
     - ax-platform
     - hydra-core
+    - tinygp
     - git+https://github.com/NeptuneProjects/TritonOA.git
     - git+https://github.com/NeptuneProjects/OAOptimization.git
   
