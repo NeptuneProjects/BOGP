@@ -13,6 +13,7 @@ dependencies:
   - matplotlib
   - parallel
   - pip
+  - python-graphviz
   - pytorch
   - pytorch-cuda=11.8
   - seaborn
