@@ -5,4 +5,4 @@
 #   $ cd swellex96
 #   $ zsh ./scripts/swellex96/collate.sh
 
-python data/collate.py experimental serial_001
+python data/swellex96/collate.py experimental serial_001

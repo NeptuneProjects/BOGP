@@ -16,7 +16,7 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
-sys.path.insert(0, str(Path(__file__).parents[1]))
+sys.path.insert(0, str(Path(__file__).parents[2]))
 from conf.swellex96.optimization.common import SWELLEX96Paths
 
 ROOT = Path.cwd() / "Data"
