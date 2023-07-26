@@ -32,8 +32,13 @@ from data.swellex96.collate import load_mfp_results, NO_DATA
 import optimization.utils as utils
 
 ROOT = Path(__file__).parents[3]
-FIGURE_PATH = ROOT / "reports" / "manuscripts" / "202305_JASA" / "figures"
-SAVEFIG_KWARGS = {"dpi": 200, "facecolor": "white", "bbox_inches": "tight"}
+FIGURE_PATH = ROOT / "reports" / "manuscripts" / "202305_JASA"
+SAVEFIG_KWARGS = {
+    "format": "pdf",
+    "dpi": 600,
+    "facecolor": "white",
+    "bbox_inches": "tight",
+}
 
 
 def main(figures: list):
@@ -41,7 +46,7 @@ def main(figures: list):
         print(f"Producing Figure {figure} " + 60 * "-")
         try:
             fig = eval(f"figure{figure}()")
-            fig.savefig(FIGURE_PATH / f"figure{figure}.pdf", **SAVEFIG_KWARGS)
+            fig.savefig(FIGURE_PATH / f"figure{figure}.{SAVEFIG_KWARGS['format']}", **SAVEFIG_KWARGS)
         except NameError:
             warnings.warn(f"Figure {figure} is not implemented yet.")
             raise NotImplementedError(f"Figure {figure} is not implemented yet.")
@@ -393,6 +398,7 @@ def experimental_posterior():
     CONTOUR_KW = {
         "origin": "lower",
         "extent": [0, 10, 50, 75],
+        "cmap": "viridis",
     }
     LABEL_KW = {"ha": "center", "va": "center", "rotation": 90, "fontsize": "large"}
     SCATTER_KW = {
@@ -1046,7 +1052,7 @@ def plot_training_1D():
     }
     mpl.rcParams.update(params)
     loadpath = (
-        ROOT / "data" / "swellex96_S5_VLA" / "outputs" / "range_estimation" / "demo3"
+        ROOT / "data" / "swellex96_S5_VLA" / "outputs" / "range_estimation" / "demo"
     )
     X_test, y_actual, X_train, y_train, mean, lcb, ucb, alpha = load_training_data(
         loadpath
