@@ -1,4 +1,4 @@
-# Bayesian optimization with Gaussian process surrogate model for acoustic source localization
+# Bayesian optimization with Gaussian process surrogate model for geoacoustic inversion and parameter estimation
 
 This repository contains code used to perform acoustic parameter estimation using Bayesian optimization with a Gaussian process surrogate model. The following papers use this code:
 
