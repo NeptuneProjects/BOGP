@@ -1,14 +1,13 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import os
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
 
-def load_range_csv(path: os.PathLike) -> np.ndarray:
+def load_range_csv(path: Path) -> np.ndarray:
     return np.loadtxt(path, delimiter=",", skiprows=1, usecols=2)
 
 
