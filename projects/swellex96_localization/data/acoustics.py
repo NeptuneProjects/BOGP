@@ -222,7 +222,7 @@ cs.store(name="process_config", node=ProcessConfig)
 
 
 @hydra.main(
-    config_path=str(Path(__file__).parents[3] / "conf" / "swellex96" / "data"),
+    config_path=str(Path(__file__).parents[1] / "conf" / "data"),
     config_name="acoustics",
     version_base=None,
 )
