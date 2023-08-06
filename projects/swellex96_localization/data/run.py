@@ -13,8 +13,9 @@ from oao.results import get_results
 from omegaconf import DictConfig, OmegaConf
 from tritonoa.at.models.kraken.kraken import clean_up_kraken_files
 
-sys.path.insert(0, str(Path(__file__).parents[2]))
-import conf.swellex96.optimization.run as config_run
+sys.path.insert(0, str(Path(__file__).parents[1]))
+import conf.optimization.run as config_run
+sys.path.insert(0, str(Path(__file__).parents[3]))
 from optimization import utils
 
 

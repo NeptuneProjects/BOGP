@@ -21,10 +21,10 @@ from tritonoa.at.models.kraken.runner import run_kraken as runner
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
 
-sys.path.insert(0, str(Path(__file__).parents[2]))
-from optimization import parameterization as param
-from env import load_env_from_json, save_env_to_json
+from env import load_from_json, save_to_json
 from gps_range import load_range_csv
+sys.path.insert(0, str(Path(__file__).parents[3]))
+from optimization import parameterization as param
 
 log = logging.getLogger(__name__)
 
@@ -66,7 +66,7 @@ def format_dict_config(dict_config: DictConfig) -> dict:
 
 
 def initialize_fixed_param(env_path: os.PathLike, fixed_def: dict) -> dict:
-    environment = load_env_from_json(env_path)
+    environment = load_from_json(env_path)
     return environment | fixed_def
 
 
@@ -161,7 +161,7 @@ def run_parameterizations(
         unit="scenario",
         bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
     ) as pbar:
-        save_env_to_json(parameterization[0], savepath / "parameterization.json")
+        save_to_json(parameterization[0], savepath / "parameterization.json")
 
         with ProcessPoolExecutor(max_workers=cfg.max_workers) as executor:
             futures = [

@@ -14,9 +14,10 @@ from hydra_zen.typing._implementations import DataClass
 from oao.space import SearchSpaceBounds
 from omegaconf import DictConfig
 
-sys.path.insert(0, str(Path(__file__).parents[2]))
-from conf.swellex96.optimization.common import FREQ, SWELLEX96Paths
-import conf.swellex96.optimization.configure as config_main
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from conf.optimization.common import FREQ, SWELLEX96Paths
+import conf.optimization.configure as config_main
+sys.path.insert(0, str(Path(__file__).parents[3]))
 from optimization import utils
 
 

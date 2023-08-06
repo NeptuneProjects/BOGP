@@ -26,12 +26,13 @@ from tritonoa.at.models.kraken.runner import run_kraken
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
 
-sys.path.insert(0, str(Path(__file__).parents[2]))
-from conf.swellex96.optimization.common import FREQ, SWELLEX96Paths
-from data.swellex96.collate import load_mfp_results, NO_DATA
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from conf.optimization.common import FREQ, SWELLEX96Paths
+from data.collate import load_mfp_results, NO_DATA
+sys.path.insert(0, str(Path(__file__).parents[3]))
 import optimization.utils as utils
 
-ROOT = Path(__file__).parents[3]
+ROOT = Path(__file__).parents[4]
 FIGURE_PATH = ROOT / "reports" / "manuscripts" / "202305_JASA"
 SAVEFIG_KWARGS = {
     "format": "pdf",

@@ -17,8 +17,9 @@ from tritonoa.at.models.kraken.runner import run_kraken
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
 
-sys.path.insert(0, str(Path(__file__).parents[2]))
-from conf.swellex96.optimization.common import FREQ, SWELLEX96Paths
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from conf.optimization.common import FREQ, SWELLEX96Paths
+sys.path.insert(0, str(Path(__file__).parents[3]))
 import optimization.utils as utils
 
 

@@ -4,7 +4,7 @@
 """
 Build the acoustic environment model for SWELLEX96 and save it to JSON.
 Usage:
-> python data/swellex96/env.py \
+> python projects/swellex96_localization/data/env.py \
     ../data/swellex96_S5_VLA/ctd/i9606.prn \
     ../data/swellex96_S5_VLA/env_models/swellex96_2.json
 """

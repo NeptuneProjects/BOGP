@@ -8,15 +8,16 @@ import sys
 from hydra.core.config_store import ConfigStore
 from hydra_zen import builds
 
+sys.path.insert(0, str(Path(__file__).parents[2]))
+from conf.optimization.common import SWELLEX96Paths
+from conf.optimization.run import LocalizationConf
+from data.gps_range import load_range_csv
 sys.path.insert(0, str(Path(__file__).parents[4]))
-from data.swellex96.gps_range import load_range_csv
 from optimization.parameterization import (
     IndexedParameterization,
     Parameterization,
     PermutedParameterization,
 )
-from conf.swellex96.optimization.common import SWELLEX96Paths
-from conf.swellex96.optimization.run import LocalizationConf
 
 
 # OBJECTIVE CONFIG

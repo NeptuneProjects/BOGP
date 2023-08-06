@@ -16,10 +16,9 @@ import numpy as np
 import pandas as pd
 from scipy.io import loadmat
 
-sys.path.insert(0, str(Path(__file__).parents[2]))
-from conf.swellex96.optimization.common import SWELLEX96Paths
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from conf.optimization.common import SWELLEX96Paths
 
-ROOT = Path.cwd() / "Data"
 NO_DATA = [
     list(range(0, 6)),
     list(range(61, 73)),
@@ -62,7 +61,9 @@ def load_mfp_results(ambsurf_path):
 
 def build_mfp_df(path: Path) -> pd.DataFrame:
     timesteps, ranges, depths = load_mfp_results(path)
-    df = pd.DataFrame(data={"Time Step": timesteps, "best_rec_r": ranges, "best_src_z": depths})
+    df = pd.DataFrame(
+        data={"Time Step": timesteps, "best_rec_r": ranges, "best_src_z": depths}
+    )
     df["Time Step"] = df["Time Step"].astype(int)
     df["strategy"] = "mfp"
     return df

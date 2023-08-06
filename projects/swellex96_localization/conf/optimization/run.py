@@ -25,7 +25,8 @@ from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
-from conf.swellex96.optimization.common import SWELLEX96Paths
+from conf.optimization.common import SWELLEX96Paths
+sys.path.insert(0, str(Path(__file__).parents[4]))
 from optimization.strategy import GPEIStrategy, SobolStrategy, GridSearchStrategy
 from optimization import utils
 
