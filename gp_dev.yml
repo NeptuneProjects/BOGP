@@ -12,6 +12,7 @@ dependencies:
   - matplotlib
   - parallel
   - pip
+  - pyproj
   - python-graphviz
   - pytorch
   - seaborn
