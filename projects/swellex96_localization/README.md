@@ -35,27 +35,26 @@ The configuration scheme is organized as follows:
 ```
 .
 +-- conf
-|   +-- swellex96
-|   |   +-- data
-|   |   |   +-- acoustics.yaml
-|   |   |   +-- mfp.yaml
-|   |   +-- optimization
-|   |   |   +-- common.py
-|   |   |   +-- configure.py
-|   |   |   +-- run.py
+|   +-- data
+|   |   +-- acoustics.yaml
+|   |   +-- mfp.yaml
+|   +-- optimization
+|   |   +-- common.py
+|   |   +-- configure.py
+|   |   +-- run.py
 ```
-The subdirectory `conf/swellex96/data` implements `yaml` files that are used with the [`Hydra`](https://hydra.cc) configuration management framework.
+The subdirectory `conf/data` implements `yaml` files that are used with the [`Hydra`](https://hydra.cc) configuration management framework.
 These configuration files control acoustic data preprocessing steps for later use in the workflow.
 
-The subdirectory `conf/swellex96/optimization` implements Python modules which are used by the [`hydra-zen`](https://mit-ll-responsible-ai.github.io/hydra-zen/) configuration management framework.
+The subdirectory `conf/optimization` implements Python modules which are used by the [`hydra-zen`](https://mit-ll-responsible-ai.github.io/hydra-zen/) configuration management framework.
 These modules are used to configure the optimization workflow.
 
-Both the `Hydra` and `hydra-zen` frameworks are implemented as I was interested in comparing the two.
+Both the `Hydra` and `hydra-zen` frameworks are implemented as I was interested in comparing the two. I think I prefer the `hydra-zen` framework.
 
 ### Source Data Directories
 Experimental data directories are organized as follows:
 ```
-.
+../../
 +-- data
 |   +-- swellex96_S5_VLA
 |   |   +-- acoustic
@@ -113,47 +112,47 @@ run:
 
 To perform pre-processing, run the following script from the `src` directory:
 ```bash
-bash ./scripts/swellex96/process.sh
+bash ./projects/swellex96_localization/scripts/process.sh
 ```
 
 ### Building the Environment Model `json` File
 The environment model for SWellEx-96 is built by running the following script from the `src` directory:
 ```bash
-bash ./scripts/swellex96/build_at_env.sh
+bash ./projects/swellex96_localization/scripts/build_at_env.sh
 ```
 
 ### High-resolution Matched Field Processing (MFP)
 High-resolution MFP is performed to serve as a baseline comparison for the other optimization methods.
 To configure MFP, edit the following file:  
-`conf/swellex96/data/mfp.yaml`
+`conf/data/mfp.yaml`
 
 To run MFP, run the following from the `src` directory:
 ```bash
-python3 ./data/swellex96/mfp.py
+python3 ./projects/swellex96_localization/data/mfp.py
 ```
 
 ### Optimization
 There are two primary optimization configuration files.
-- In `conf/swellex96/optimization/run.py`, the individual optimization strategies are configured.
-- In `conf/swellex96/optimization/configure.py`, an entire optimization workflow is configured.
+- In `conf/optimization/run.py`, the individual optimization strategies are configured.
+- In `conf/optimization/configure.py`, an entire optimization workflow is configured.
 
-The file `conf/swellex96/optimization/common.py` contains configurations common to individual optimization strategies and the broader experiment.
+The file `conf/optimization/common.py` contains configurations common to individual optimization strategies and the broader experiment.
 
 To generate a queue of optimization configurations that can be run sequentially or in parallel, run the following from the `src` directory:
 ```bash
-bash ./scripts/swellex96/config.sh <serial name> <mode | experimental,simulation>
+bash ./projects/swellex96_localization/scripts/config.sh <serial name> <mode | experimental,simulation>
 ```
 
 To run an optimization serial (a batch of configurations), run the following from the `src` directory:
 ```bash
-bash ./scripts/swellex96/optimization/run.sh <path to queue> <num jobs>
+bash ./projects/swellex96_localization/scripts/run.sh <path to queue> <num jobs>
 ```
 The queue can be run in parallel by specifying `<num jobs>`.
 
 ### Aggregate Optimization Results
 To aggregate the results of an optimization serial, run the following from the `src` directory:
 ```bash
-bash ./scripts/swellex96/agg.sh <path to queue>
+bash ./projects/swellex96_localization/scripts/agg.sh <path to queue>
 ```
 Edit `agg.sh` directly to specify which serial to aggregate.
 The output of this script results in two `.csv` files:
@@ -164,13 +163,13 @@ The output of this script results in two `.csv` files:
 For use in producing figures, a final, collated `.csv` is created by collating data and metadata from various sources in the epxerimental data.
 To collate results, run the following from the `src` directory:
 ```bash
-bash ./scripts/swellex96/collate.sh
+bash ./projects/swellex96_localization/scripts/collate.sh
 ```
 Edit `collate.sh` directly to specify which serial to aggregate.
 
 ### Plotting Results
 To plot results, run the following from the `src` directory:
 ```bash
-python3 ./data/plotting/figures.py --figures=<1,2,5,...>
+python3 ./projects/swellex96_localization/plotting/figures.py --figures=<1,2,5,...>
 ```
 The `--figures` argument is a comma-separated list of figures to plot.
