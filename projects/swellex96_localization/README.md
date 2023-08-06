@@ -5,7 +5,6 @@ This repository contains the code used to perform acoustic source localization u
 > William Jenkins, Peter Gerstoft, and Yongsung Park. "Bayesian optimization with Gaussian process surrogate model for acoustic source localization," submitted to the Journal of the Acoustical Society of America, 31 May 2023.
 
 
----
 ## Installation
 
 In your desired target directory, run the following command:
@@ -25,7 +24,6 @@ Activate the environment:
 conda activate gp310
 ```
 
----
 ## Usage
 
 This workflow has been broken into multiple steps with corresponding scripts.
