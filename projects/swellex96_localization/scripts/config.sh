@@ -8,4 +8,4 @@ SERIAL="$1"
 MODE="$2"
 
 # python3 ./data/swellex96/configure.py serial=$SERIAL parameterization=$MODE 
-python3 ./data/swellex96/configure.py serial=$SERIAL parameterization=$MODE "optimizers=[qgpei]"
+python3 ./projects/swellex96_localization/data/configure.py serial=$SERIAL parameterization=$MODE "optimizers=[qgpei]"
