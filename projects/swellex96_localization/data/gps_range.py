@@ -31,8 +31,8 @@ def save_range_csv(path: Path) -> None:
 
 
 def main() -> None:
-    DATADIR = Path(__file__).parents[3] / "data" / "swellex96_S5_VLA" / "gps"
-    save_range_csv(DATADIR / "gps_range2.csv")
+    DATADIR = Path(__file__).parents[4] / "data" / "swellex96_S5_VLA" / "gps"
+    save_range_csv(DATADIR / "gps_range.csv")
 
 
 if __name__ == "__main__":
