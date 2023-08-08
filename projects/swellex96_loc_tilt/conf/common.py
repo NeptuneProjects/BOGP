@@ -14,5 +14,5 @@ class SWELLEX96Paths:
     environment_data = SWELLEX96PATH / "env_models" / "swellex96.json"
     gps_data = SWELLEX96PATH / "gps" / "gps_range.csv"
     acoustic_path = SWELLEX96PATH / "acoustic" / "processed"
-    outputs = SWELLEX96PATH / "outputs" / "localization"
+    outputs = SWELLEX96PATH / "outputs"
     ambiguity_surfaces = SWELLEX96PATH / "acoustic" / "ambiguity_surfaces"
