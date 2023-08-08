@@ -71,17 +71,22 @@ def adjust_bounds(lower: float, lower_bound: float, upper: float, upper_bound: f
 
 
 def format_search_space(search_space: SearchSpaceBounds, scenario: dict) -> dict:
+    # TODO: Problem with boundaries here - need to fix logic.
     parameters = []
     for bounds in search_space.bounds:
-        if bounds.name in scenario.keys():
-            lower = scenario[bounds.name] + bounds.lower_bound
-            upper = scenario[bounds.name] + bounds.upper_bound
-            if lower < bounds.min_lower_bound:
-                lower = bounds.min_lower_bound
-                upper = lower + abs(bounds.lower_bound) + abs(bounds.upper_bound)
-            elif upper > bounds.max_upper_bound:
-                upper = bounds.max_upper_bound
-                lower = upper - abs(bounds.upper_bound) - abs(bounds.lower_bound)
+        if bounds.relative:
+            if bounds.name in scenario.keys():
+                lower = scenario[bounds.name] + bounds.lower_bound
+                upper = scenario[bounds.name] + bounds.upper_bound
+                if lower < bounds.min_lower_bound:
+                    lower = bounds.min_lower_bound
+                    upper = lower + abs(bounds.lower_bound) + abs(bounds.upper_bound)
+                elif upper > bounds.max_upper_bound:
+                    upper = bounds.max_upper_bound
+                    lower = upper - abs(bounds.upper_bound) - abs(bounds.lower_bound)
+        else:
+            lower = bounds.lower_bound
+            upper = bounds.upper_bound
 
         parameters.append(
             {
