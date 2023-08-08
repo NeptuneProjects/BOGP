@@ -2,10 +2,72 @@
 # -*- coding: utf-8 -*-
 
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd
 from pyproj import Geod
+from tritonoa.at.env.array import compute_range_offsets
+
+sys.path.insert(0, str(Path(__file__).parents[1]))
+from conf.common import SWELLEX96Paths
+from env import load_from_json
+
+
+def add_tilt_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Add array tilt data columns to GPS data.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        GPS data.
+
+    Returns
+    -------
+    pd.DataFrame
+        GPS data with array tilt data.
+    """
+
+    TRUE_TILT = 2.5
+    TRUE_AZ = 270.0
+    df["Tilt [deg]"] = TRUE_TILT
+    df["Rel Az [deg]"] = TRUE_AZ - df["Src Brg [deg]"]
+    return df
+
+
+def compute_apparent_tilt(df: pd.DataFrame) -> pd.DataFrame:
+    """Compute apparent tilt in the LOS from GPS data.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        GPS data.
+
+    Returns
+    -------
+    pd.DataFrame
+        GPS data with apparent tilt added.
+    """
+    rec_z = np.array(load_from_json(SWELLEX96Paths.environment_data)["rec_z"])
+    scope = rec_z.max() - rec_z.min()
+    rec_r = df["Range [km]"].values[0]
+    tilt = df["Tilt [deg]"].values[0]
+    azimuth = df["Rel Az [deg]"].values[0]
+
+    apparent_tilt = []
+    for i in range(len(df)):
+        rec_r = df["Range [km]"].values[i]
+        tilt = df["Tilt [deg]"].values[i]
+        azimuth = df["Rel Az [deg]"].values[i]
+        range_offsets, _ = compute_range_offsets(rec_r, rec_z, tilt, azimuth)
+        apparent_tilt.append(
+            np.rad2deg(
+                np.arcsin(-range_offsets[np.argmax(np.abs(range_offsets))] / scope)
+            )
+        )
+
+    df["Apparent Tilt [deg]"] = apparent_tilt
+    return df
 
 
 def compute_range_and_bearing_to_source(df: pd.DataFrame) -> pd.DataFrame:
@@ -137,6 +199,8 @@ def main() -> None:
     df = format_gps_data(df)
     df = compute_range_and_bearing_to_source(df)
     df = resample_df(df)
+    df = add_tilt_data(df)
+    df = compute_apparent_tilt(df)
     df.to_csv(DATADIR / "gps_range.csv")
 
 
