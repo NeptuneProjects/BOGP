@@ -1,8 +1,6 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# TODO: Refactor this module into a repo-level module
-
 from dataclasses import dataclass
 import logging
 from pathlib import Path
