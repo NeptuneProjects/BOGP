@@ -1,27 +1,20 @@
 run:
-  - convert
-  - merge
+  # - convert
+  # - merge
   - process
-  - compute_covariance
 configs:
   data_path: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA_loc_tilt/acoustic
   convert:
     _target_: __main__.ConversionConfig
+    fmt: ["npy", "mat", "wav"]
     paths:
       _target_: __main__.ProcessPaths
       source: ${configs.data_path}/raw/sio
-      destination: ${configs.data_path}/raw/npy
+      destination: ${configs.data_path}/raw
     glob_pattern: "*/VLA_*[!.npy]"
     channels_to_remove: -1
-    max_workers: 4
-  compute_covariance:
-    _target_: __main__.CovarianceConfig
-    paths:
-      _target_: __main__.ProcessPaths
-      source: ${configs.data_path}/processed
-      destination: ${configs.data_path}/processed
-    frequencies: ${configs.process.frequencies}
-    num_segments: ${configs.process.num_segments}
+    max_workers: 8
+    fs: 1500
   merge:
     _target_: __main__.MergeConfig
     paths:
@@ -42,7 +35,8 @@ configs:
       source: ${configs.data_path}/processed/merged.npz
       destination: ${configs.data_path}/processed
     frequencies: [201, 235, 283, 338, 388]
-    num_segments: 250
+    samples_per_segment: 8192
+    segments_every_n: 16200
     fs: 1500
     channels_to_remove: [42]
     freq_finding_params:
@@ -56,3 +50,4 @@ configs:
         # _target_: functools.partial
         # _args_: ["${get_method:numpy.hamming}"]
     max_workers: 8
+    normalize_covariance: true
