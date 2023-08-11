@@ -2,12 +2,19 @@
 # -*- coding: utf-8 -*-
 
 from dataclasses import dataclass, field
+from enum import Enum
 import itertools
-from typing import Any
+from typing import Any, Optional
+import warnings
 
 
 class UnequalLengthWarning(Warning):
     pass
+
+
+class DropOptions(Enum):
+    HEAD = "head"
+    TAIL = "tail"
 
 
 @dataclass
@@ -16,25 +23,41 @@ class IndexedParameterization:
 
     def __len__(self) -> int:
         if not self.equal_length:
-            raise UnequalLengthWarning("Not all lists have same length!")
+            warnings.warn("Not all lists have same length!", UnequalLengthWarning)
         else:
             return len(next(iter(self.scenario.values())))
 
     @property
     def equal_length(self) -> bool:
-        it = iter(self.scenario.values())
-        length_of_first = len(next(it))
-        if not all(len(l) == length_of_first for l in it):
-            return False
-        return True
+        return all(
+            len(l) == len(next(iter(self.scenario.values())))
+            for l in self.scenario.values()
+        )
 
     def parameterize(self) -> list[dict]:
         if not self.scenario:
             return [{}]
         if not self.equal_length:
-            raise UnequalLengthWarning("Not all lists have same length!")
+            warnings.warn(
+                "Not all lists have same length! Use equalize_length() to "
+                "fix this. Values with index greater than the minimum length "
+                "have been dropped.",
+                UnequalLengthWarning,
+            )
+        return [
+            dict(zip(self.scenario.keys(), values))
+            for values in zip(*self.scenario.values())
+        ]
 
-        return [{k: v[i] for k, v in self.scenario.items()} for i in range(len(self))]
+    def equalize_length(self, drop: Optional[str] = "tail") -> None:
+        dropopt = DropOptions(drop)
+
+        if not self.equal_length:
+            min_length = min(len(l) for l in self.scenario.values())
+            if dropopt == DropOptions.HEAD:
+                self.scenario = {k: v[-min_length:] for k, v in self.scenario.items()}
+            elif dropopt == DropOptions.TAIL:
+                self.scenario = {k: v[:min_length] for k, v in self.scenario.items()}
 
 
 @dataclass
@@ -51,12 +74,8 @@ class PermutedParameterization:
 
 @dataclass
 class Parameterization:
-    indexed: IndexedParameterization = field(
-        default_factory=IndexedParameterization
-    )
-    permuted: PermutedParameterization = field(
-        default_factory=PermutedParameterization
-    )
+    indexed: IndexedParameterization = field(default_factory=IndexedParameterization)
+    permuted: PermutedParameterization = field(default_factory=PermutedParameterization)
     fixed: dict[str, Any] = field(default_factory=dict)
 
     def __post_init__(self):
@@ -85,18 +104,17 @@ class Parameterization:
 def main():
     indexed = {
         "timestep": list(range(50, 60)),
-        "range": list(range(5,15)),
+        "range": list(range(5, 15)),
     }
     permuted = {"depths": [50, 60, 70], "snr": [0, 10]}
     fixed = {"name": "test"}
-
 
     idx_param = IndexedParameterization(indexed)
     perm_param = PermutedParameterization(permuted)
 
     param = Parameterization(indexed=idx_param, permuted=perm_param, fixed=fixed)
     print(param[5])
-    
+
 
 if __name__ == "__main__":
     main()
