@@ -211,7 +211,7 @@ def worker(
         freq=cfg.frequencies,
         parameters=scenario,
         beamformer=partial(beamformer, atype=cfg.mfp_parameters.bf_type),
-        multifreq_method=cfg.mfp_parameters.multifreq_method,
+        multifreq_method=cfg.mfp_parameters.mf_method,
     )
 
     amb_surface = np.zeros(

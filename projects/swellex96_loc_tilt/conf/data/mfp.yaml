@@ -42,4 +42,4 @@ mfp_parameters:
       _target_: numpy.linspace
       _args_: [1.0, 200.0, 100]
   bf_type: "cbf_ml"
-  multi_freq_parameters: "mean"
+  mf_method: "product"
