@@ -158,12 +158,6 @@ def run_parameterizations(
     tmpdir = savepath / cfg.parameters.fixed.tmpdir
     tmpdir.mkdir(parents=True, exist_ok=True)
 
-    log.info("Loading covariance matrices.")
-    K = load_covariance(
-        path=cfg.paths.covariance_path,
-        frequencies=cfg.frequencies,
-    )
-
     with tqdm(
         total=len(parameterization),
         desc="Creating ambiguity surfaces",
