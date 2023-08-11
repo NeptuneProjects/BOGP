@@ -4,6 +4,7 @@ from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
+from tqdm import tqdm
 from tritonoa.plotting import plot_ambiguity_surface
 
 
@@ -44,9 +45,23 @@ def save_figure(destination: Path, fig: plt.Figure) -> None:
 def main(args: ArgumentParser) -> None:
     grid = np.load(args.source / "grid_parameters.pkl", allow_pickle=True)
     data = load_data(args.source, args.glob)
-    for surf, fname in data:
-        fig = create_figure(surf, grid, vmin=args.vmin, vmax=args.vmax, cmap=args.cmap)
+    pbar = tqdm(
+        data,
+        total=len(data),
+        desc="Creating figures",
+        unit="figure",
+        bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}",
+    )
+    for surf, fname in pbar:
+        fig = create_figure(
+            surf,
+            grid,
+            vmin=args.vmin,
+            vmax=args.vmax,
+            cmap=args.cmap,
+        )
         save_figure(args.source / args.destination / (fname + "." + args.fmt), fig)
+        plt.close()
 
 
 if __name__ == "__main__":
@@ -55,7 +70,7 @@ if __name__ == "__main__":
         "--source",
         "--s",
         type=Path,
-        default="/Users/williamjenkins/Research/Projects/BOGP/data/swellex96_S5_VLA_loc_tilt/acoustic/ambiguity_surfaces/201-235-283-338-388_200x100",
+        default="/Users/williamjenkins/Research/Projects/BOGP/data/swellex96_S5_VLA_loc_tilt/acoustic/ambiguity_surfaces/49-64-79-94-112-130-148-166-201-235-283-338-388_100x100",
     )
     parser.add_argument("--glob", "--g", type=str, default="surface_*.npy")
     parser.add_argument("--destination", "--d", type=str, default="plots/rel_scale")
