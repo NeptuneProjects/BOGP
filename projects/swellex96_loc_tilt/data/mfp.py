@@ -4,6 +4,7 @@
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from copy import deepcopy
 from dataclasses import dataclass
+from functools import partial
 import logging
 import os
 from pathlib import Path
@@ -19,7 +20,6 @@ import numpy as np
 import pandas as pd
 from omegaconf import DictConfig, OmegaConf
 from tqdm import tqdm
-
 from tritonoa.at.models.kraken.runner import run_kraken as runner
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
@@ -210,7 +210,8 @@ def worker(
         covariance_matrix=K,
         freq=cfg.frequencies,
         parameters=scenario,
-        beamformer=beamformer,
+        beamformer=partial(beamformer, atype=cfg.mfp_parameters.bf_type),
+        multifreq_method=cfg.mfp_parameters.multifreq_method,
     )
 
     amb_surface = np.zeros(

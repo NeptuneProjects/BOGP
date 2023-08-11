@@ -33,7 +33,6 @@ parameters:
     # depth: [9, 60]
   fixed:
     tmpdir: .tmp
-    # tilt: -1.0
 mfp_parameters:
   grid:
     rec_r:
@@ -42,3 +41,5 @@ mfp_parameters:
     src_z:
       _target_: numpy.linspace
       _args_: [1.0, 200.0, 100]
+  bf_type: "cbf_ml"
+  multi_freq_parameters: "mean"
