@@ -13,6 +13,9 @@ sys.path.insert(0, str(Path(__file__).parents[1]))
 from conf.common import SWELLEX96Paths
 from env import load_from_json
 
+TRUE_TILT: float = 2.5
+TRUE_AZ: float = 270.0
+
 
 def add_tilt_data(df: pd.DataFrame) -> pd.DataFrame:
     """Add array tilt data columns to GPS data.
@@ -28,9 +31,8 @@ def add_tilt_data(df: pd.DataFrame) -> pd.DataFrame:
         GPS data with array tilt data.
     """
 
-    TRUE_TILT = 2.5
-    TRUE_AZ = 270.0
     df["Tilt [deg]"] = TRUE_TILT
+    df["Azimuth [deg]"] = TRUE_AZ
     df["Rel Az [deg]"] = TRUE_AZ - df["Src Brg [deg]"]
     return df
 
