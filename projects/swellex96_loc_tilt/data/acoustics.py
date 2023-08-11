@@ -75,6 +75,7 @@ class ProcessConfig:
     fft_params: FFTParameters
     max_workers: int
     normalize_covariance: bool
+    covariance_averaging: int
 
     def __post_init__(self) -> None:
         self.paths.__post_init__()
@@ -134,6 +135,7 @@ def process(config: ProcessConfig) -> None:
         destination=config.paths.destination,
         max_workers=config.max_workers,
         normalize_covariance=config.normalize_covariance,
+        covariance_averaging=config.covariance_averaging,
     )
 
 

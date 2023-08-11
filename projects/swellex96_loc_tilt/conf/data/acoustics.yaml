@@ -34,9 +34,9 @@ configs:
       _target_: __main__.ProcessPaths
       source: ${configs.data_path}/processed/merged.npz
       destination: ${configs.data_path}/processed
-    frequencies: [201, 235, 283, 338, 388]
+    frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
     samples_per_segment: 8192
-    segments_every_n: 16200
+    segments_every_n: 4050
     fs: 1500
     channels_to_remove: [42]
     freq_finding_params:
@@ -51,3 +51,4 @@ configs:
         # _args_: ["${get_method:numpy.hamming}"]
     max_workers: 8
     normalize_covariance: true
+    covariance_averaging: 4
