@@ -36,7 +36,7 @@ ExperimentalObjectiveConf = builds(
     runner="kraken",
     covariance_matrix="experimental",
     parameters="swellex96",
-    beamformer="bartlett",
+    beamformer="bartlett_ml",
     builds_bases=(ObjectiveConfig,),
 )
 
@@ -63,6 +63,14 @@ BartlettMetricConf = builds(
     MetricConfig,
     name="bartlett",
     minimize=False,
+    builds_bases=(MetricConfig,),
+)
+
+
+BartlettMLMetricConf = builds(
+    MetricConfig,
+    name="bartlett_ml",
+    minimize=True,
     builds_bases=(MetricConfig,),
 )
 
@@ -105,13 +113,13 @@ SimulationParameterizationConf = builds(
             IndexedParameterization,
             scenario=builds(
                 dict,
-                time_step=range(0, 250),
+                time_step=range(0, 250)[0:1],
                 rec_r=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Range [km]"
-                ].values.tolist(),
+                ].values.tolist()[0:1],
                 tilt=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Apparent Tilt [deg]"
-                ].values.tolist(),
+                ].values.tolist()[0:1],
             ),
         ),
         fixed=builds(dict, src_z=60.0),
@@ -130,13 +138,16 @@ ExperimentalParameterizationConf = builds(
             IndexedParameterization,
             scenario=builds(
                 dict,
-                time_step=range(0, 350),
+                time_step=range(0, 250),
                 rec_r=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Range [km]"
                 ].values.tolist(),
+                tilt=pd.read_csv(SWELLEX96Paths.gps_data)[
+                    "Apparent Tilt [deg]"
+                ].values.tolist(),
             ),
         ),
-        fixed=builds(dict, src_z=60.0, tilt=-1.0),
+        fixed=builds(dict, src_z=60.0),
     ),
     mode="experimental",
     objective=ExperimentalObjectiveConf,
@@ -152,7 +163,7 @@ class ProblemDefinition:
     search_space: SearchConf
 
 
-LocalizationDefinitionConf = builds(
+ProblemDefinitionConf = builds(
     ProblemDefinition,
     name="loc_tilt",
     search_space=SearchConf,
@@ -170,6 +181,6 @@ cs.store(
     name="experimental",
     node=ExperimentalParameterizationConf,
 )
-cs.store(group="problem", name="loc_tilt", node=LocalizationDefinitionConf)
-# cs.store(group="objective", name="mfp", node=ObjectiveConf)
+cs.store(group="problem", name="loc_tilt", node=ProblemDefinitionConf)
 cs.store(group="metric", name="bartlett", node=BartlettMetricConf)
+cs.store(group="metric", name="bartlett_ml", node=BartlettMLMetricConf)

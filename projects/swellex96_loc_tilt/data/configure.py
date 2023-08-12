@@ -101,7 +101,7 @@ Config = make_config(
         "_self_",
         {"parameterization": "simulation"},
         {"problem": "loc_tilt"},
-        {"metric": "bartlett"},
+        {"metric": "bartlett_ml"},
     ],
     path=SWELLEX96Paths.outputs,
     serial=f"serial_{datetime.now().strftime('%Y%m%d%H%M%S')}",

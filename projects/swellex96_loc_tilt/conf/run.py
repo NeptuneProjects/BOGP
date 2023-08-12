@@ -25,6 +25,7 @@ from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
 
 from conf.common import SWELLEX96Paths
+
 sys.path.insert(0, str(Path(__file__).parents[3]))
 from optimization.strategy import GPEIStrategy, SobolStrategy, GridSearchStrategy
 from optimization import utils
@@ -65,10 +66,8 @@ def instantiate_simulation_covariance(cfg: DictConfig):
 def instantiate_objective(cfg: DictConfig):
     if cfg.objective.covariance_matrix.name == "simulation":
         covariance_matrix = instantiate_simulation_covariance(cfg)
-        print("Simulation!!!")
     if cfg.objective.covariance_matrix.name == "experimental":
         covariance_matrix = instantiate_experimental_covariance(cfg)
-        print("Experimental!!!")
     return instantiate(
         cfg.objective,
     )(
@@ -92,14 +91,14 @@ MFPConf = pbuilds(
     freq=MISSING,
     parameters=MISSING,
     beamformer=MISSING,
+    multifreq_method=MISSING,
 )
 
 # objective/runner
 RunnerConf = pbuilds(run_kraken)
 
+
 # objective/covariance_matrix
-
-
 @dataclass
 class CovarianceMatrixConfig:
     name: str
@@ -136,7 +135,6 @@ ExperimentalCovarianceConf = pbuilds(
         ),
     ),
 )
-# TODO: Pass the index to the covariance matrix loader.
 
 # objective/parameters
 Swellex96EnvConf = builds(
@@ -144,7 +142,9 @@ Swellex96EnvConf = builds(
 )
 
 # objective/beamformer
-BeamformerConf = pbuilds(beamformer)
+BartlettConf = pbuilds(beamformer)
+BartlettMLConf = pbuilds(beamformer, atype="cbf_ml")
+
 
 # formatter
 NoiselessFormatConf = pbuilds(
@@ -164,7 +164,7 @@ SearchConf = sbuilds(
             lower_bound=-0.5,
             upper_bound=0.5,
             relative=True,
-            min_lower_bound=0.010,
+            min_lower_bound=0.5,
             max_upper_bound=8.0,
             builds_bases=(SearchParameterBounds,),
         ),
@@ -191,26 +191,26 @@ SearchConf = sbuilds(
 )
 
 # strategy
-GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=16)
+GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=4)
 SobolStrategyConf = pbuilds(
     SobolStrategy,
-    num_trials=4096,
+    num_trials=32,
     max_parallelism=16,
     seed=MISSING,
 )
 GPEIStrategyConf = pbuilds(
     GPEIStrategy,
-    warmup_trials=64,
+    warmup_trials=16,
     warmup_parallelism=16,
-    num_trials=36,
+    num_trials=48,
     max_parallelism=1,
     seed=MISSING,
 )
 qGPEIStrategyConf = pbuilds(
     GPEIStrategy,
-    warmup_trials=64,
+    warmup_trials=16,
     warmup_parallelism=16,
-    num_trials=36,
+    num_trials=48,
     max_parallelism=4,
     seed=MISSING,
 )
@@ -251,7 +251,10 @@ cs.store(
     node=ExperimentalCovarianceConf,
 )
 cs.store(group="objective/parameters", name="swellex96", node=Swellex96EnvConf)
-cs.store(group="objective/beamformer", name="bartlett", node=BeamformerConf)
+cs.store(group="objective/beamformer", name="bartlett", node=BartlettConf)
+cs.store(group="objective/beamformer", name="bartlett_ml", node=BartlettMLConf)
+cs.store(group="objective/multifreq_method", name="mean", node="mean")
+cs.store(group="objective/multifreq_method", name="product", node="product")
 cs.store(group="formatter", name="noiseless", node=NoiselessFormatConf)
 cs.store(group="formatter", name="noisy", node=NoisyFormatConf)
 cs.store(group="search_space", name="localization", node=SearchConf)
