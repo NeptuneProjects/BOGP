@@ -18,11 +18,15 @@ def create_figure(
     vmin: Optional[float] = None,
     vmax: Optional[float] = None,
     cmap: str = "viridis",
+    minimize: bool = True,
 ) -> plt.Figure:
     if vmin is None:
         vmin = data.min()
     if vmax is None:
         vmax = data.max()
+
+    if minimize:
+        data = 1.0 - data
 
     fig = plt.figure(figsize=(8, 6))
     ax, im = plot_ambiguity_surface(
@@ -59,6 +63,7 @@ def main(args: ArgumentParser) -> None:
             vmin=args.vmin,
             vmax=args.vmax,
             cmap=args.cmap,
+            minimize=args.minimize,
         )
         save_figure(args.source / args.destination / (fname + "." + args.fmt), fig)
         plt.close()
@@ -70,7 +75,7 @@ if __name__ == "__main__":
         "--source",
         "--s",
         type=Path,
-        default="../data/swellex96_S5_VLA_loc_tilt/acoustic/ambiguity_surfaces/49-64-79-94-112-130-148-166-201-235-283-338-388_100x100",
+        default="../data/swellex96_S5_VLA_loc_tilt/acoustic/ambiguity_surfaces/49-64-79-94-112-130-148-166-201-235-283-338-388_100x100_product",
     )
     parser.add_argument("--glob", "--g", type=str, default="surface_*.npy")
     parser.add_argument("--destination", "--d", type=str, default="plots/rel_scale")
@@ -78,5 +83,6 @@ if __name__ == "__main__":
     parser.add_argument("--vmin", type=float, default=None)
     parser.add_argument("--vmax", type=float, default=None)
     parser.add_argument("--cmap", type=str, default="viridis")
+    parser.add_argument("--minimize", default=False, action="store_true")
     args = parser.parse_args()
     main(args)
