@@ -5,4 +5,4 @@
 #   $ cd swellex96
 #   $ zsh ./projects/swellex96_loc_tilt/scripts/collate.sh
 
-python projects/swellex96_loc_tilt/data/collate.py experimental serial_001
+python projects/swellex96_loc_tilt/data/collate.py experimental serial_002

@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
-RESULTS_PATH = Path("../data/swellex96_S5_VLA_loc_tilt/outputs/loc_tilt/experimental/serial_001/results/collated_results.csv")
+RESULTS_PATH = Path("../data/swellex96_S5_VLA_loc_tilt/outputs/loc_tilt/experimental/serial_002/results/collated_results.csv")
 TRUE_PATH = Path("../data/swellex96_S5_VLA_loc_tilt/gps/gps_range.csv")
 
 KEY = {
