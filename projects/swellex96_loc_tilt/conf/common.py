@@ -5,12 +5,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 FREQ = [
-    49.0,
-    64.0,
-    79.0,
-    94.0,
-    112.0,
-    130.0,
+    # 49.0,
+    # 64.0,
+    # 79.0,
+    # 94.0,
+    # 112.0,
+    # 130.0,
     148.0,
     166.0,
     201.0,
