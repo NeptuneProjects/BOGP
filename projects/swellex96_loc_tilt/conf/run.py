@@ -161,8 +161,8 @@ SearchConf = sbuilds(
         builds(
             SearchParameterBounds,
             name="rec_r",
-            lower_bound=-1.0,
-            upper_bound=1.0,
+            lower_bound=-0.5,
+            upper_bound=0.5,
             relative=True,
             min_lower_bound=0.5,
             max_upper_bound=8.0,
@@ -171,8 +171,8 @@ SearchConf = sbuilds(
         builds(
             SearchParameterBounds,
             name="src_z",
-            lower_bound=-30.0,
-            upper_bound=30.0,
+            lower_bound=-20.0,
+            upper_bound=20.0,
             relative=True,
             min_lower_bound=1.0,
             max_upper_bound=200.0,
