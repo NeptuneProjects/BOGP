@@ -200,17 +200,17 @@ SobolStrategyConf = pbuilds(
 )
 GPEIStrategyConf = pbuilds(
     GPEIStrategy,
-    warmup_trials=128,
-    warmup_parallelism=52,
-    num_trials=52,
+    warmup_trials=32,
+    warmup_parallelism=16,
+    num_trials=32,
     max_parallelism=1,
     seed=MISSING,
 )
 qGPEIStrategyConf = pbuilds(
     GPEIStrategy,
-    warmup_trials=128,
+    warmup_trials=32,
     warmup_parallelism=16,
-    num_trials=52,
+    num_trials=32,
     max_parallelism=4,
     seed=MISSING,
 )
