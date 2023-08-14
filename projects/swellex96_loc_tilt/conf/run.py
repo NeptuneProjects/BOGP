@@ -191,26 +191,26 @@ SearchConf = sbuilds(
 )
 
 # strategy
-GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=4)
+GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=[6, 6, 5])
 SobolStrategyConf = pbuilds(
     SobolStrategy,
-    num_trials=64,
+    num_trials=180,
     max_parallelism=16,
     seed=MISSING,
 )
 GPEIStrategyConf = pbuilds(
     GPEIStrategy,
     warmup_trials=128,
-    warmup_parallelism=16,
+    warmup_parallelism=52,
     num_trials=16,
     max_parallelism=1,
     seed=MISSING,
 )
 qGPEIStrategyConf = pbuilds(
     GPEIStrategy,
-    warmup_trials=32,
+    warmup_trials=128,
     warmup_parallelism=16,
-    num_trials=32,
+    num_trials=52,
     max_parallelism=4,
     seed=MISSING,
 )
