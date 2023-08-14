@@ -8,7 +8,8 @@ import numpy as np
 import pandas as pd
 
 RESULTS_PATH = Path(
-    "../data/swellex96_S5_VLA_loc_tilt/outputs/loc_tilt/experimental/serial_006/results/collated_results.csv"
+    "../data/swellex96_S5_VLA_loc_tilt/outputs/loc_tilt/experimental/serial_001/results/collated_results.csv"
+    # "../data/swellex96_S5_VLA_loc_tilt/outputs/loc_tilt/simulation/serial_003/results/collated_results.csv"
 )
 TRUE_PATH = Path("../data/swellex96_S5_VLA_loc_tilt/gps/gps_range.csv")
 
@@ -50,7 +51,7 @@ def plot_results(data: pd.DataFrame, parameters: list[str]) -> plt.Figure:
             df = data[data["strategy"] == strategy]
             df = df.drop(df[df["Time Step"].isin(SKIP_STEPS)].index)
             ax.scatter(
-                df["Time Step"], df[parameter], label=strategy, s=2.0, c="b", alpha=0.5
+                df["Time Step"], df[f"best_{parameter}"], label=strategy, s=2.0, c="b", alpha=0.5
             )
             ax.plot(true_data.index, true_kv[parameter], "gray", alpha=0.5, label="True")
             ax.set_xlabel("Time Step")
