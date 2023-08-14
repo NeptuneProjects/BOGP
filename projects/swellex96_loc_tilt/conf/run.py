@@ -161,8 +161,8 @@ SearchConf = sbuilds(
         builds(
             SearchParameterBounds,
             name="rec_r",
-            lower_bound=-0.5,
-            upper_bound=0.5,
+            lower_bound=-1.0,
+            upper_bound=1.0,
             relative=True,
             min_lower_bound=0.5,
             max_upper_bound=8.0,
@@ -181,8 +181,8 @@ SearchConf = sbuilds(
         builds(
             SearchParameterBounds,
             name="tilt",
-            lower_bound=-5.0,
-            upper_bound=5.0,
+            lower_bound=-4.0,
+            upper_bound=4.0,
             relative=False,
             builds_bases=(SearchParameterBounds,),
         ),
@@ -200,17 +200,17 @@ SobolStrategyConf = pbuilds(
 )
 GPEIStrategyConf = pbuilds(
     GPEIStrategy,
-    warmup_trials=32,
+    warmup_trials=128,
     warmup_parallelism=16,
-    num_trials=32,
+    num_trials=16,
     max_parallelism=1,
     seed=MISSING,
 )
 qGPEIStrategyConf = pbuilds(
     GPEIStrategy,
-    warmup_trials=32,
+    warmup_trials=128,
     warmup_parallelism=16,
-    num_trials=32,
+    num_trials=16,
     max_parallelism=4,
     seed=MISSING,
 )
