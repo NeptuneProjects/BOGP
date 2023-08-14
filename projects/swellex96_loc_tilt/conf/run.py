@@ -202,7 +202,7 @@ GPEIStrategyConf = pbuilds(
     GPEIStrategy,
     warmup_trials=128,
     warmup_parallelism=16,
-    num_trials=16,
+    num_trials=32,
     max_parallelism=1,
     seed=MISSING,
 )
