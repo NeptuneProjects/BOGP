@@ -171,8 +171,8 @@ SearchConf = sbuilds(
         builds(
             SearchParameterBounds,
             name="src_z",
-            lower_bound=-20.0,
-            upper_bound=20.0,
+            lower_bound=-40.0,
+            upper_bound=40.0,
             relative=True,
             min_lower_bound=1.0,
             max_upper_bound=200.0,
@@ -191,16 +191,16 @@ SearchConf = sbuilds(
 )
 
 # strategy
-GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=[6, 6, 5])
+GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=[4])
 SobolStrategyConf = pbuilds(
     SobolStrategy,
-    num_trials=180,
+    num_trials=64,
     max_parallelism=16,
     seed=MISSING,
 )
 GPEIStrategyConf = pbuilds(
     GPEIStrategy,
-    warmup_trials=128,
+    warmup_trials=32,
     warmup_parallelism=16,
     num_trials=32,
     max_parallelism=1,
@@ -208,9 +208,9 @@ GPEIStrategyConf = pbuilds(
 )
 qGPEIStrategyConf = pbuilds(
     GPEIStrategy,
-    warmup_trials=128,
+    warmup_trials=32,
     warmup_parallelism=16,
-    num_trials=16,
+    num_trials=32,
     max_parallelism=4,
     seed=MISSING,
 )
