@@ -138,13 +138,13 @@ ExperimentalParameterizationConf = builds(
             IndexedParameterization,
             scenario=builds(
                 dict,
-                time_step=range(0, 250)[100:],
+                time_step=range(0, 250),
                 rec_r=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Range [km]"
-                ].values.tolist()[100:],
+                ].values.tolist(),
                 tilt=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Apparent Tilt [deg]"
-                ].values.tolist()[100:],
+                ].values.tolist(),
             ),
         ),
         fixed=builds(dict, src_z=60.0),
