@@ -191,7 +191,7 @@ SearchConf = sbuilds(
 )
 
 # strategy
-GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=[4])
+GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=4)
 SobolStrategyConf = pbuilds(
     SobolStrategy,
     num_trials=64,
