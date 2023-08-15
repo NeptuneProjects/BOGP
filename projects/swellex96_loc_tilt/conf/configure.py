@@ -47,7 +47,7 @@ SimulationObjectiveConf = builds(
     runner="kraken",
     covariance_matrix="simulation",
     parameters="swellex96",
-    beamformer="bartlett",
+    beamformer="bartlett_ml",
     builds_bases=(ObjectiveConfig,),
 )
 
@@ -113,13 +113,13 @@ SimulationParameterizationConf = builds(
             IndexedParameterization,
             scenario=builds(
                 dict,
-                time_step=range(0, 250)[0:1],
+                time_step=range(0, 250)[150:],
                 rec_r=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Range [km]"
-                ].values.tolist()[0:1],
+                ].values.tolist()[150:],
                 tilt=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Apparent Tilt [deg]"
-                ].values.tolist()[0:1],
+                ].values.tolist()[150:],
             ),
         ),
         fixed=builds(dict, src_z=60.0),
@@ -138,13 +138,13 @@ ExperimentalParameterizationConf = builds(
             IndexedParameterization,
             scenario=builds(
                 dict,
-                time_step=range(0, 250),
+                time_step=range(0, 250)[100:],
                 rec_r=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Range [km]"
-                ].values.tolist(),
+                ].values.tolist()[100:],
                 tilt=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Apparent Tilt [deg]"
-                ].values.tolist(),
+                ].values.tolist()[100:],
             ),
         ),
         fixed=builds(dict, src_z=60.0),
