@@ -41,7 +41,6 @@ def save_covariance_data(covariance_matrix: np.ndarray, path: Path) -> Path:
 
 def load_covariance_matrices(paths: list, index: Optional[int] = None) -> np.ndarray:
     K = []
-    print(paths)
     for path in paths:
         K.append(np.load(Path(path)))
     if index is None:
