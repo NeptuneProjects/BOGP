@@ -101,11 +101,11 @@ def build_bogp_df(path: Path) -> pd.DataFrame:
 
 def rename_columns(df: pd.DataFrame) -> pd.DataFrame:
     # df = df.replace({"strategy": "mfp"}, "High-res MFP")
-    # df = df.replace({"strategy": "sobol"}, "Sobol")
-    # df = df.replace({"strategy": "grid"}, "Grid")
+    df = df.replace({"strategy": "sobol"}, "Sobol")
+    df = df.replace({"strategy": "grid"}, "Grid")
     # df = df.replace({"strategy": "sbl"}, "SBL")
     df = df.replace({"strategy": "gpei"}, "Sobol+GP/EI")
-    # df = df.replace({"strategy": "qgpei"}, "Sobol+GP/qEI")
+    df = df.replace({"strategy": "qgpei"}, "Sobol+GP/qEI")
     return df
 
 
