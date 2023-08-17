@@ -26,7 +26,7 @@ SWELLEX96PATH = Path("../data/swellex96_S5_VLA_loc_tilt")
 class SWELLEX96Paths:
     path = SWELLEX96PATH
     environment_data = SWELLEX96PATH / "env_models" / "swellex96.json"
-    gps_data = SWELLEX96PATH / "gps" / "gps_range.csv"
+    gps_data = SWELLEX96PATH / "gps" / "source_tow.csv"
     acoustic_path = SWELLEX96PATH / "acoustic" / "processed"
     outputs = SWELLEX96PATH / "outputs"
     ambiguity_surfaces = SWELLEX96PATH / "acoustic" / "ambiguity_surfaces"
