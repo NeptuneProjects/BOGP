@@ -75,13 +75,13 @@ def compute_apparent_tilt(df: pd.DataFrame) -> pd.DataFrame:
     """
     rec_z = np.array(load_from_json(SWELLEX96Paths.environment_data)["rec_z"])
     scope = rec_z.max() - rec_z.min()
-    rec_r = df["Range [km]"].values[0]
+    rec_r = df["Apparent Range [km]"].values[0]
     tilt = df["Tilt [deg]"].values[0]
     azimuth = df["Rel Az [deg]"].values[0]
 
     apparent_tilt = []
     for i in range(len(df)):
-        rec_r = df["Range [km]"].values[i]
+        rec_r = df["Apparent Range [km]"].values[i]
         tilt = df["Tilt [deg]"].values[i]
         azimuth = df["Rel Az [deg]"].values[i]
         z_pivot = 216
