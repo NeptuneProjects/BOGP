@@ -4,6 +4,7 @@
 from pathlib import Path
 import sys
 
+import bathyreq
 import numpy as np
 import pandas as pd
 from pyproj import Geod
@@ -15,6 +16,28 @@ from env import load_from_json
 
 TRUE_TILT: float = 2.5
 TRUE_AZ: float = 270.0
+TRUE_DEPTH: float = 60.0
+TRUE_ARRAY_DEPTH: float = 216.0
+
+
+def add_bathymetry(df: pd.DataFrame) -> pd.DataFrame:
+    """Add bathymetry data to GPS data.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        GPS data.
+
+    Returns
+    -------
+    pd.DataFrame
+        GPS data with bathymetry data.
+    """
+    req = bathyreq.BathyRequest()
+    df["Bathy [m]"] = -req.get_point(
+        longitude=df["Lon"].values, latitude=df["Lat"].values, size=[400, 400]
+    )
+    return df
 
 
 def add_tilt_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -61,7 +84,8 @@ def compute_apparent_tilt(df: pd.DataFrame) -> pd.DataFrame:
         rec_r = df["Range [km]"].values[i]
         tilt = df["Tilt [deg]"].values[i]
         azimuth = df["Rel Az [deg]"].values[i]
-        range_offsets, _ = compute_range_offsets(rec_r, rec_z, tilt, azimuth)
+        z_pivot = 216
+        range_offsets, _ = compute_range_offsets(rec_r, rec_z, tilt, azimuth, z_pivot)
         apparent_tilt.append(
             np.rad2deg(
                 np.arcsin(-range_offsets[np.argmax(np.abs(range_offsets))] / scope)
@@ -69,6 +93,24 @@ def compute_apparent_tilt(df: pd.DataFrame) -> pd.DataFrame:
         )
 
     df["Apparent Tilt [deg]"] = apparent_tilt
+    return df
+
+
+def compute_mirage(df: pd.DataFrame) -> pd.DataFrame:
+    """Compute mirage parameters from GPS data.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        GPS data.
+
+    Returns
+    -------
+    pd.DataFrame
+        GPS data with mirage parameters.
+    """
+    df["Apparent Range [km]"] = TRUE_ARRAY_DEPTH * df["Range [km]"] / df["Bathy [m]"]
+    df["Apparent Depth [m]"] = TRUE_ARRAY_DEPTH * df["Depth [m]"] / df["Bathy [m]"]
     return df
 
 
@@ -110,8 +152,8 @@ def format_gps_data(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         GPS data with decimal degrees.
     """
-    df["Lat"] = df["Lat [Deg]"].astype(float) + df["Lat [Min]"].astype(float) / 60
     df["Lon"] = -(df["Lon [Deg]"].astype(float) + df["Lon [Min]"].astype(float) / 60)
+    df["Lat"] = df["Lat [Deg]"].astype(float) + df["Lat [Min]"].astype(float) / 60
     return df.drop(columns=["Lat [Deg]", "Lat [Min]", "Lon [Deg]", "Lon [Min]"])
 
 
@@ -184,14 +226,26 @@ def resample_df(df: pd.DataFrame) -> pd.DataFrame:
 
     # Trim and extract data
     df = df.loc[start:end]
+    lon = df["Lon"].values
+    lat = df["Lat"].values
     r = df["Range [km]"].values
     brg = df["Src Bearing [deg]"].values
 
     # Interpolate data to new timebase
+    lon_ts = np.interp(t, df.index, lon)
+    lat_ts = np.interp(t, df.index, lat)
     r_ts = np.interp(t, df.index, r)
     brg_ts = np.interp(t, df.index, brg)
 
-    return pd.DataFrame({"Time": t, "Range [km]": r_ts, "Src Brg [deg]": brg_ts})
+    return pd.DataFrame(
+        {
+            "Time": t,
+            "Lon": lon_ts,
+            "Lat": lat_ts,
+            "Range [km]": r_ts,
+            "Src Brg [deg]": brg_ts,
+        }
+    )
 
 
 def main() -> None:
@@ -201,9 +255,12 @@ def main() -> None:
     df = format_gps_data(df)
     df = compute_range_and_bearing_to_source(df)
     df = resample_df(df)
+    df["Depth [m]"] = TRUE_DEPTH
+    df = add_bathymetry(df)
+    df = compute_mirage(df)
     df = add_tilt_data(df)
     df = compute_apparent_tilt(df)
-    df.to_csv(DATADIR / "gps_range.csv")
+    df.to_csv(DATADIR / "source_tow.csv")
 
 
 if __name__ == "__main__":
