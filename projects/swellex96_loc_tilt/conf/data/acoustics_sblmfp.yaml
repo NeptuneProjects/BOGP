@@ -1,4 +1,5 @@
-# This configuration uses 64 channels (1 bad channel, 42, is zeroed out)
+# This configuration replicates results from Gemba et al. (2017), JASA.
+# The data is from the SWELLEX96 experiment websites (21 channels)
 run:
   # - convert
   # - merge
@@ -12,7 +13,7 @@ configs:
       _target_: __main__.ProcessPaths
       source: ${configs.data_path}/raw/sio
       destination: ${configs.data_path}/raw
-    glob_pattern: "*/VLA_*[!.npy]"
+    glob_pattern: "J1312315.vla.21els.sio"
     channels_to_remove: null
     max_workers: 8
     fs: 1500
@@ -22,7 +23,7 @@ configs:
       _target_: __main__.ProcessPaths
       source: ${configs.data_path}/raw/npy
       destination: ${configs.data_path}/processed
-    glob_pattern: VLA_*[!header].npy
+    glob_pattern: "J1312315.vla.21els*[!header].npy"
     filename: merged.npz
     base_time: 96131 23:15
     start: 96131 23:39
@@ -36,21 +37,21 @@ configs:
       source: ${configs.data_path}/processed/merged.npz
       destination: ${configs.data_path}/processed
     frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
-    samples_per_segment: 8192
-    segments_every_n: 4050
+    samples_per_segment: 4096
+    segments_every_n: 2048
     fs: 1500
-    channels_to_remove: [42]
-    reverse_channels: true
+    channels_to_remove: null
+    reverse_channels: false
     freq_finding_params:
       _target_: __main__.FrequencyPeakFindingParameters
-      lower_bw: 1.0
-      upper_bw: 1.0
+      lower_bw: 0.75
+      upper_bw: 0.75
     fft_params:
       _target_: __main__.FFTParameters
-      nfft: 8192
+      nfft: 4096
       window:
         _target_: functools.partial
-        _args_: ["${get_method:numpy.hamming}"]
+        _args_: ["${get_method:numpy.hanning}"]
     max_workers: 8
     normalize_covariance: true
-    covariance_averaging: 4
+    covariance_averaging: 21
