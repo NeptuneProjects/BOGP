@@ -3,11 +3,11 @@ paths:
   _target_: __main__.MFPPaths
   data_path: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA_loc_tilt
   env_path: ${paths.data_path}/env_models/swellex96.json
-  range_path: ${paths.data_path}/gps/gps_range.csv
+  range_path: ${paths.data_path}/gps/source_tow.csv
   mfp_path: ${paths.data_path}/acoustic/ambiguity_surfaces
   covariance_path: ${paths.data_path}/acoustic/processed
-frequencies: [148, 166, 201, 235, 283, 338, 388]
-max_workers: 4
+frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201]
+max_workers: 2
 parameters:
   indexed:
     # _target_: __main__.param.IndexedParameterization
@@ -37,9 +37,9 @@ mfp_parameters:
   grid:
     rec_r:
       _target_: numpy.linspace
-      _args_: [0.5, 6.0, 100]
+      _args_: [0.5, 6.0, 40]
     src_z:
       _target_: numpy.linspace
-      _args_: [1.0, 200.0, 100]
+      _args_: [1.0, 200.0, 40]
   bf_type: "cbf_ml"
   mf_method: "product"

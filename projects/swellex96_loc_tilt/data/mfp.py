@@ -77,11 +77,19 @@ def initialize_indexed_param(
 ) -> param.IndexedParameterization:
     data = pd.read_csv(range_path)
     ranges = data["Range [km]"].values.tolist()
-    tilts = data["Tilt [deg]"].values.tolist()
+    depths = data["Depth [m]"].values.tolist()
+    tilts = data["Apparent Tilt [deg]"].values.tolist()
     timestep = list(range(len(ranges)))
 
     return param.IndexedParameterization(
-        scenario=indexed_def | {"timestep": timestep, "rec_r": ranges, "tilt": tilts},
+        scenario=indexed_def
+        | {
+            "timestep": timestep,
+            "rec_r": ranges,
+            "src_z": depths,
+            "tilt": tilts,
+            "tmpdir": [f".tmp/{t:03d}" for t in timestep],
+        },
     )
 
 
