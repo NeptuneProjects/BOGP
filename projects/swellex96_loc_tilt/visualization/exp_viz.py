@@ -11,7 +11,7 @@ RESULTS_PATH = Path(
     "../data/swellex96_S5_VLA_loc_tilt/outputs/loc_tilt/experimental/serial_007/results/collated_results.csv"
     # "../data/swellex96_S5_VLA_loc_tilt/outputs/loc_tilt/simulation/serial_003/results/collated_results.csv"
 )
-TRUE_PATH = Path("../data/swellex96_S5_VLA_loc_tilt/gps/gps_range.csv")
+TRUE_PATH = Path("../data/swellex96_S5_VLA_loc_tilt/gps/source_tow.csv")
 
 KEY = {
     "rec_r": "Range [km]",
@@ -24,8 +24,9 @@ SKIP_STEPS = list(range(74, 86)) + list(range(174, 181)) + list(range(189, 196))
 
 def plot_results(data: pd.DataFrame, parameters: list[str]) -> plt.Figure:
     true_data = pd.read_csv(TRUE_PATH)
-    r_true = true_data["Range [km]"].values
-    z_true = 60.0 * np.ones_like(r_true)
+    r_true = true_data["Apparent Range [km]"].values
+    # z_true = 60.0 * np.ones_like(r_true)
+    z_true = true_data["Apparent Depth [m]"].values
     tilt_true = true_data["Apparent Tilt [deg]"].values
     true_kv = {
         "rec_r": r_true,
@@ -35,11 +36,11 @@ def plot_results(data: pd.DataFrame, parameters: list[str]) -> plt.Figure:
 
     ylims = [
         [0.0, 6.0],
-        [30.0, 85.0],
-        [-5.5, 5.5],
+        [105.0, 15.0],
+        [-4.5, 4.5],
     ]
 
-    fig, axs = plt.subplots(4, 3, figsize=(12, 6))
+    fig, axs = plt.subplots(4, 3, figsize=(18, 12))
 
     strategies = data["strategy"].unique()
 
@@ -56,9 +57,7 @@ def plot_results(data: pd.DataFrame, parameters: list[str]) -> plt.Figure:
             ax.plot(true_data.index, true_kv[parameter], "gray", alpha=0.5, label="True")
             ax.set_xlabel("Time Step")
             if j == 0:
-                ax.set_ylabel(strategy + "\n" + parameter)
-            else:
-                ax.set_ylabel(parameter)
+                ax.set_ylabel(strategy)
             ax.set_ylim(ylims[j])
 
     fig.tight_layout()
