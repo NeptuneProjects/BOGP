@@ -5,7 +5,7 @@
 Build the acoustic environment model for SWELLEX96 and save it to JSON.
 Usage:
 > python projects/swellex96_loc_tilt/data/env.py \
-    ../data/swellex96_S5_VLA_loc_tilt/ctd/i9606.prn \
+    ../data/swellex96_S5_VLA_loc_tilt/ctd/i9605.prn \
     ../data/swellex96_S5_VLA_loc_tilt/env_models/swellex96.json
 """
 from argparse import ArgumentParser, Namespace
@@ -22,7 +22,7 @@ from tritonoa.io.profile import read_ssp
 def build_environment(
     ctd_path: os.PathLike,
     title: str = "swellex96",
-    model: str = "KRAKEN",
+    model: str = "KRAKENC",
     tilt: Optional[float] = None,
 ) -> dict:
     z_data, c_data = load_ctd_data(ctd_path)
@@ -33,21 +33,45 @@ def build_environment(
         # 2. Top medium (halfspace) - Not used
         # 3. Layered media
         "layerdata": [
-            {"z": z_data, "c_p": c_data, "rho": 1},
-            {"z": [217, 240], "c_p": [1572.3, 1593.0], "rho": 1.76, "a_p": 0.2},
-            {"z": [240, 1040], "c_p": [1881, 3245], "rho": 2.06, "a_p": 0.06},
+            {"z": z_data, "c_p": c_data, "rho": 1.0},
+            {"z": [217.0, 240.0], "c_p": [1572.3, 1593.0], "rho": 1.76, "a_p": 0.2},
+            {"z": [240.0, 1040.0], "c_p": [1881.0, 3245.0], "rho": 2.06, "a_p": 0.06},
         ],
         # 4. Bottom medium
         "bot_opt": "A",
-        "bot_c_p": 5200,
+        "bot_c_p": 5200.0,
         "bot_rho": 2.66,
         "bot_a_p": 0.02,
         # 5. Speed constraints
-        "clow": 0,
-        "chigh": 1650,
+        "clow": 0.0,
+        "chigh": 1650.0,
         # 6. Receiver parameters
         "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
+        # "rec_z": [
+        #     94.125,
+        #     99.755,
+        #     105.38,
+        #     111.0,
+        #     116.62,
+        #     122.25,
+        #     127.88,
+        #     139.12,
+        #     144.74,
+        #     150.38,
+        #     155.99,
+        #     161.62,
+        #     167.26,
+        #     172.88,
+        #     178.49,
+        #     184.12,
+        #     189.76,
+        #     195.38,
+        #     200.99,
+        #     206.62,
+        #     212.25,
+        # ],
         "tilt": tilt,
+        "z_pivot": 217.0,
     }
 
 
