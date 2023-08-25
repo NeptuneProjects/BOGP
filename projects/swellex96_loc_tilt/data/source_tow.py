@@ -5,6 +5,7 @@ from pathlib import Path
 import sys
 
 import bathyreq
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from pyproj import Geod
@@ -14,10 +15,27 @@ sys.path.insert(0, str(Path(__file__).parents[1]))
 from conf.common import SWELLEX96Paths
 from env import load_from_json
 
-TRUE_TILT: float = 2.5
-TRUE_AZ: float = 270.0
-TRUE_DEPTH: float = 60.0
+DECLINATION: float = 13.35  # From IGRF model hosted by NOAA NCEI
+NUM_SEGMENTS: int = 250
 TRUE_ARRAY_DEPTH: float = 216.0
+TRUE_DEPTH: float = 60.0
+
+# Define start/end times for resampling
+start = pd.to_datetime(pd.Timestamp(1996, 5, 10, 23, 39, 0))
+end = pd.to_datetime(pd.Timestamp(1996, 5, 11, 0, 24, 0))
+t = pd.date_range(start, end=end, periods=NUM_SEGMENTS)
+
+
+def load_tilt_data(path: Path) -> pd.DataFrame:
+    """Load tilt data from file."""
+    df = pd.read_fwf(
+        path, names=["Date", "Time", "Depth", "Temp", "Tilt [deg]", "Azimuth"]
+    )
+    df["Datetime"] = pd.to_datetime(df["Date"] + " " + df["Time"])
+    df["Azimuth [deg]"] = df["Azimuth"] + DECLINATION
+    df = df.drop(columns=["Date", "Time", "Depth", "Temp", "Azimuth"])
+    df = df.set_index("Datetime")
+    return df
 
 
 def add_bathymetry(df: pd.DataFrame) -> pd.DataFrame:
@@ -40,7 +58,7 @@ def add_bathymetry(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-def add_tilt_data(df: pd.DataFrame) -> pd.DataFrame:
+def add_tilt_data(df: pd.DataFrame, path: Path) -> pd.DataFrame:
     """Add array tilt data columns to GPS data.
 
     Parameters
@@ -53,11 +71,12 @@ def add_tilt_data(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         GPS data with array tilt data.
     """
-
-    df["Tilt [deg]"] = TRUE_TILT
-    df["Azimuth [deg]"] = TRUE_AZ
-    df["Rel Az [deg]"] = TRUE_AZ - df["Src Brg [deg]"]
-    return df
+    df_tilt = resample_tilt_df(load_tilt_data(path))
+    new_df = pd.merge(df, df_tilt, how="inner")
+    new_df["Rel Az [deg]"] = new_df["Azimuth [deg]"] - new_df["Src Brg [deg]"]
+    print(df_tilt)
+    print(new_df)
+    return new_df
 
 
 def compute_apparent_tilt(df: pd.DataFrame) -> pd.DataFrame:
@@ -74,7 +93,7 @@ def compute_apparent_tilt(df: pd.DataFrame) -> pd.DataFrame:
         GPS data with apparent tilt added.
     """
     rec_z = np.array(load_from_json(SWELLEX96Paths.environment_data)["rec_z"])
-    scope = rec_z.max() - rec_z.min()
+    scope = TRUE_ARRAY_DEPTH - rec_z.min()
     rec_r = df["Apparent Range [km]"].values[0]
     tilt = df["Tilt [deg]"].values[0]
     azimuth = df["Rel Az [deg]"].values[0]
@@ -84,7 +103,7 @@ def compute_apparent_tilt(df: pd.DataFrame) -> pd.DataFrame:
         rec_r = df["Apparent Range [km]"].values[i]
         tilt = df["Tilt [deg]"].values[i]
         azimuth = df["Rel Az [deg]"].values[i]
-        z_pivot = 216
+        z_pivot = TRUE_ARRAY_DEPTH
         range_offsets, _ = compute_range_offsets(rec_r, rec_z, tilt, azimuth, z_pivot)
         apparent_tilt.append(
             np.rad2deg(
@@ -205,7 +224,7 @@ def load_gps_data(fname: Path) -> pd.DataFrame:
     )
 
 
-def resample_df(df: pd.DataFrame) -> pd.DataFrame:
+def resample_main_df(df: pd.DataFrame) -> pd.DataFrame:
     """Resamples dataframe according to desired timesteps between start/end times.
 
     Parameters
@@ -219,10 +238,7 @@ def resample_df(df: pd.DataFrame) -> pd.DataFrame:
         Resampled GPS data.
     """
 
-    # Define start/end times for resampling
-    start = pd.to_datetime(pd.Timestamp(1996, 5, 10, 23, 39, 0))
-    end = pd.to_datetime(pd.Timestamp(1996, 5, 11, 0, 24, 0))
-    t = pd.date_range(start, end=end, periods=250)
+    # t = pd.date_range(start, end=end, periods=250)
 
     # Trim and extract data
     df = df.loc[start:end]
@@ -248,17 +264,52 @@ def resample_df(df: pd.DataFrame) -> pd.DataFrame:
     )
 
 
+def resample_tilt_df(df: pd.DataFrame) -> pd.DataFrame:
+    """Resamples dataframe according to desired timesteps between start/end times.
+
+    Parameters
+    ----------
+    df : pd.DataFrame
+        GPS data.
+
+    Returns
+    -------
+    pd.DataFrame
+        Resampled GPS data.
+    """
+
+    # Trim and extract data
+    # start_local = start - pd.to_timedelta(7, unit="h")
+    # end_local = end - pd.to_timedelta(7, unit="h")
+    # df = df.loc[start_local:end_local]
+    df = df.loc[start:end]
+    azimuth = df["Azimuth [deg]"].values
+    tilt = df["Tilt [deg]"].values
+
+    # Interpolate data to new timebase
+    azimuth_ts = np.interp(t, df.index, azimuth)
+    tilt_ts = np.interp(t, df.index, tilt)
+
+    return pd.DataFrame(
+        {
+            "Time": t,
+            "Azimuth [deg]": azimuth_ts,
+            "Tilt [deg]": tilt_ts,
+        }
+    )
+
+
 def main() -> None:
     DATADIR = Path(__file__).parents[4] / "data" / "swellex96_S5_VLA_loc_tilt" / "gps"
     df = load_gps_data(DATADIR / "EventS5.txt")
     df = format_gps_time(df)
     df = format_gps_data(df)
     df = compute_range_and_bearing_to_source(df)
-    df = resample_df(df)
+    df = resample_main_df(df)
     df["Depth [m]"] = TRUE_DEPTH
     df = add_bathymetry(df)
     df = compute_mirage(df)
-    df = add_tilt_data(df)
+    df = add_tilt_data(df, DATADIR / "SW96_1.dat")
     df = compute_apparent_tilt(df)
     df.to_csv(DATADIR / "source_tow.csv")
 
