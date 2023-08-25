@@ -13,7 +13,7 @@ from tritonoa.plotting import plot_ambiguity_surface
 sys.path.insert(0, str(Path(__file__).parents[3]))
 from optimization import utils
 
-GPS_DATA = pd.read_csv("/Users/williamjenkins/Research/Projects/BOGP/data/swellex96_S5_VLA_loc_tilt/gps/gps_range.csv")
+GPS_DATA = pd.read_csv("/Users/williamjenkins/Research/Projects/BOGP/data/swellex96_S5_VLA_loc_tilt/gps/source_tow.csv")
 
 
 def load_data(source: Path, glob_pattern: str) -> list[np.ndarray]:
@@ -26,7 +26,7 @@ def get_gps_data(step: str) -> pd.DataFrame:
     r_min = 0.5
     r_max = 6.0
 
-    r = df["Range [km]"]
+    r = df["Apparent Range [km]"]
 
     rl_500, ru_500 = utils.adjust_bounds(r - 0.5, r_min, r + 0.5, r_max)
     rl_1000, ru_1000 = utils.adjust_bounds(r - 1.0, r_min, r + 1.0, r_max)
@@ -113,7 +113,7 @@ if __name__ == "__main__":
         "--source",
         "--s",
         type=Path,
-        default="../data/swellex96_S5_VLA_loc_tilt/acoustic/ambiguity_surfaces/49-64-79-94-112-130-148-166-201-235-283-338-388_100x100_product",
+        default="../data/swellex96_S5_VLA_loc_tilt/acoustic/ambiguity_surfaces/166-201_40x40",
     )
     parser.add_argument("--glob", "--g", type=str, default="surface_*.npy")
     parser.add_argument("--destination", "--d", type=str, default="plots/rel_scale")
