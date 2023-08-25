@@ -71,6 +71,7 @@ class ProcessConfig:
     segments_every_n: int
     fs: float
     channels_to_remove: int
+    reverse_channels: bool
     freq_finding_params: FrequencyPeakFindingParameters
     fft_params: FFTParameters
     max_workers: int
@@ -120,7 +121,8 @@ def process(config: ProcessConfig) -> None:
     if config.channels_to_remove is not None:
         for channel in config.channels_to_remove:
             ds.X[:, channel] = 0.0
-    ds.X = np.fliplr(ds.X)  # Reverse channel index
+    if config.reverse_channels:
+        ds.X = np.fliplr(ds.X)
 
     processor = Processor(
         data=ds,
