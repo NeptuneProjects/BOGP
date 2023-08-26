@@ -195,14 +195,14 @@ GridSearchStrategyConf = builds(GridSearchStrategy, num_trials=4)
 SobolStrategyConf = pbuilds(
     SobolStrategy,
     num_trials=64,
-    max_parallelism=16,
+    max_parallelism=64,
     seed=MISSING,
 )
 GPEIStrategyConf = pbuilds(
     GPEIStrategy,
-    warmup_trials=32,
+    warmup_trials=16,
     warmup_parallelism=16,
-    num_trials=32,
+    num_trials=48,
     max_parallelism=1,
     seed=MISSING,
 )
