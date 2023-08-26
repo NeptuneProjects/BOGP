@@ -16,7 +16,6 @@ sys.path.insert(0, str(Path(__file__).parents[3]))
 from optimization.parameterization import (
     IndexedParameterization,
     Parameterization,
-    PermutedParameterization,
 )
 
 
@@ -140,7 +139,7 @@ ExperimentalParameterizationConf = builds(
                 dict,
                 time_step=range(0, 250),
                 rec_r=pd.read_csv(SWELLEX96Paths.gps_data)[
-                    "Range [km]"
+                    "Apparent Range [km]"
                 ].values.tolist(),
                 tilt=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Apparent Tilt [deg]"
