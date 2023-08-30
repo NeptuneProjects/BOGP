@@ -335,7 +335,7 @@ def plot_model_selection():
     ax.set_ylabel("$f(\mathbf{x})$")
     title = rf"$l={{{format_sci_notation(f'{params_suboptim[0]:.2E}')}}}$, $\sigma_y={{{format_sci_notation(f'{params_suboptim[1]:.2E}')}}}$"
     ax.set_title(title)
-    add_subfigure_labels(axs, x=0.5, y=-0.2)
+    add_subfigure_labels(axs, x=-0.1, y=1.2)
 
     return fig
 
@@ -574,7 +574,7 @@ def experimental_posterior():
     ax.set_yticklabels([])
     fig.colorbar(im, ax=ax, ticks=[vmin, vmid, vmax], **CBAR_KW)
 
-    add_subfigure_labels(axs, x=0.5, y=-0.25)
+    add_subfigure_labels(axs, x=0.0, y=1.32)
 
     return fig
 
@@ -1436,8 +1436,8 @@ def show_sampling_density():
             ax_histx.set_ylabel("Count")
 
         ax.text(
-            0.5,
-            -0.2,
+            -0.18,
+            1.31,
             f"({string.ascii_lowercase[i]})",
             ha="center",
             va="top",
