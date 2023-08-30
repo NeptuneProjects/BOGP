@@ -4,9 +4,9 @@ paths:
   data_path: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA_loc_tilt
   env_path: ${paths.data_path}/env_models/swellex96.json
   range_path: ${paths.data_path}/gps/source_tow.csv
-  mfp_path: ${paths.data_path}/acoustic/ambiguity_surfaces
+  mfp_path: ${paths.data_path}/acoustic/processed/ambiguity_surfaces
   covariance_path: ${paths.data_path}/acoustic/processed
-frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201]
+frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
 max_workers: 2
 parameters:
   indexed:
