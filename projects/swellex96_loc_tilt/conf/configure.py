@@ -18,8 +18,8 @@ from optimization.parameterization import (
     Parameterization,
 )
 
-START = 240
-END = 242
+START = 0
+END = 125
 
 # OBJECTIVE CONFIG
 @dataclass
@@ -139,7 +139,7 @@ ExperimentalParameterizationConf = builds(
             IndexedParameterization,
             scenario=builds(
                 dict,
-                time_step=range(0, 250)[START:END],
+                time_step=range(0, 125)[START:END],
                 rec_r=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Apparent Range [km]"
                 ].values.tolist()[START:END],
