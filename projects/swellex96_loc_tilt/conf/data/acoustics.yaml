@@ -53,4 +53,4 @@ configs:
         _args_: ["${get_method:numpy.hamming}"]
     max_workers: 8
     normalize_covariance: true
-    covariance_averaging: 4
+    covariance_averaging: 8
