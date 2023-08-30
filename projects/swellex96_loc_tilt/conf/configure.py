@@ -18,6 +18,8 @@ from optimization.parameterization import (
     Parameterization,
 )
 
+START = 240
+END = 242
 
 # OBJECTIVE CONFIG
 @dataclass
@@ -112,13 +114,13 @@ SimulationParameterizationConf = builds(
             IndexedParameterization,
             scenario=builds(
                 dict,
-                time_step=range(0, 250)[200:201],
+                time_step=range(0, 250)[START:END],
                 rec_r=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Range [km]"
-                ].values.tolist()[200:201],
+                ].values.tolist()[START:END],
                 tilt=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Apparent Tilt [deg]"
-                ].values.tolist()[200:201],
+                ].values.tolist()[START:END],
             ),
         ),
         fixed=builds(dict, src_z=60.0),
@@ -137,13 +139,13 @@ ExperimentalParameterizationConf = builds(
             IndexedParameterization,
             scenario=builds(
                 dict,
-                time_step=range(0, 250),
+                time_step=range(0, 250)[START:END],
                 rec_r=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Apparent Range [km]"
-                ].values.tolist(),
+                ].values.tolist()[START:END],
                 tilt=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Apparent Tilt [deg]"
-                ].values.tolist(),
+                ].values.tolist()[START:END],
             ),
         ),
         fixed=builds(dict, src_z=60.0),
