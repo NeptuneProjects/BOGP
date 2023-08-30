@@ -19,7 +19,8 @@ KEY = {
     "tilt": "Apparent Tilt [deg]",
 }
 
-SKIP_STEPS = list(range(74, 86)) + list(range(174, 181)) + list(range(189, 196))
+# SKIP_STEPS = list(range(74, 86)) + list(range(174, 181)) + list(range(189, 196))
+SKIP_STEPS = list(range(37, 43)) + list(range(87, 91)) + list(range(95, 98))
 
 
 def plot_results(data: pd.DataFrame, parameters: list[str]) -> plt.Figure:
