@@ -16,7 +16,7 @@ from conf.common import SWELLEX96Paths
 from env import load_from_json
 
 DECLINATION: float = 13.35  # From IGRF model hosted by NOAA NCEI
-NUM_SEGMENTS: int = 250
+NUM_SEGMENTS: int = 125
 TRUE_ARRAY_DEPTH: float = 216.0
 TRUE_DEPTH: float = 60.0
 
@@ -74,8 +74,6 @@ def add_tilt_data(df: pd.DataFrame, path: Path) -> pd.DataFrame:
     df_tilt = resample_tilt_df(load_tilt_data(path))
     new_df = pd.merge(df, df_tilt, how="inner")
     new_df["Rel Az [deg]"] = new_df["Azimuth [deg]"] - new_df["Src Brg [deg]"]
-    print(df_tilt)
-    print(new_df)
     return new_df
 
 
