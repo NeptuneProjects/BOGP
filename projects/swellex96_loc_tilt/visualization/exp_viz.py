@@ -8,7 +8,7 @@ import numpy as np
 import pandas as pd
 
 RESULTS_PATH = Path(
-    "../data/swellex96_S5_VLA_loc_tilt/outputs/loc_tilt/experimental/serial_007/results/collated_results.csv"
+    "../data/swellex96_S5_VLA_loc_tilt/outputs/loc_tilt/experimental/serial_008/results/collated_results.csv"
     # "../data/swellex96_S5_VLA_loc_tilt/outputs/loc_tilt/simulation/serial_003/results/collated_results.csv"
 )
 TRUE_PATH = Path("../data/swellex96_S5_VLA_loc_tilt/gps/source_tow.csv")
