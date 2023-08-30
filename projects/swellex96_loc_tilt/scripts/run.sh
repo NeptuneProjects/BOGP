@@ -8,5 +8,5 @@ QUEUE="$1"
 JOBS=$2
 
 find $QUEUE/*.yaml \
-    | parallel -j$JOBS --progress \
+    | parallel -j$JOBS --progress --lb \
     'HYDRA_FULL_ERROR=1 python3 projects/swellex96_loc_tilt/data/run.py --config-path ../../../'$QUEUE' --config-name $(basename ${})'
