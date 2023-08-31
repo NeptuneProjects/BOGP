@@ -33,8 +33,8 @@ configs:
     _target_: __main__.ProcessConfig
     paths:
       _target_: __main__.ProcessPaths
-      source: ${configs.data_path}/processed/merged.npz
-      destination: ${configs.data_path}/processed
+      source: ${configs.data_path}/processed_002/merged.npz
+      destination: ${configs.data_path}/processed_002
     frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
     samples_per_segment: 8192
     segments_every_n: 4050
@@ -51,6 +51,6 @@ configs:
       window:
         _target_: functools.partial
         _args_: ["${get_method:numpy.hamming}"]
-    max_workers: 8
+    max_workers: 7
     normalize_covariance: true
     covariance_averaging: 8
