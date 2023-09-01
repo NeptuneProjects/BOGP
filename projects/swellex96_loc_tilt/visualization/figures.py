@@ -376,13 +376,14 @@ def figure_4() -> plt.Figure:
     df_grid = df_grid[df_grid["strategy"] == "grid"]
     df_grid = df_grid[~df_grid["param_time_step"].isin(skip_steps)]
 
-    # SOBOL_SERIAL = "serial_011"
-    # df_sobol = pd.read_csv(loadpath.parent.parent / SOBOL_SERIAL / "results" / "aggregated_results.csv")
-    # df_sobol = df_sobol[df_sobol["strategy"] == "sobol"]
-    # df_sobol = df_sobol[~df_sobol["param_time_step"].isin(skip_steps)]
+    SOBOL_SERIAL = "serial_011"
+    df_sobol = pd.read_csv(
+        loadpath.parent.parent / SOBOL_SERIAL / "results" / "aggregated_results.csv"
+    )
+    df_sobol = df_sobol[df_sobol["strategy"] == "sobol"]
+    df_sobol = df_sobol[~df_sobol["param_time_step"].isin(skip_steps)]
 
-    df = pd.concat([df_gpei, df_grid])
-    # df = pd.concat([df_gpei, df_grid, df_sobol], axis=0)
+    df = pd.concat([df_gpei, df_grid, df_sobol], axis=0)
 
     fig, axs = plt.subplots(
         3, 1, gridspec_kw={"hspace": 0}, sharex=True, sharey=True, figsize=(3.5, 1.5)
@@ -436,7 +437,7 @@ if __name__ == "__main__":
         description="Create figures for the swellex96_loc_tilt project."
     )
     parser.add_argument(
-        "--figure", "-f", default="2", type=str, help="Figure number to create."
+        "--figure", "-f", default="4", type=str, help="Figure number to create."
     )
     args = parser.parse_args()
     main(args)
