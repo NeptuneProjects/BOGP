@@ -17,7 +17,7 @@ from oao.objective import (
     NoisyFormattedObjective,
     Objective,
 )
-from oao.optimizer import BayesianOptimization, GridSearch
+from oao.optimizer import BayesianOptimization, GridSearch, QuasiRandom
 from oao.space import SearchParameterBounds, SearchSpaceBounds
 from omegaconf import DictConfig, OmegaConf
 from tritonoa.at.models.kraken.runner import run_kraken
@@ -225,9 +225,8 @@ qGPEIStrategyConf = pbuilds(
 GridSearchOptimizationConf = pbuilds(
     GridSearch, objective=MISSING, search_space=MISSING, strategy=GridSearchStrategyConf
 )
-# TODO: Implement Sobol Optimization Class
 SobolOptimizationConf = pbuilds(
-    BayesianOptimization,
+    QuasiRandom,
     objective=MISSING,
     search_space=MISSING,
     strategy=SobolStrategyConf,
