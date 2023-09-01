@@ -12,11 +12,11 @@ import seaborn as sns
 
 plt.style.use(["science", "ieee"])
 
-SERIAL = "serial_007"
+SERIAL = "serial_009"
 SKIP_REGIONS = [
-    list(range(74, 86)),
-    list(range(174, 181)),
-    list(range(189, 196)),
+    list(range(37, 43)),
+    list(range(87, 91)),
+    list(range(95, 98)),
 ]
 skip_steps = sum(SKIP_REGIONS, [])
 
@@ -95,16 +95,22 @@ def figure_1() -> plt.Figure:
     return fig
 
 
-def figure_2a() -> plt.Figure:
+def figure_2() -> plt.Figure:
     df_tow, df_res = load_results()
 
     # Drop rows equal to SKIP_STEPS:
-    # drop_loc = df_res["Time Step"].isin(SKIP_STEPS)
     df_tow_skip = df_tow[~df_tow.index.isin(skip_steps)]
     df_res = df_res[~df_res["Time Step"].isin(skip_steps)]
-    # print(len(df_new), len(df_res))
+    NT = len(df_tow)
+    xlim = (0, NT - 1)
 
-    data_plot_kwargs = {
+    strategies = ["gpei", "grid", "sobol"]
+    strategy_names = {
+        "gpei": "Sobol+GP/EI",
+        "grid": "Grid",
+        "sobol": "Sobol",
+    }
+    common_data_plot_kwargs = {
         "facecolor": "none",
         "s": 5,
         "linewidth": 0.5,
@@ -122,21 +128,13 @@ def figure_2a() -> plt.Figure:
         "linewidth": 0.5,
         "zorder": 10,
     }
-    colors = {
-        "gpei": "black",
-        "grid": "red",
-        "sobol": "blue",
-    }
-    zorders = {
-        "gpei": 40,
-        "grid": 30,
-        "sobol": 20,
+    data_plot_kwargs = {
+        "gpei": common_data_plot_kwargs | {"color": "black", "marker": "o", "zorder": 40},
+        "grid": common_data_plot_kwargs | {"color": "red", "marker": "D", "zorder": 30},
+        "sobol": common_data_plot_kwargs | {"color": "blue", "marker": "s", "zorder": 20},
     }
 
     fig, axs = plt.subplots(3, 2, gridspec_kw={"hspace": 0.0, "wspace": 0.0})
-
-    NT = len(df_tow)
-    xlim = (0, NT - 1)
 
     ax = axs[0, 0]
     ax.set_title("Estimate")
@@ -146,32 +144,13 @@ def figure_2a() -> plt.Figure:
         label="Range",
         **true_plot_kwargs,
     )
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"],
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"],
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"],
-        color=colors["sobol"],
-        marker="s",
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
+    for strategy in strategies:
+        selection = df_res["strategy"] == strategy_names[strategy]
+        ax.scatter(
+            df_res.loc[selection, "Time Step"],
+            df_res.loc[selection, "best_rec_r"],
+            **data_plot_kwargs[strategy],
+        )
     ax.set_xlim(xlim)
     ax.set_ylim(0, 6)
     ax.set_xticklabels([])
@@ -179,31 +158,13 @@ def figure_2a() -> plt.Figure:
 
     ax = axs[1, 0]
     ax.plot(range(NT), df_tow["Apparent Depth [m]"], label="Depth", **true_plot_kwargs)
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"],
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"],
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"],
-        color=colors["sobol"],
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
+    for strategy in strategies:
+        selection = df_res["strategy"] == strategy_names[strategy]
+        ax.scatter(
+            df_res.loc[selection, "Time Step"],
+            df_res.loc[selection, "best_src_z"],
+            **data_plot_kwargs[strategy],
+        )
     ax.set_xlim(xlim)
     ax.set_ylim(100, 20)
     ax.set_xticklabels([])
@@ -211,31 +172,13 @@ def figure_2a() -> plt.Figure:
 
     ax = axs[2, 0]
     ax.plot(range(NT), df_tow["Apparent Tilt [deg]"], label="Tilt", **true_plot_kwargs)
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"],
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"],
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"],
-        color=colors["sobol"],
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
+    for strategy in strategies:
+        selection = df_res["strategy"] == strategy_names[strategy]
+        ax.scatter(
+            df_res.loc[selection, "Time Step"],
+            df_res.loc[selection, "best_tilt"],
+            **data_plot_kwargs[strategy],
+        )
     ax.set_xlim(xlim)
     ax.set_ylim(-4, 4)
     ax.set_ylabel("Tilt [$^\circ$]")
@@ -244,34 +187,14 @@ def figure_2a() -> plt.Figure:
     ax = axs[0, 1]
     ax.set_title("Error")
     ax.axhline(**error_plot_kwargs)
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"].values
-        - df_tow_skip["Apparent Range [km]"].values,
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"].values
-        - df_tow_skip["Apparent Range [km]"].values,
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"].values
-        - df_tow_skip["Apparent Range [km]"].values,
-        color=colors["sobol"],
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
+    for strategy in strategies:
+        selection = df_res["strategy"] == strategy_names[strategy]
+        ax.scatter(
+            df_res.loc[selection, "Time Step"],
+            df_res.loc[selection, "best_rec_r"].values
+            - df_tow_skip["Apparent Range [km]"].values,
+            **data_plot_kwargs[strategy],
+        )
     ax.set_xlim(xlim)
     ax.set_ylim(-0.5, 0.5)
     ax.set_xticklabels([])
@@ -279,34 +202,14 @@ def figure_2a() -> plt.Figure:
 
     ax = axs[1, 1]
     ax.axhline(**error_plot_kwargs)
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"].values
-        - df_tow_skip["Apparent Depth [m]"].values,
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"].values
-        - df_tow_skip["Apparent Depth [m]"].values,
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"].values
-        - df_tow_skip["Apparent Depth [m]"].values,
-        color=colors["sobol"],
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
+    for strategy in strategies:
+        selection = df_res["strategy"] == strategy_names[strategy]
+        ax.scatter(
+            df_res.loc[selection, "Time Step"],
+            df_res.loc[selection, "best_src_z"].values
+            - df_tow_skip["Apparent Depth [m]"].values,
+            **data_plot_kwargs[strategy],
+        )
     ax.set_xlim(xlim)
     ax.set_ylim(-40, 40)
     ax.set_xticklabels([])
@@ -314,285 +217,14 @@ def figure_2a() -> plt.Figure:
 
     ax = axs[2, 1]
     ax.axhline(**error_plot_kwargs)
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"].values
-        - df_tow_skip["Apparent Tilt [deg]"].values,
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"].values
-        - df_tow_skip["Apparent Tilt [deg]"].values,
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"].values
-        - df_tow_skip["Apparent Tilt [deg]"].values,
-        color=colors["sobol"],
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
-    ax.set_xlim(xlim)
-    ax.set_ylim(-4, 4)
-    ax.yaxis.tick_right()
-    ax.set_xlabel("Time Step")
-
-    return fig
-
-
-def figure_2b() -> plt.Figure:
-    df_tow, df_res = load_results()
-    df_tow_skip = df_tow[~df_tow.index.isin(skip_steps)]
-    df_res = df_res[~df_res["Time Step"].isin(skip_steps)]
-
-    data_plot_kwargs = {
-        "facecolor": "none",
-        "s": 5,
-        "linewidth": 0.5,
-        "alpha": 0.75,
-    }
-    error_plot_kwargs = {
-        "y": 0.0,
-        "color": "lightgray",
-        "linewidth": 0.5,
-        # "alpha": 0.25,
-        "zorder": 10,
-    }
-    true_plot_kwargs = {
-        "color": "k",
-        "linewidth": 0.5,
-        "zorder": 10,
-    }
-    colors = {
-        "gpei": "black",
-        "grid": "red",
-        "sobol": "blue",
-    }
-    zorders = {
-        "gpei": 40,
-        "grid": 30,
-        "sobol": 20,
-    }
-
-    fig, axs = plt.subplots(3, 2, gridspec_kw={"hspace": 0.0, "wspace": 0.0})
-
-    NT = len(df_tow)
-    xlim = (150, 250)
-
-    ax = axs[0, 0]
-    ax.set_title("Estimate")
-    ax.plot(
-        range(NT),
-        df_tow["Apparent Range [km]"],
-        label="Range",
-        **true_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"],
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"],
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"],
-        color=colors["sobol"],
-        marker="s",
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
-    ax.set_xlim(xlim)
-    ax.set_ylim(1, 3)
-    ax.set_xticklabels([])
-    ax.set_ylabel("Range [km]")
-
-    ax = axs[1, 0]
-    ax.plot(range(NT), df_tow["Apparent Depth [m]"], label="Depth", **true_plot_kwargs)
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"],
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"],
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"],
-        color=colors["sobol"],
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
-    ax.set_xlim(xlim)
-    ax.set_ylim(100, 20)
-    ax.set_xticklabels([])
-    ax.set_ylabel("Depth [m]")
-
-    ax = axs[2, 0]
-    ax.plot(range(NT), df_tow["Apparent Tilt [deg]"], label="Tilt", **true_plot_kwargs)
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"],
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"],
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"],
-        color=colors["sobol"],
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
-    ax.set_xlim(xlim)
-    ax.set_ylim(-4, 4)
-    ax.set_ylabel("Tilt [$^\circ$]")
-    ax.set_xlabel("Time Step")
-
-    ax = axs[0, 1]
-    ax.set_title("Error")
-    ax.axhline(**error_plot_kwargs)
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"].values
-        - df_tow_skip["Apparent Range [km]"].values,
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"].values
-        - df_tow_skip["Apparent Range [km]"].values,
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_rec_r"].values
-        - df_tow_skip["Apparent Range [km]"].values,
-        color=colors["sobol"],
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
-    ax.set_xlim(xlim)
-    ax.set_ylim(-0.5, 0.5)
-    ax.set_xticklabels([])
-    ax.yaxis.tick_right()
-
-    ax = axs[1, 1]
-    ax.axhline(**error_plot_kwargs)
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"].values
-        - df_tow_skip["Apparent Depth [m]"].values,
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"].values
-        - df_tow_skip["Apparent Depth [m]"].values,
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_src_z"].values
-        - df_tow_skip["Apparent Depth [m]"].values,
-        color=colors["sobol"],
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
-    ax.set_xlim(xlim)
-    ax.set_ylim(-40, 40)
-    ax.set_xticklabels([])
-    ax.yaxis.tick_right()
-
-    ax = axs[2, 1]
-    ax.axhline(**error_plot_kwargs)
-    selection = df_res["strategy"] == "Sobol+GP/EI"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"].values
-        - df_tow_skip["Apparent Tilt [deg]"].values,
-        color=colors["gpei"],
-        zorder=zorders["gpei"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Grid"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"].values
-        - df_tow_skip["Apparent Tilt [deg]"].values,
-        color=colors["grid"],
-        marker="D",
-        zorder=zorders["grid"],
-        **data_plot_kwargs,
-    )
-    selection = df_res["strategy"] == "Sobol"
-    ax.scatter(
-        df_res.loc[selection, "Time Step"],
-        df_res.loc[selection, "best_tilt"].values
-        - df_tow_skip["Apparent Tilt [deg]"].values,
-        color=colors["sobol"],
-        zorder=zorders["sobol"],
-        **data_plot_kwargs,
-    )
+    for strategy in strategies:
+        selection = df_res["strategy"] == strategy_names[strategy]
+        ax.scatter(
+            df_res.loc[selection, "Time Step"],
+            df_res.loc[selection, "best_tilt"].values
+            - df_tow_skip["Apparent Tilt [deg]"].values,
+            **data_plot_kwargs[strategy],
+        )
     ax.set_xlim(xlim)
     ax.set_ylim(-4, 4)
     ax.yaxis.tick_right()
@@ -603,16 +235,6 @@ def figure_2b() -> plt.Figure:
 
 def figure_3() -> plt.Figure:
     strategies = ["gpei", "grid", "sobol"]
-    linestyles = {
-        "gpei": "-",
-        "grid": "--",
-        "sobol": ":",
-    }
-    colors = {
-        "gpei": "black",
-        "grid": "red",
-        "sobol": "blue",
-    }
     strategy_names = {
         "gpei": "Sobol+GP/EI",
         "grid": "Grid",
@@ -623,26 +245,30 @@ def figure_3() -> plt.Figure:
         "y2": 1.1,
         "color": "lightgray",
     }
+    data_kwargs = {
+        "gpei": {"color": "black", "linestyle": "-", "zorder": 40},
+        "grid": {"color": "red", "linestyle": "--", "zorder": 30},
+        "sobol": {"color": "blue", "linestyle": ":", "zorder": 20},
+    }
 
     _, df = load_results()
     df = df[~(df["strategy"] == "Sobol+GP/qEI")]
     df.loc[df["Time Step"].isin(skip_steps), "best_value"] = np.nan
 
-    fig = plt.figure()
+    fig = plt.figure(figsize=(3.5, 1.0))
     ax = plt.gca()
     for strategy in strategies:
         view = df[df["strategy"] == strategy_names[strategy]]
         ax.plot(
             view["Time Step"],
             view["best_value"],
-            color=colors[strategy],
-            linestyle=linestyles[strategy],
             label=strategy_names[strategy],
+            **data_kwargs[strategy],
         )
     [ax.fill_between(region, **block_kwargs) for region in SKIP_REGIONS]
-
-    ax.set_ylim(0, 1.1)
-    ax.legend(frameon=True)
+    ax.set_xlim(0, 125)
+    ax.set_ylim(0.1, 0.9)
+    ax.legend(frameon=True, ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.35))
     ax.set_xlabel("Time Step")
     ax.set_ylabel("$\hat{\phi}(\mathbf{m})$")
     return fig
@@ -672,10 +298,25 @@ def figure_4() -> plt.Figure:
         "sobol": "Sobol",
     }
 
-    df = pd.read_csv(loadpath / "aggregated_results.csv")
-    df = df[~df["param_time_step"].isin(skip_steps)]
+    df_gpei = pd.read_csv(loadpath / "aggregated_results.csv")
+    df_gpei = df_gpei[df_gpei["strategy"] == "gpei"]
+    df_gpei = df_gpei[~df_gpei["param_time_step"].isin(skip_steps)]
 
-    fig, axs = plt.subplots(3, 1, gridspec_kw={"hspace": 0}, sharex=True, sharey=True)
+    GRID_SERIAL = "serial_010"
+    df_grid = pd.read_csv(loadpath.parent.parent / GRID_SERIAL / "results" / "aggregated_results.csv")
+    df_grid = df_grid[df_grid["strategy"] == "grid"]
+    df_grid = df_grid[~df_grid["param_time_step"].isin(skip_steps)]
+
+    SOBOL_SERIAL = "serial_011"
+    df_sobol = pd.read_csv(loadpath.parent.parent / SOBOL_SERIAL / "results" / "aggregated_results.csv")
+    df_sobol = df_sobol[df_sobol["strategy"] == "sobol"]
+    df_sobol = df_sobol[~df_sobol["param_time_step"].isin(skip_steps)]
+
+    df = pd.concat([df_gpei, df_grid, df_sobol], axis=0)
+
+    fig, axs = plt.subplots(
+        3, 1, gridspec_kw={"hspace": 0}, sharex=True, sharey=True, figsize=(3.5, 1.5)
+    )
     for i, (strategy, ax) in enumerate(zip(strategies, axs)):
         selected_df = df[df["strategy"] == strategy]
         for step in selected_df["param_time_step"].unique():
