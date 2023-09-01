@@ -3,7 +3,10 @@
 
 import argparse
 from pathlib import Path
+from typing import Optional
 
+from matplotlib.axes._axes import Axes
+from matplotlib.lines import Line2D
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -112,15 +115,14 @@ def figure_2() -> plt.Figure:
     }
     common_data_plot_kwargs = {
         "facecolor": "none",
-        "s": 5,
+        "s": 10,
         "linewidth": 0.5,
         "alpha": 0.75,
     }
     error_plot_kwargs = {
         "y": 0.0,
-        "color": "lightgray",
+        "color": "darkgray",
         "linewidth": 0.5,
-        # "alpha": 0.25,
         "zorder": 10,
     }
     true_plot_kwargs = {
@@ -129,12 +131,27 @@ def figure_2() -> plt.Figure:
         "zorder": 10,
     }
     data_plot_kwargs = {
-        "gpei": common_data_plot_kwargs | {"color": "black", "marker": "o", "zorder": 40},
+        "gpei": common_data_plot_kwargs
+        | {"color": "black", "marker": "o", "zorder": 40},
         "grid": common_data_plot_kwargs | {"color": "red", "marker": "D", "zorder": 30},
-        "sobol": common_data_plot_kwargs | {"color": "blue", "marker": "s", "zorder": 20},
+        "sobol": common_data_plot_kwargs
+        | {"color": "blue", "marker": "s", "zorder": 20},
+    }
+    line_kwargs = {
+        "linestyle": "none",
+        "markerfacecolor": "none",
+        "markersize": 4,
+        "markeredgewidth": 0.5,
+    }
+    ylabel_kwargs = {}
+    xlabel_kwargs = {"ha": "right"}
+    block_kwargs = {
+        "color": "lightgray",
     }
 
-    fig, axs = plt.subplots(3, 2, gridspec_kw={"hspace": 0.0, "wspace": 0.0})
+    fig, axs = plt.subplots(
+        3, 2, gridspec_kw={"hspace": 0.0, "wspace": 0.0}, figsize=(4.0, 2.29)
+    )
 
     ax = axs[0, 0]
     ax.set_title("Estimate")
@@ -152,9 +169,11 @@ def figure_2() -> plt.Figure:
             **data_plot_kwargs[strategy],
         )
     ax.set_xlim(xlim)
-    ax.set_ylim(0, 6)
+    ax.set_ylim(0.0, 6.0)
+    [ax.fill_between(region, *ax.get_ylim(), **block_kwargs) for region in SKIP_REGIONS]
+    adjust_subplotticklabels(ax, 0, -1)
     ax.set_xticklabels([])
-    ax.set_ylabel("Range [km]")
+    ax.set_ylabel("Range [km]", **ylabel_kwargs)
 
     ax = axs[1, 0]
     ax.plot(range(NT), df_tow["Apparent Depth [m]"], label="Depth", **true_plot_kwargs)
@@ -166,9 +185,11 @@ def figure_2() -> plt.Figure:
             **data_plot_kwargs[strategy],
         )
     ax.set_xlim(xlim)
-    ax.set_ylim(100, 20)
+    ax.set_ylim(110.0, 10.0)
+    [ax.fill_between(region, *ax.get_ylim(), **block_kwargs) for region in SKIP_REGIONS]
+    adjust_subplotticklabels(ax, 0, -1)
     ax.set_xticklabels([])
-    ax.set_ylabel("Depth [m]")
+    ax.set_ylabel("Depth [m]", **ylabel_kwargs)
 
     ax = axs[2, 0]
     ax.plot(range(NT), df_tow["Apparent Tilt [deg]"], label="Tilt", **true_plot_kwargs)
@@ -180,9 +201,11 @@ def figure_2() -> plt.Figure:
             **data_plot_kwargs[strategy],
         )
     ax.set_xlim(xlim)
-    ax.set_ylim(-4, 4)
-    ax.set_ylabel("Tilt [$^\circ$]")
-    ax.set_xlabel("Time Step")
+    ax.set_ylim(-5.0, 5.0)
+    [ax.fill_between(region, *ax.get_ylim(), **block_kwargs) for region in SKIP_REGIONS]
+    adjust_subplotticklabels(ax, 0, -1)
+    ax.set_ylabel("Tilt [$^\circ$]", **ylabel_kwargs)
+    ax.set_xlabel("Time Step", **xlabel_kwargs)
 
     ax = axs[0, 1]
     ax.set_title("Error")
@@ -197,8 +220,10 @@ def figure_2() -> plt.Figure:
         )
     ax.set_xlim(xlim)
     ax.set_ylim(-0.5, 0.5)
+    [ax.fill_between(region, *ax.get_ylim(), **block_kwargs) for region in SKIP_REGIONS]
     ax.set_xticklabels([])
     ax.yaxis.tick_right()
+    adjust_subplotticklabels(ax, 0, -1)
 
     ax = axs[1, 1]
     ax.axhline(**error_plot_kwargs)
@@ -211,9 +236,11 @@ def figure_2() -> plt.Figure:
             **data_plot_kwargs[strategy],
         )
     ax.set_xlim(xlim)
-    ax.set_ylim(-40, 40)
+    ax.set_ylim(-40.0, 40.0)
+    [ax.fill_between(region, *ax.get_ylim(), **block_kwargs) for region in SKIP_REGIONS]
     ax.set_xticklabels([])
     ax.yaxis.tick_right()
+    adjust_subplotticklabels(ax, 0, -1)
 
     ax = axs[2, 1]
     ax.axhline(**error_plot_kwargs)
@@ -226,9 +253,49 @@ def figure_2() -> plt.Figure:
             **data_plot_kwargs[strategy],
         )
     ax.set_xlim(xlim)
-    ax.set_ylim(-4, 4)
+    ax.set_ylim(-4.0, 4.0)
+    [ax.fill_between(region, *ax.get_ylim(), **block_kwargs) for region in SKIP_REGIONS]
+    ax.set_xticklabels([])
     ax.yaxis.tick_right()
-    ax.set_xlabel("Time Step")
+    adjust_subplotticklabels(ax, 0, -1)
+
+    custom_lines = [
+        Line2D([0], [0], color="k", linestyle="-", linewidth=0.5, label="True"),
+        Line2D(
+            [0],
+            [0],
+            color="k",
+            marker="o",
+            label="Sobol+GP/EI",
+            **line_kwargs,
+        ),
+        Line2D(
+            [0],
+            [0],
+            color="r",
+            marker="D",
+            label="Grid",
+            **line_kwargs,
+        ),
+        Line2D(
+            [0],
+            [0],
+            color="b",
+            marker="s",
+            label="Sobol",
+            **line_kwargs,
+        ),
+    ]
+    ax.legend(
+        handles=custom_lines,
+        labels=["True", "Sobol+GP/EI", "Grid", "Sobol"],
+        loc="upper left",
+        ncols=2,
+        bbox_to_anchor=(-0.35, -0.2),
+        frameon=True,
+    )
+
+    print(type(ax))
 
     return fig
 
@@ -293,9 +360,9 @@ def figure_4() -> plt.Figure:
         "va": "top",
     }
     text_values = {
-        "gpei": "Sobol+GP/EI",
-        "grid": "Grid",
-        "sobol": "Sobol",
+        "gpei": "Sobol+GP/EI: 64 trials",
+        "grid": "Grid: 1008 trials",
+        "sobol": "Sobol: 1024 trials",
     }
 
     df_gpei = pd.read_csv(loadpath / "aggregated_results.csv")
@@ -303,16 +370,19 @@ def figure_4() -> plt.Figure:
     df_gpei = df_gpei[~df_gpei["param_time_step"].isin(skip_steps)]
 
     GRID_SERIAL = "serial_010"
-    df_grid = pd.read_csv(loadpath.parent.parent / GRID_SERIAL / "results" / "aggregated_results.csv")
+    df_grid = pd.read_csv(
+        loadpath.parent.parent / GRID_SERIAL / "results" / "aggregated_results.csv"
+    )
     df_grid = df_grid[df_grid["strategy"] == "grid"]
     df_grid = df_grid[~df_grid["param_time_step"].isin(skip_steps)]
 
-    SOBOL_SERIAL = "serial_011"
-    df_sobol = pd.read_csv(loadpath.parent.parent / SOBOL_SERIAL / "results" / "aggregated_results.csv")
-    df_sobol = df_sobol[df_sobol["strategy"] == "sobol"]
-    df_sobol = df_sobol[~df_sobol["param_time_step"].isin(skip_steps)]
+    # SOBOL_SERIAL = "serial_011"
+    # df_sobol = pd.read_csv(loadpath.parent.parent / SOBOL_SERIAL / "results" / "aggregated_results.csv")
+    # df_sobol = df_sobol[df_sobol["strategy"] == "sobol"]
+    # df_sobol = df_sobol[~df_sobol["param_time_step"].isin(skip_steps)]
 
-    df = pd.concat([df_gpei, df_grid, df_sobol], axis=0)
+    df = pd.concat([df_gpei, df_grid])
+    # df = pd.concat([df_gpei, df_grid, df_sobol], axis=0)
 
     fig, axs = plt.subplots(
         3, 1, gridspec_kw={"hspace": 0}, sharex=True, sharey=True, figsize=(3.5, 1.5)
@@ -339,6 +409,16 @@ def figure_4() -> plt.Figure:
     return fig
 
 
+def adjust_subplotticklabels(
+    ax: Axes, low: Optional[int] = None, high: Optional[int] = None
+) -> None:
+    ticklabels = ax.get_yticklabels()
+    if low is not None:
+        ticklabels[low].set_va("bottom")
+    if high is not None:
+        ticklabels[high].set_va("top")
+
+
 def load_results() -> tuple[pd.DataFrame, pd.DataFrame]:
     df_tow = pd.read_csv(datapath)
     df_res = pd.read_csv(loadpath / "collated_results.csv")
@@ -356,7 +436,7 @@ if __name__ == "__main__":
         description="Create figures for the swellex96_loc_tilt project."
     )
     parser.add_argument(
-        "--figure", "-f", default="2a", type=str, help="Figure number to create."
+        "--figure", "-f", default="2", type=str, help="Figure number to create."
     )
     args = parser.parse_args()
     main(args)
