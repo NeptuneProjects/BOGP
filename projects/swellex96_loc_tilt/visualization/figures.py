@@ -48,7 +48,9 @@ savepath = Path.cwd().parent / "reports/manuscripts/202309_ICASSP"
 
 
 def figure_1() -> plt.Figure:
-    fig, axs = plt.subplots(2, 1, gridspec_kw={"height_ratios": [3, 1], "hspace": 0.0}, figsize=(3.5, 2.0))
+    fig, axs = plt.subplots(
+        2, 1, gridspec_kw={"height_ratios": [3, 1], "hspace": 0.0}, figsize=(3.5, 2.0)
+    )
     x, y, x_t, f, mu, sigma, alpha = get_gp_data()
     lcb = mu - 2 * sigma
     ucb = mu + 2 * sigma
@@ -412,6 +414,60 @@ def figure_4() -> plt.Figure:
     return fig
 
 
+def figure_5() -> plt.Figure:
+    block_kwargs = {
+        "y1": -0.1,
+        "y2": 1.1,
+        "color": "lightgray",
+    }
+    data_kwargs = {
+        "Est.": {"color": "black", "linestyle": "-", "zorder": 40},
+        "$0^\circ$": {"color": "red", "linestyle": "--", "zorder": 30},
+        "$1^\circ$": {"color": "blue", "linestyle": ":", "zorder": 20},
+        "$2^\circ$": {"color": "green", "linestyle": "-.", "zorder": 10},
+    }
+
+    _, df_tv = load_results()
+    df_tv = df_tv[(df_tv["strategy"] == "Sobol+GP/EI")]
+    df_tv.loc[df_tv["Time Step"].isin(skip_steps), "best_value"] = np.nan
+
+    # df_t0 = pd.read_csv(
+    #     loadpath.parent.parent / "serial_012" / "results" / "collated_results.csv"
+    # )
+    # df_t0 = df_t0[(df_t0["strategy"] == "Sobol+GP/EI")]
+    # df_t0.loc[df_t0["Time Step"].isin(skip_steps), "best_value"] = np.nan
+
+    # df_t1 = pd.read_csv(
+    #     loadpath.parent.parent / "serial_013" / "results" / "collated_results.csv"
+    # )
+    # df_t1 = df_t1[(df_t1["strategy"] == "Sobol+GP/EI")]
+    # df_t1.loc[df_t1["Time Step"].isin(skip_steps), "best_value"] = np.nan
+
+    # df_t2 = pd.read_csv(
+    #     loadpath.parent.parent / "serial_014" / "results" / "collated_results.csv"
+    # )
+    # df_t2 = df_t2[(df_t2["strategy"] == "Sobol+GP/EI")]
+    # df_t2.loc[df_t2["Time Step"].isin(skip_steps), "best_value"] = np.nan
+
+    data = [df_tv]
+    # data = [df_tv, df_t0, df_t1, df_t2]
+
+    fig = plt.figure(figsize=(3.5, 1.0))
+    ax = plt.gca()
+    [
+        ax.plot(df["Time Step"], df["best_value"], label=k, **v)
+        for df, (k, v) in zip(data, data_kwargs.items())
+    ]
+    [ax.fill_between(region, **block_kwargs) for region in SKIP_REGIONS]
+    ax.set_xlim(0, 125)
+    ax.set_ylim(0.1, 0.9)
+    ax.legend(frameon=True, ncols=4, loc="upper center", bbox_to_anchor=(0.5, 1.35))
+    ax.set_xlabel("Time Step")
+    ax.set_ylabel("$\hat{\phi}(\mathbf{m})$")
+
+    return fig
+
+
 def adjust_subplotticklabels(
     ax: Axes, low: Optional[int] = None, high: Optional[int] = None
 ) -> None:
@@ -523,7 +579,7 @@ if __name__ == "__main__":
         description="Create figures for the swellex96_loc_tilt project."
     )
     parser.add_argument(
-        "--figure", "-f", default="1", type=str, help="Figure number to create."
+        "--figure", "-f", default="5", type=str, help="Figure number to create."
     )
     args = parser.parse_args()
     main(args)
