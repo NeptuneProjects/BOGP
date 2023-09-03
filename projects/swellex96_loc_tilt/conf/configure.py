@@ -143,12 +143,12 @@ ExperimentalParameterizationConf = builds(
                 rec_r=pd.read_csv(SWELLEX96Paths.gps_data)[
                     "Apparent Range [km]"
                 ].values.tolist()[START:END],
-                tilt=pd.read_csv(SWELLEX96Paths.gps_data)[
-                    "Apparent Tilt [deg]"
-                ].values.tolist()[START:END],
+                # tilt=pd.read_csv(SWELLEX96Paths.gps_data)[
+                #     "Apparent Tilt [deg]"
+                # ].values.tolist()[START:END],
             ),
         ),
-        fixed=builds(dict, src_z=60.0),
+        fixed=builds(dict, src_z=60.0, tilt=0.0),
     ),
     mode="experimental",
     objective=ExperimentalObjectiveConf,

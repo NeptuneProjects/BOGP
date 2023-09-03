@@ -178,14 +178,14 @@ SearchConf = sbuilds(
             max_upper_bound=200.0,
             builds_bases=(SearchParameterBounds,),
         ),
-        builds(
-            SearchParameterBounds,
-            name="tilt",
-            lower_bound=-4.0,
-            upper_bound=4.0,
-            relative=False,
-            builds_bases=(SearchParameterBounds,),
-        ),
+        # builds(
+        #     SearchParameterBounds,
+        #     name="tilt",
+        #     lower_bound=-4.0,
+        #     upper_bound=4.0,
+        #     relative=False,
+        #     builds_bases=(SearchParameterBounds,),
+        # ),
     ],
     hydra_convert="object",
 )
