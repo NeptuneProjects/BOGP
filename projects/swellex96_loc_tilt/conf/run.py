@@ -195,7 +195,7 @@ GridSearchStrategyConf = builds(
     GridSearchStrategy,
     # num_trials=4,
     # num_trials=[12, 12, 7],  # Time Trial
-    num_trials=[60, 200],
+    num_trials=[30, 100],
     max_parallelism=64,  # Side-by-side
 )
 SobolStrategyConf = pbuilds(
