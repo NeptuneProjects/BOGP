@@ -171,8 +171,8 @@ SearchConf = sbuilds(
         builds(
             SearchParameterBounds,
             name="src_z",
-            lower_bound=-40.0,
-            upper_bound=40.0,
+            lower_bound=-30.0,
+            upper_bound=30.0,
             relative=True,
             min_lower_bound=1.0,
             max_upper_bound=200.0,
@@ -194,7 +194,8 @@ SearchConf = sbuilds(
 GridSearchStrategyConf = builds(
     GridSearchStrategy,
     # num_trials=4,
-    num_trials=[12, 12, 7],  # Time Trial
+    # num_trials=[12, 12, 7],  # Time Trial
+    num_trials=[60, 200],
     max_parallelism=64,  # Side-by-side
 )
 SobolStrategyConf = pbuilds(
