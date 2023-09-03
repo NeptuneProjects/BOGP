@@ -148,7 +148,7 @@ ExperimentalParameterizationConf = builds(
                 # ].values.tolist()[START:END],
             ),
         ),
-        fixed=builds(dict, src_z=60.0, tilt=0.0),
+        fixed=builds(dict, src_z=60.0, tilt=1.0),
     ),
     mode="experimental",
     objective=ExperimentalObjectiveConf,
