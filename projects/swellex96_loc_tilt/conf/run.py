@@ -178,14 +178,14 @@ SearchConf = sbuilds(
             max_upper_bound=200.0,
             builds_bases=(SearchParameterBounds,),
         ),
-        # builds(
-        #     SearchParameterBounds,
-        #     name="tilt",
-        #     lower_bound=-4.0,
-        #     upper_bound=4.0,
-        #     relative=False,
-        #     builds_bases=(SearchParameterBounds,),
-        # ),
+        builds(
+            SearchParameterBounds,
+            name="tilt",
+            lower_bound=-4.0,
+            upper_bound=4.0,
+            relative=False,
+            builds_bases=(SearchParameterBounds,),
+        ),
     ],
     hydra_convert="object",
 )
@@ -194,8 +194,8 @@ SearchConf = sbuilds(
 GridSearchStrategyConf = builds(
     GridSearchStrategy,
     # num_trials=4,
-    # num_trials=[12, 12, 7],  # Time Trial
-    num_trials=[30, 100],
+    num_trials=[24, 9, 5],  # Time Trial
+    # num_trials=[30, 100],
     max_parallelism=64,  # Side-by-side
 )
 SobolStrategyConf = pbuilds(
