@@ -85,20 +85,23 @@ def compute_tilt_mae(
 def main() -> None:
     df_tow = pd.read_csv(SWELLEX96Paths.gps_data)
     df_res = pd.read_csv(SOURCE_CSV)
-    error = compute_strategy_mae(df_tow, df_res)
-    print(error.to_latex(index=False, escape=False))
+    strat_error = compute_strategy_mae(df_tow, df_res)
+    print(strat_error.to_latex(index=False, escape=False))
 
-    # df_var = df_res[(df_res["strategy"] == "Sobol+GP/EI")]
-    # df_0 = pd.read_csv(SOURCE_CSV.parents[3] / "serial_012" / "results" / "collated_results.csv")
-    # df_1 = pd.read_csv(SOURCE_CSV.parents[3] / "serial_013" / "results" / "collated_results.csv")
-    # df_2 = pd.read_csv(SOURCE_CSV.parents[3] / "serial_014" / "results" / "collated_results.csv")
-    # data = {
-    #     "Est.": df_var,
-    #     "$0^\circ$": df_0,
-    #     "$1^\circ$": df_1,
-    #     "$2^\circ$": df_2
-    # }
-    # compute_tilt_mae(df_tow, data)
+    df_var = df_res[(df_res["strategy"] == "Sobol+GP/EI")]
+    df_0 = pd.read_csv(SOURCE_CSV.parents[2] / "serial_012" / "results" / "collated_results.csv")
+    df_1 = pd.read_csv(SOURCE_CSV.parents[2] / "serial_013" / "results" / "collated_results.csv")
+    df_2 = pd.read_csv(SOURCE_CSV.parents[2] / "serial_014" / "results" / "collated_results.csv")
+    data = {
+        "Estimated": df_var,
+        "$0^\circ$": df_0,
+        "$1^\circ$": df_1,
+        "$2^\circ$": df_2
+    }
+    tilt_error = compute_tilt_mae(df_tow, data)
+    print(tilt_error.to_latex(index=False, escape=False))
+
+    print(sum(df_2["best_value"].values - df_0["best_value"].values))
 
 
 if __name__ == "__main__":

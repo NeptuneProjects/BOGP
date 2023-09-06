@@ -154,7 +154,7 @@ def figure_2() -> plt.Figure:
     }
 
     fig, axs = plt.subplots(
-        3, 2, gridspec_kw={"hspace": 0.0, "wspace": 0.0}, figsize=(4.0, 2.29)
+        3, 2, gridspec_kw={"hspace": 0.0, "wspace": 0.0}, figsize=(4.0, 3.0)
     )
 
     ax = axs[0, 0]
@@ -299,8 +299,6 @@ def figure_2() -> plt.Figure:
         frameon=True,
     )
 
-    print(type(ax))
-
     return fig
 
 
@@ -341,7 +339,7 @@ def figure_3() -> plt.Figure:
     ax.set_ylim(0.1, 0.9)
     ax.legend(frameon=True, ncols=3, loc="upper center", bbox_to_anchor=(0.5, 1.35))
     ax.set_xlabel("Time Step")
-    ax.set_ylabel("$\hat{\phi}(\mathbf{m})$")
+    ax.set_ylabel("$\phi(\mathbf{\hat{m}})$")
     return fig
 
 
@@ -390,7 +388,7 @@ def figure_4() -> plt.Figure:
     df = pd.concat([df_gpei, df_grid, df_sobol], axis=0)
 
     fig, axs = plt.subplots(
-        3, 1, gridspec_kw={"hspace": 0}, sharex=True, sharey=True, figsize=(3.5, 1.5)
+        3, 1, gridspec_kw={"hspace": 0}, sharex=True, sharey=True, figsize=(3.5, 1.75)
     )
     for i, (strategy, ax) in enumerate(zip(strategies, axs)):
         selected_df = df[df["strategy"] == strategy]
@@ -409,7 +407,7 @@ def figure_4() -> plt.Figure:
 
     ax.set_ylim(0, 1)
     ax.set_xlabel("Run time [s]")
-    ax.set_ylabel("$\hat{\phi}(\mathbf{m})$")
+    ax.set_ylabel("$\phi(\mathbf{\hat{m}})$")
 
     return fig
 
@@ -423,47 +421,43 @@ def figure_5() -> plt.Figure:
     data_kwargs = {
         "Est.": {"color": "black", "linestyle": "-", "zorder": 40},
         "$0^\circ$": {"color": "red", "linestyle": "--", "zorder": 30},
-        "$1^\circ$": {"color": "blue", "linestyle": ":", "zorder": 20},
-        "$2^\circ$": {"color": "green", "linestyle": "-.", "zorder": 10},
+        # "$1^\circ$": {"color": "blue", "linestyle": ":", "zorder": 20},
+        # "$2^\circ$": {"color": "green", "linestyle": "-.", "zorder": 10},
     }
 
+    value_to_plot = "best_value"
+
     _, df_tv = load_results()
-    df_tv = df_tv[(df_tv["strategy"] == "Sobol+GP/EI")]
-    df_tv.loc[df_tv["Time Step"].isin(skip_steps), "best_value"] = np.nan
-
-    # df_t0 = pd.read_csv(
-    #     loadpath.parent.parent / "serial_012" / "results" / "collated_results.csv"
-    # )
-    # df_t0 = df_t0[(df_t0["strategy"] == "Sobol+GP/EI")]
-    # df_t0.loc[df_t0["Time Step"].isin(skip_steps), "best_value"] = np.nan
-
-    # df_t1 = pd.read_csv(
-    #     loadpath.parent.parent / "serial_013" / "results" / "collated_results.csv"
-    # )
-    # df_t1 = df_t1[(df_t1["strategy"] == "Sobol+GP/EI")]
-    # df_t1.loc[df_t1["Time Step"].isin(skip_steps), "best_value"] = np.nan
-
-    # df_t2 = pd.read_csv(
-    #     loadpath.parent.parent / "serial_014" / "results" / "collated_results.csv"
-    # )
-    # df_t2 = df_t2[(df_t2["strategy"] == "Sobol+GP/EI")]
-    # df_t2.loc[df_t2["Time Step"].isin(skip_steps), "best_value"] = np.nan
-
-    data = [df_tv]
-    # data = [df_tv, df_t0, df_t1, df_t2]
+    raw_data = [
+        df_tv,
+        pd.read_csv(
+            loadpath.parent.parent / "serial_012" / "results" / "collated_results.csv"
+        ),
+        # pd.read_csv(
+        #     loadpath.parent.parent / "serial_013" / "results" / "collated_results.csv"
+        # ),
+        # pd.read_csv(
+        #     loadpath.parent.parent / "serial_014" / "results" / "collated_results.csv"
+        # )
+    ]
+    data = []
+    for df in raw_data:
+        df = df[(df["strategy"] == "Sobol+GP/EI")]
+        df.loc[df["Time Step"].isin(skip_steps), value_to_plot] = np.nan
+        data.append(df)
 
     fig = plt.figure(figsize=(3.5, 1.0))
     ax = plt.gca()
     [
-        ax.plot(df["Time Step"], df["best_value"], label=k, **v)
+        ax.plot(df["Time Step"], df[value_to_plot], label=k, **v)
         for df, (k, v) in zip(data, data_kwargs.items())
     ]
     [ax.fill_between(region, **block_kwargs) for region in SKIP_REGIONS]
     ax.set_xlim(0, 125)
     ax.set_ylim(0.1, 0.9)
-    ax.legend(frameon=True, ncols=4, loc="upper center", bbox_to_anchor=(0.5, 1.35))
+    ax.legend(frameon=True, ncols=4, loc="upper left")
     ax.set_xlabel("Time Step")
-    ax.set_ylabel("$\hat{\phi}(\mathbf{m})$")
+    ax.set_ylabel("$\phi(\mathbf{\hat{m}})$")
 
     return fig
 
@@ -579,7 +573,7 @@ if __name__ == "__main__":
         description="Create figures for the swellex96_loc_tilt project."
     )
     parser.add_argument(
-        "--figure", "-f", default="5", type=str, help="Figure number to create."
+        "--figure", "-f", default="4", type=str, help="Figure number to create."
     )
     args = parser.parse_args()
     main(args)
