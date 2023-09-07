@@ -90,7 +90,7 @@ def figure_1() -> plt.Figure:
     ax.set_ylim(-0.1, 1.1)
     ax.set_xticklabels([])
     ax.set_ylabel("$\phi(\mathbf{m})$")
-    ax.legend(loc="lower right")
+    ax.legend(bbox_to_anchor=(0.68, 0.69), prop={"size": 7})
 
     ax = axs[1]
     ax.plot(x_t, alpha, color="k", label="Acquisition function")
@@ -154,7 +154,7 @@ def figure_2() -> plt.Figure:
     }
 
     fig, axs = plt.subplots(
-        3, 2, gridspec_kw={"hspace": 0.0, "wspace": 0.0}, figsize=(4.0, 3.0)
+        3, 2, gridspec_kw={"hspace": 0.0, "wspace": 0.0}, figsize=(4.0, 2.5)
     )
 
     ax = axs[0, 0]
@@ -363,7 +363,7 @@ def figure_4() -> plt.Figure:
     }
     text_values = {
         "gpei": "Sobol+GP/EI: 64 trials",
-        "grid": "Grid: 1008 trials",
+        "grid": "Grid: 1080 trials",
         "sobol": "Sobol: 1024 trials",
     }
 
@@ -371,7 +371,7 @@ def figure_4() -> plt.Figure:
     df_gpei = df_gpei[df_gpei["strategy"] == "gpei"]
     df_gpei = df_gpei[~df_gpei["param_time_step"].isin(skip_steps)]
 
-    GRID_SERIAL = "serial_010"
+    GRID_SERIAL = "serial_015"
     df_grid = pd.read_csv(
         loadpath.parent.parent / GRID_SERIAL / "results" / "aggregated_results.csv"
     )
@@ -388,7 +388,7 @@ def figure_4() -> plt.Figure:
     df = pd.concat([df_gpei, df_grid, df_sobol], axis=0)
 
     fig, axs = plt.subplots(
-        3, 1, gridspec_kw={"hspace": 0}, sharex=True, sharey=True, figsize=(3.5, 1.75)
+        3, 1, gridspec_kw={"hspace": 0}, sharex=True, sharey=True, figsize=(3.5, 1.5)
     )
     for i, (strategy, ax) in enumerate(zip(strategies, axs)):
         selected_df = df[df["strategy"] == strategy]
