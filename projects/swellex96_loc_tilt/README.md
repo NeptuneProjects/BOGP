@@ -1,6 +1,8 @@
-# Bayesian optimization with Gaussian process surrogate model for acoustic source localization and array tilt/azimuth estimation
+# Bayesian optimization with Gaussian process surrogate model for acoustic source localization robust to array tilt
 
-This repository contains the code used to perform acoustic source localization and array tilt/azimuth estimation using Bayesian optimization with a Gaussian process surrogate model. This work was submitted to the Journal of the Acoustical Society of America:
+This repository contains the code used to perform acoustic source localization and array tilt estimation using Bayesian optimization with a Gaussian process surrogate model. This work was submitted to IEEE International Conference  on Acoustics, Speech, and Signal Processing:
+
+> W. F. Jenkins II and P. Gerstoft, “Bayesian optimization with Gaussian processes for robust localization,” Submitted to IEEE Int. Conf. Acoust., Speech, Signal Process., Sep. 2023.
 
 ## Installation
 
