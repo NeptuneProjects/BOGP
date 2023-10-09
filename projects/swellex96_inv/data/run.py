@@ -13,6 +13,7 @@ from oao.objective import NoiselessFormattedObjective
 from oao.optimizer import BayesianOptimization
 from oao.results import get_results
 from oao.space import SearchParameter, SearchSpace
+import torch
 from tritonoa.at.models.kraken.runner import run_kraken
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
@@ -24,9 +25,11 @@ from data import formatter
 sys.path.insert(0, str(Path(__file__).parents[3]))
 from optimization import utils
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+print(f"Using device: {device}")
 
 def main():
-    time_step = 50
+    time_step = 20
     base_env = utils.load_env_from_json(common.SWELLEX96Paths.environment_data)
 
     processor = MatchedFieldProcessor(
@@ -55,9 +58,9 @@ def main():
         {"name": "src_z", "type": "range", "bounds": [40.0, 80.0]},
         {"name": "h_w", "type": "range", "bounds": [200.0, 240.0]},
         {"name": "h_s", "type": "range", "bounds": [1.0, 30.0]},
-        {"name": "c_s", "type": "range", "bounds": [1500.0, 1700.0]},
-        # {"name": "dcdz_s", "type": "range", "bounds": [0.0, 4.0]},
-        {"name": "tilt", "type": "range", "bounds": [-4.0, 4.0]},
+        {"name": "c_s", "type": "range", "bounds": [1520.0, 1620.0]},
+        {"name": "dcdz_s", "type": "range", "bounds": [0.0, 3.0]},
+        {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
     ]
     space = SearchSpace([SearchParameter(**d) for d in search_space])
 
@@ -65,13 +68,22 @@ def main():
         steps=[
             GenerationStep(
                 model=Models.SOBOL,
-                num_trials=128,
+                num_trials=64,
                 max_parallelism=64,
             ),
             GenerationStep(
                 model=Models.GPEI,
-                num_trials=64,
+                num_trials=500 - 64,
                 max_parallelism=None,
+                model_kwargs={"torch_device": device},
+                model_gen_kwargs={
+                    "model_gen_options": {
+                        "optimizer_kwargs": {
+                            "num_restarts": 120,
+                            "raw_samples": 4096,
+                        }
+                    }
+                }
             ),
         ]
     )
