@@ -24,7 +24,7 @@ def main():
     render(plot_slice(model, "src_z", "bartlett"))
     render(plot_slice(model, "h_w", "bartlett"))
     render(plot_slice(model, "c_s", "bartlett"))
-    render(plot_slice(model, "dcdz_s", "bartlett"))           
+    render(plot_slice(model, "dcdz_s", "bartlett"))
     render(plot_slice(model, "tilt", "bartlett"))
 
     print(client.get_best_parameters(use_model_predictions=False))
