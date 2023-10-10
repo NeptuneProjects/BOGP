@@ -45,10 +45,10 @@ TRUE_VALUES = {
     # "dc10": 0.0,
     "h_w": 217.0,
     # "h_s": 23.0,
-    "c_s": 1572.3,
+    # "c_s": 1572.3,
     # "dcdz_s": 0.9,
     "bot_c_p": 1572.3,
-    "bot_rho": 1.76,
+    # "bot_rho": 1.76,
     "tilt": TRUE_TILT,
 }
 
