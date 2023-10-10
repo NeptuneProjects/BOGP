@@ -91,9 +91,9 @@ def main(args):
         num_init_evals,
         seed=args.seed,
         alpha=0.1,
-        num_warmup=128,
-        num_samples=128,
-        thinning=8,
+        num_warmup=512,
+        num_samples=256,
+        thinning=16,
         device=args.device,
     )
 
