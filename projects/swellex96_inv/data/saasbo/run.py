@@ -102,7 +102,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run SAASBO to estimate SSP.")
     parser.add_argument("--seed", default=0, type=int)
     parser.add_argument("--max-evals", default=100, type=int)
-    parser.add_argument("--device", default="cpu", type=str, help='use "cpu" or "gpu".')
+    parser.add_argument("--device", default="gpu", type=str, help='use "cpu" or "gpu".')
     args = parser.parse_args()
 
     numpyro.set_platform(args.device)
