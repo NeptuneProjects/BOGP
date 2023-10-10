@@ -80,7 +80,7 @@ def main(args):
     ub = np.array([s["bounds"][1] for s in search_space])
     # lb = np.zeros(50)
     # ub = np.ones(50)
-    num_init_evals = 10
+    num_init_evals = 50
 
     X, Y = run_saasbo(
         objective,
@@ -90,7 +90,7 @@ def main(args):
         args.max_evals,
         num_init_evals,
         seed=args.seed,
-        alpha=0.1,
+        alpha=0.01,
         num_warmup=512,
         num_samples=256,
         thinning=16,
@@ -101,7 +101,7 @@ def main(args):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run SAASBO to estimate SSP.")
     parser.add_argument("--seed", default=0, type=int)
-    parser.add_argument("--max-evals", default=100, type=int)
+    parser.add_argument("--max-evals", default=200, type=int)
     parser.add_argument("--device", default="gpu", type=str, help='use "cpu" or "gpu".')
     args = parser.parse_args()
 
