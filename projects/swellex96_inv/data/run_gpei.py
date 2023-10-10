@@ -51,15 +51,27 @@ def main():
     if time_step == 20:
         range_space = {"name": "rec_r", "type": "range", "bounds": [5.5, 6.0]}
     if time_step == 50:
-        range_space = {"name": "rec_r", "type": "range", "bounds": [3.8, 4.4]}
+        range_space = {"name": "rec_r", "type": "range", "bounds": [3.8, 4.3]}
 
     search_space = [
         range_space,
         {"name": "src_z", "type": "range", "bounds": [40.0, 80.0]},
+        {"name": "c1", "type": "range", "bounds": [1500.0, 1550.0]},
+        {"name": "dc1", "type": "range", "bounds": [-40.0, 40.0]},
+        {"name": "dc2", "type": "range", "bounds": [-10.0, 10.0]},
+        {"name": "dc3", "type": "range", "bounds": [-5.0, 5.0]},
+        {"name": "dc4", "type": "range", "bounds": [-5.0, 5.0]},
+        {"name": "dc5", "type": "range", "bounds": [-5.0, 5.0]},
+        {"name": "dc6", "type": "range", "bounds": [-5.0, 5.0]},
+        {"name": "dc7", "type": "range", "bounds": [-5.0, 5.0]},
+        {"name": "dc8", "type": "range", "bounds": [-5.0, 5.0]},
+        {"name": "dc9", "type": "range", "bounds": [-5.0, 5.0]},
+        # {"name": "dc10", "type": "range", "bounds": [-10.0, 10.0]},
         {"name": "h_w", "type": "range", "bounds": [200.0, 240.0]},
-        {"name": "h_s", "type": "range", "bounds": [1.0, 30.0]},
-        {"name": "c_s", "type": "range", "bounds": [1520.0, 1620.0]},
-        {"name": "dcdz_s", "type": "range", "bounds": [0.0, 3.0]},
+        # {"name": "h_s", "type": "range", "bounds": [1.0, 100.0]},
+        {"name": "bot_c_p", "type": "range", "bounds": [1500.0, 1700.0]},
+        # {"name": "bot_rho", "type": "range", "bounds": [1.0, 3.0]},
+        # {"name": "dcdz_s", "type": "range", "bounds": [0.0, 3.0]},
         {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
     ]
     space = SearchSpace([SearchParameter(**d) for d in search_space])
@@ -93,13 +105,13 @@ def main():
         search_space=space,
         strategy=gs,
     )
-    opt.run(name="test_bo")
+    opt.run(name="gpei")
     get_results(
         opt.client,
         times=opt.batch_execution_times,
         minimize=objective.properties.minimize,
-    ).to_csv(common.SWELLEX96Paths.outputs / "results.csv")
-    opt.client.save_to_json_file(common.SWELLEX96Paths.outputs / "client.json")
+    ).to_csv(common.SWELLEX96Paths.outputs / "results_gpei.csv")
+    opt.client.save_to_json_file(common.SWELLEX96Paths.outputs / "client_gpei.json")
     print(opt.client.get_best_parameters(use_model_predictions=False))
     print(opt.client.get_best_parameters(use_model_predictions=True))
 
