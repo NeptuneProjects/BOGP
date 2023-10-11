@@ -154,7 +154,7 @@ cs.store(name="process_config", node=ProcessConfig)
 
 @hydra.main(
     config_path=str(Path(__file__).parents[1] / "conf" / "data"),
-    config_name="acoustics",
+    config_name="acoustics_21",
     version_base=None,
 )
 def main(cfg: ProcessConfig):

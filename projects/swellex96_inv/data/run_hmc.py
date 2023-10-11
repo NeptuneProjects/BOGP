@@ -1,20 +1,18 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import argparse
 from functools import partial
 from pathlib import Path
 import sys
 
-import numpy as np
+from jax import random
+import jax.numpy as jnp
 import numpyro
-from numpyro.util import enable_x64
+import numpyro.distributions as dist
+from numpyro.infer import MCMC, NUTS
 from tritonoa.at.models.kraken.runner import run_kraken
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
-
-from objective import hartmann6_50
-from saasbo import run_saasbo
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from conf import common
@@ -73,38 +71,5 @@ def objective(x):
     return processor(parameters).item()
 
 
-def main(args):
-    lb = np.array([s["bounds"][0] for s in search_space])
-    ub = np.array([s["bounds"][1] for s in search_space])
-    # lb = np.zeros(50)
-    # ub = np.ones(50)
-    num_init_evals = 20
-
-    X, Y = run_saasbo(
-        objective,
-        # hartmann6_50,
-        lb,
-        ub,
-        args.max_evals,
-        num_init_evals,
-        seed=args.seed,
-        alpha=0.1,
-        num_warmup=512,
-        num_samples=256,
-        thinning=8,
-        device=args.device,
-    )
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Run SAASBO to estimate SSP.")
-    parser.add_argument("--seed", default=12345, type=int)
-    parser.add_argument("--max-evals", default=100, type=int)
-    parser.add_argument("--device", default="cpu", type=str, help='use "cpu" or "gpu".')
-    args = parser.parse_args()
-
-    numpyro.set_platform(args.device)
-    enable_x64()
-    numpyro.set_host_device_count(1)
-
-    main(args)
+kernel = NUTS(potential_fn=processor)
+mcmc = MCMC(kernel, num_warmup=1000, num_samples=1000, num_chains=3)
