@@ -20,15 +20,17 @@ def get_initial_points(
     return 2 * sobol.draw(n=n_pts).to(dtype=dtype, device=device) - 1
 
 
-def initialize_loggers(fname: Path, logger: logging.Logger) -> None:
-    logfmt = logging.Formatter("[%(levelname)s][%(asctime)s] %(message)s")
-
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(logfmt)
-    logger.addHandler(ch)
-
+def initialize_logger_file(
+    fname: Path, logger: logging.Logger, logfmt: logging.Formatter
+) -> None:
     fh = logging.FileHandler(filename=fname)
     fh.setLevel(logging.DEBUG)
     fh.setFormatter(logfmt)
     logger.addHandler(fh)
+
+
+def initialize_std_logger(logger: logging.Logger, logfmt: logging.Formatter) -> None:
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(logfmt)
+    logger.addHandler(ch)

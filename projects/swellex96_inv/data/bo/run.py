@@ -20,7 +20,8 @@ from conf import common
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
-
+logfmt = logging.Formatter("[%(levelname)s][%(asctime)s] %(message)s")
+helpers.initialize_std_logger(logger, logfmt)
 
 warnings.filterwarnings(
     "ignore", message="A not p.d., added jitter of 1e-08 to the diagonal"
@@ -74,10 +75,11 @@ def main(args) -> None:
     random.seed(args.seed)
     seeds = helpers.get_random_seeds(args.runs)
 
+    print("_" * 80)
     for seed in seeds:
         serial_name = f"{args.optim}_{seed:04d}_{args.budget}-{args.init}"
-        helpers.initialize_loggers(args.dir / f"{serial_name}.log", logger)
-
+        helpers.initialize_logger_file(args.dir / f"{serial_name}.log", logger, logfmt)
+        
         X, Y, times = loop(
             objective=obj.objective, dtype=dtype, device=device, **kwargs
         )
@@ -91,6 +93,10 @@ def main(args) -> None:
             Y=Y.detach().cpu().numpy(),
             t=np.array(times),
         )
+        
+        logger.handlers[1].stream.close()
+        logger.removeHandler(logger.handlers[1])
+        print("_" * 80)
 
 
 if __name__ == "__main__":
@@ -106,7 +112,7 @@ if __name__ == "__main__":
         "--budget",
         help="Choose the total budget of trials (including warmup).",
         type=int,
-        default=15,
+        default=12,
     )
     parser.add_argument(
         "--init",
