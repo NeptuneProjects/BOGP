@@ -112,19 +112,19 @@ if __name__ == "__main__":
         "--budget",
         help="Choose the total budget of trials (including warmup).",
         type=int,
-        default=12,
+        default=500,
     )
     parser.add_argument(
         "--init",
         help="Choose the number of warmup trials.",
         type=int,
-        default=10,
+        default=100,
     )
     parser.add_argument(
         "--runs",
         help="Specify the number of MC runs for each strategy.",
         type=int,
-        default=3,
+        default=30,
     )
     parser.add_argument(
         "--seed",
