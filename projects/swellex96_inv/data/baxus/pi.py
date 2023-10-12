@@ -42,15 +42,13 @@ def loop(
 ) -> tuple[torch.tensor, torch.tensor]:
     logging.info(f"Running GP/PI on {device.type.upper()}.")
     
-    times = []
     start = time.time()
     
     X = helpers.get_initial_points(dim, n_init, dtype, device)
     Y = torch.tensor(objective(X.detach().cpu().numpy()), dtype=dtype, device=device)
 
     stop = time.time() - start
-    times.append([stop / n_init for _ in range(n_init)])
-    
+    times = [stop / n_init for _ in range(n_init)]    
 
     logging.info(
         f"{n_init} warmup trials complete. | Best value: {1 - Y.max().item():.3}"
