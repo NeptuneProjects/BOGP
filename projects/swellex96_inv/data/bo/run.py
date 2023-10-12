@@ -87,8 +87,8 @@ def main(args) -> None:
         
         np.savez(
             args.dir / serial_name,
-            X=X,
-            Y=Y,
+            X=X.detach().cpu().numpy(),
+            Y=Y.detach().cpu().numpy(),
             t=np.array(times),
         )
 
