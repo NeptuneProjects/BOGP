@@ -27,7 +27,6 @@ def loop(
 ) -> tuple[torch.tensor, torch.tensor]:
     logging.info(f"Running Sobol on {device.type.upper()}.")
 
-    times = []
     start = time.time()
 
     X = (
@@ -40,7 +39,7 @@ def loop(
     Y = torch.tensor(objective(X.detach().cpu().numpy()), dtype=dtype, device=device)
 
     stop = time.time() - start
-    times.append([stop / budget for _ in range(budget)])
+    times = [stop / budget for _ in range(budget)]
 
     logging.info(
         f"{budget} Sobol trials complete. | Best value: {1 - Y.max().item():.3}"
