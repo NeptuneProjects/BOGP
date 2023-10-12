@@ -80,7 +80,7 @@ def main(args) -> None:
 
     print("_" * 80)
     for seed in seeds:
-        serial_name = f"{args.optim}_{seed:04d}_{args.budget}-{args.init}"
+        serial_name = f"{args.optim}_{args.budget}-{args.init}_{seed:04d}"
         helpers.initialize_logger_file(args.dir / f"{serial_name}.log", logger, logfmt)
         
         X, Y, times = loop(
