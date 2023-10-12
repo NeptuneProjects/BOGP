@@ -24,6 +24,7 @@ class GIBBONLoopArgs:
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     num_restarts: int = 40
     raw_samples: int = 1024
+    seed: int = 0
 
 
 def loop(
@@ -35,11 +36,12 @@ def loop(
     device,
     num_restarts,
     raw_samples,
+    seed: int = 0,
     *args,
     **kwargs,
 ) -> tuple[torch.tensor, torch.tensor]:
     logging.info(f"Running GP/qGIBBON on {device.type.upper()}.")
-    X = helpers.get_initial_points(dim, n_init, dtype, device)
+    X = helpers.get_initial_points(dim, n_init, dtype, device, seed)
     Y = torch.tensor(objective(X.detach().cpu().numpy()), dtype=dtype, device=device)
 
     logging.info(

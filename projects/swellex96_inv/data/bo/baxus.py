@@ -39,6 +39,7 @@ class BAxUSLoopArgs:
     raw_samples: int = 1024
     dim: int = field(init=False)
     n_candidates: int = field(init=False)
+    seed: int = 0
 
     def __post_init__(self):
         self.dim = self.true_dim + self.dummy_dim
@@ -268,6 +269,7 @@ def loop(
     num_restarts: int,
     raw_samples: int,
     n_candidates: int,
+    seed: int = 0,
     *args,
     **kwargs,
 )  -> tuple[torch.tensor, torch.tensor]:
@@ -277,7 +279,7 @@ def loop(
         input_dim=state.dim, target_dim=state.d_init, dtype=dtype, device=device
     )
 
-    X_target = helpers.get_initial_points(state.d_init, n_init, dtype, device)
+    X_target = helpers.get_initial_points(state.d_init, n_init, dtype, device, seed)
     X_input = X_target @ S
     Y = torch.tensor(
         objective(X_input.detach().cpu().numpy(), true_dim=true_dim),

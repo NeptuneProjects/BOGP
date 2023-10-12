@@ -13,7 +13,7 @@ import warnings
 
 import numpy as np
 
-import baxus, ei, gibbon, helpers, obj, pi, sobol
+import baxus, ei, gibbon, helpers, obj, pi, sobol, ucb
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from conf import common
@@ -58,10 +58,13 @@ def get_loop(
         kwargs = gibbon.GIBBONLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
     if optim == Strategy.PI:
         loop = pi.loop
-        kwargs = pi.EILoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
+        kwargs = pi.PILoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
     if optim == Strategy.SOBOL:
         loop = sobol.loop
         kwargs = sobol.SobolLoopArgs(dim=TRUE_DIM, budget=budget)
+    if optim == Strategy.UCB:
+        loop = ucb.loop
+        kwargs = ucb.UCBLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
     return loop, asdict(kwargs)
 
 
@@ -81,7 +84,7 @@ def main(args) -> None:
         helpers.initialize_logger_file(args.dir / f"{serial_name}.log", logger, logfmt)
         
         X, Y, times = loop(
-            objective=obj.objective, dtype=dtype, device=device, **kwargs
+            objective=obj.objective, dtype=dtype, device=device, **{**kwargs | {"seed": seed}}
         )
 
         with open(args.dir / f"{serial_name}.json", "w") as f:

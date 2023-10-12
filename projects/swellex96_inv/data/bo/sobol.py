@@ -12,6 +12,7 @@ from torch.quasirandom import SobolEngine
 class SobolLoopArgs:
     dim: int
     budget: int = 500
+    seed: int = None
     dtype: torch.dtype = torch.double
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -22,6 +23,7 @@ def loop(
     budget: int,
     dtype: torch.dtype,
     device: torch.device,
+    seed: int = 0,
     *args,
     **kwargs,
 ) -> tuple[torch.tensor, torch.tensor]:
@@ -30,7 +32,7 @@ def loop(
     start = time.time()
 
     X = (
-        SobolEngine(dim, scramble=True, seed=0)
+        SobolEngine(dim, scramble=True, seed=seed)
         .draw(budget)
         .to(dtype=dtype, device=device)
         * 2
