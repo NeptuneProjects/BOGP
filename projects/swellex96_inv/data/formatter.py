@@ -41,6 +41,7 @@ def update_sediment(dz: float, z_values: list) -> list:
 def update_ssp(data: dict) -> dict:
     z = data["z"]
     c = data["c_p"]
+    assert len(z) == len(c)
     cs = CubicSpline(z, c, bc_type="clamped")
 
     # zs = np.linspace(z[0], z[-1], 100)

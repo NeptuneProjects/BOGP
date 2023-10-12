@@ -5,7 +5,6 @@ from pathlib import Path
 import sys
 
 import matplotlib.pyplot as plt
-import numpy as np
 import scienceplots
 
 sys.path.insert(0, str(Path(__file__).parents[1]))

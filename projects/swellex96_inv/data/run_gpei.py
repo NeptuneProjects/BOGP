@@ -29,7 +29,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 NUM_TRIALS = 300
-NUM_WARMUP = 100
+NUM_WARMUP = 200
 
 SIMULATE = False
 
@@ -90,7 +90,7 @@ def main():
                     "model_gen_options": {
                         "optimizer_kwargs": {
                             "num_restarts": 40,
-                            "raw_samples": 2048,
+                            "raw_samples": 4096,
                         }
                     }
                 },

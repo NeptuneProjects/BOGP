@@ -27,18 +27,18 @@ def main():
     c = simple_env["layerdata"][0]["c_p"]
     plt.plot(c, z, "o")
 
-    cs = CubicSpline(z, c)
-    zs = np.linspace(z[1], z[-2], 21).tolist()    
-    z_new = [z[0]] + zs + [z[-1]]
-    c_new = [c[0]] + cs(zs).tolist() + [c[-1]]
-    plt.plot(c_new, z_new)
+    # cs = CubicSpline(z, c)
+    # zs = np.linspace(z[1], z[-2], 21).tolist()    
+    # z_new = [z[0]] + zs + [z[-1]]
+    # c_new = [c[0]] + cs(zs).tolist() + [c[-1]]
+    # plt.plot(c_new, z_new)
 
     # cs = CubicSpline(z, c, bc_type="clamped")
     # zs = np.linspace(z[1], z[-2], 21).tolist()    
     # z_new = [z[0]] + zs + [z[-1]]
     # c_new = [c[0]] + cs(zs).tolist() + [c[-1]]
     # plt.plot(c_new, z_new)
-    
+    print(z)
     cs = CubicSpline(z, c, bc_type="natural")
     zs = np.linspace(z[1], z[-2], 21).tolist()    
     z_new = [z[0]] + zs + [z[-1]]
