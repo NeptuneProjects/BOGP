@@ -70,7 +70,7 @@ def main(args) -> None:
     seeds = helpers.get_random_seeds(args.runs)
 
     for seed in seeds:
-        serial_name = f"{args.optim}_{seed:04d}"
+        serial_name = f"{args.optim}_{seed:04d}_{args.budget}-{args.init}"
         helpers.initialize_loggers(args.dir / f"{serial_name}.log", logger)
 
         X, Y, times = loop(
@@ -89,31 +89,31 @@ if __name__ == "__main__":
         help="Choose an optimization strategy.",
         type=Strategy,
         choices=list(Strategy),
-        default="sobol",
+        default="ei",
     )
     parser.add_argument(
         "--budget",
         help="Choose the total budget of trials (including warmup).",
         type=int,
-        default=100,
+        default=500,
     )
     parser.add_argument(
         "--init",
         help="Choose the number of warmup trials.",
         type=int,
-        default=64,
+        default=100,
     )
     parser.add_argument(
         "--runs",
         help="Specify the number of MC runs for each strategy.",
         type=int,
-        default=1,
+        default=30,
     )
     parser.add_argument(
         "--seed",
         help="Specify the random seed.",
         type=int,
-        default=1,
+        default=719,
     )
     parser.add_argument(
         "--dir",
