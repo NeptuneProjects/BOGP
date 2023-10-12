@@ -132,7 +132,6 @@ def increase_embedding_and_observations(
         elements_to_move = torch.tensor_split(non_zero_elements, n_row_bins)[1:]
 
         # pad the tuples of bins with zeros to apply _scatter
-        print(new_bins)
         new_bins_padded = torch.nn.utils.rnn.pad_sequence(new_bins, batch_first=True)
         els_to_move_padded = torch.nn.utils.rnn.pad_sequence(
             elements_to_move, batch_first=True

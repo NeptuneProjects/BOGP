@@ -1,7 +1,7 @@
 # This configuration replicates results from Gemba et al. (2017), JASA.
 # The data is from the SWELLEX96 experiment websites (21 channels)
 run:
-  # - convert
+  - convert
   - merge
   - process
 configs:

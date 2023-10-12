@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 
+from typing import Optional
+
 from botorch.acquisition.analytic import ExpectedImprovement
 from botorch.generation import MaxPosteriorSampling
 from botorch.optim import optimize_acqf
@@ -7,7 +9,9 @@ import torch
 from torch.quasirandom import SobolEngine
 
 
-def get_initial_points(dim, n_pts, dtype, device, seed=0):
+def get_initial_points(
+    dim: int, n_pts: int, dtype: torch.dtype, device: torch.device, seed=0
+) -> torch.Tensor:
     sobol = SobolEngine(dimension=dim, scramble=True, seed=seed)
     X_init = (
         2 * sobol.draw(n=n_pts).to(dtype=dtype, device=device) - 1
@@ -16,16 +20,16 @@ def get_initial_points(dim, n_pts, dtype, device, seed=0):
 
 
 def create_candidate(
-    state,
-    model,  # GP model
-    X,  # Evaluated points on the domain [-1, 1]^d
-    Y,  # Function values
-    dtype,
-    device,
-    n_candidates=None,  # Number of candidates for Thompson sampling
-    num_restarts=10,
-    raw_samples=512,
-    acqf="ts",  # "ei" or "ts"
+    state: object,
+    model: object,  # GP model
+    X: torch.tensor,  # Evaluated points on the domain [-1, 1]^d
+    Y: torch.tensor,  # Function values
+    dtype: torch.dtype,
+    device: torch.device,
+    n_candidates: Optional[int] = None,  # Number of candidates for Thompson sampling
+    num_restarts: int = 10,
+    raw_samples: int = 512,
+    acqf: str = "ts",  # "ei" or "ts"
 ):
     assert acqf in ("ts", "ei")
     assert X.min() >= -1.0 and X.max() <= 1.0 and torch.all(torch.isfinite(Y))

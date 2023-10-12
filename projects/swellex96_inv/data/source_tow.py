@@ -89,7 +89,7 @@ def compute_apparent_tilt(df: pd.DataFrame) -> pd.DataFrame:
     pd.DataFrame
         GPS data with apparent tilt added.
     """
-    rec_z = np.array(load_from_json(SWELLEX96Paths.environment_data)["rec_z"])
+    rec_z = np.array(load_from_json(SWELLEX96Paths.main_environment_data)["rec_z"])
     scope = TRUE_ARRAY_DEPTH - rec_z.min()
     rec_r = df["Apparent Range [km]"].values[0]
     tilt = df["Tilt [deg]"].values[0]
