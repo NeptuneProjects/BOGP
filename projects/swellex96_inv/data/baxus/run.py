@@ -13,7 +13,7 @@ import warnings
 
 import numpy as np
 
-import baxus, ei, gibbon, helpers, obj, sobol
+import baxus, ei, gibbon, helpers, obj, pi, sobol
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from conf import common
@@ -33,6 +33,7 @@ class Strategy(Enum):
     BAXUS = "baxus"
     EI = "ei"
     GIBBON = "gibbon"
+    PI = "pi"
     SOBOL = "sobol"
 
     def __str__(self):
@@ -53,6 +54,9 @@ def get_loop(
     if optim == Strategy.GIBBON:
         loop = gibbon.loop
         kwargs = gibbon.GIBBONLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
+    if optim == Strategy.PI:
+        loop = pi.loop
+        kwargs = pi.EILoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
     if optim == Strategy.SOBOL:
         loop = sobol.loop
         kwargs = sobol.SobolLoopArgs(dim=TRUE_DIM, budget=budget)
