@@ -35,6 +35,7 @@ class Strategy(Enum):
     GIBBON = "gibbon"
     PI = "pi"
     SOBOL = "sobol"
+    UCB = "ucb"
 
     def __str__(self):
         return self.value
@@ -83,7 +84,12 @@ def main(args) -> None:
 
         with open(args.dir / f"{serial_name}.json", "w") as f:
             json.dump(kwargs, f, indent=4)
-        np.savez(args.dir / serial_name, X=X, Y=Y, t=np.array(times))
+        np.savez(
+            args.dir / serial_name,
+            X=X,
+            Y=Y,
+            t=np.array(times),
+        )
 
 
 if __name__ == "__main__":
@@ -99,19 +105,19 @@ if __name__ == "__main__":
         "--budget",
         help="Choose the total budget of trials (including warmup).",
         type=int,
-        default=500,
+        default=15,
     )
     parser.add_argument(
         "--init",
         help="Choose the number of warmup trials.",
         type=int,
-        default=100,
+        default=10,
     )
     parser.add_argument(
         "--runs",
         help="Specify the number of MC runs for each strategy.",
         type=int,
-        default=30,
+        default=3,
     )
     parser.add_argument(
         "--seed",
