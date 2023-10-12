@@ -1,0 +1,57 @@
+# This configuration replicates results from Gemba et al. (2017), JASA.
+# The data is from the SWELLEX96 experiment websites (21 channels)
+run:
+  # - convert
+  - merge
+  - process
+configs:
+  data_path: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA_inv/acoustic
+  convert:
+    _target_: __main__.ConversionConfig
+    fmt: ["npy", "mat", "wav"]
+    paths:
+      _target_: __main__.ProcessPaths
+      source: ${configs.data_path}/raw/sio
+      destination: ${configs.data_path}/raw
+    glob_pattern: "J1312315.vla.21els.sio"
+    channels_to_remove: null
+    max_workers: 8
+    fs: 1500
+  merge:
+    _target_: __main__.MergeConfig
+    paths:
+      _target_: __main__.ProcessPaths
+      source: ${configs.data_path}/raw/npy
+      destination: ${configs.data_path}/processed
+    glob_pattern: "J1312315.vla.21els*[!header].npy"
+    filename: merged001.npz
+    base_time: 96131 23:15
+    start: 96131 23:30
+    end: 96132 00:15
+    fs: 1500
+    channels_to_remove: null
+  process:
+    _target_: __main__.ProcessConfig
+    paths:
+      _target_: __main__.ProcessPaths
+      source: ${configs.data_path}/processed/merged001.npz
+      destination: ${configs.data_path}/processed_001
+    frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
+    samples_per_segment: 8192
+    segments_every_n: 4096
+    fs: 1500
+    channels_to_remove: null
+    reverse_channels: false
+    freq_finding_params:
+      _target_: __main__.FrequencyPeakFindingParameters
+      lower_bw: 1.0
+      upper_bw: 1.0
+    fft_params:
+      _target_: __main__.FFTParameters
+      nfft: 8192
+      window:
+        _target_: functools.partial
+        _args_: ["${get_method:numpy.hanning}"]
+    max_workers: 13
+    normalize_covariance: true
+    covariance_averaging: 8

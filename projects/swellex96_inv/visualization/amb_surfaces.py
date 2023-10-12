@@ -116,7 +116,7 @@ if __name__ == "__main__":
         "--source",
         "--s",
         type=Path,
-        default="../data/swellex96_S5_VLA_inv/acoustic/processed_000/ambiguity_surfaces/49-64-79-94-112-130-148-166-201-235-283-338-388_100x40",
+        default="../data/swellex96_S5_VLA_inv/acoustic/processed_001/ambiguity_surfaces/49-64-79-94-112-130-148-166-201-235-283-338-388_40x40",
     )
     parser.add_argument("--glob", "--g", type=str, default="surface_*.npy")
     parser.add_argument("--destination", "--d", type=str, default="plots/rel_scale")

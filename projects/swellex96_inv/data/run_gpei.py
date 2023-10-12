@@ -16,6 +16,7 @@ import torch
 from tritonoa.at.models.kraken.runner import run_kraken
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
+from tritonoa.sp.processing import simulate_covariance
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from conf import common
@@ -27,18 +28,40 @@ from optimization import utils
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
-def main():
-    time_step = 20
-    base_env = utils.load_env_from_json(common.SWELLEX96Paths.environment_data)
+NUM_TRIALS = 300
+NUM_WARMUP = 200
 
-    processor = MatchedFieldProcessor(
-        runner=run_kraken,
-        covariance_matrix=utils.load_covariance_matrices(
+SIMULATE = False
+
+
+def monitor(client):
+    _, values = client.get_best_parameters(use_model_predictions=False)
+    print(
+        f"Best observation so far: {values[0]['bartlett']}"
+    )
+
+
+def main():
+    base_env = utils.load_env_from_json(common.SWELLEX96Paths.simple_environment_data)
+
+    if SIMULATE:
+        K = simulate_covariance(
+            runner=run_kraken,
+            parameters=base_env
+            | {"rec_r": common.TRUE_R, "src_z": common.TRUE_SRC_Z, "tilt": common.TRUE_TILT},
+            freq=common.FREQ,
+        )
+    else:
+        K = utils.load_covariance_matrices(
             paths=utils.get_covariance_matrix_paths(
                 freq=common.FREQ, path=common.SWELLEX96Paths.acoustic_path
             ),
-            index=time_step,
-        ),
+            index=common.TIME_STEP,
+        )
+
+    processor = MatchedFieldProcessor(
+        runner=run_kraken,
+        covariance_matrix=K,
         freq=common.FREQ,
         parameters=base_env,
         parameter_formatter=formatter.format_parameters,
@@ -47,54 +70,30 @@ def main():
     )
     objective = NoiselessFormattedObjective(processor, "bartlett", {"minimize": True})
 
-    if time_step == 20:
-        range_space = {"name": "rec_r", "type": "range", "bounds": [5.5, 6.0]}
-    if time_step == 50:
-        range_space = {"name": "rec_r", "type": "range", "bounds": [3.8, 4.3]}
-
-    search_space = [
-        range_space,
-        {"name": "src_z", "type": "range", "bounds": [40.0, 80.0]},
-        {"name": "c1", "type": "range", "bounds": [1500.0, 1550.0]},
-        {"name": "dc1", "type": "range", "bounds": [-40.0, 40.0]},
-        {"name": "dc2", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "dc3", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc4", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc5", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc6", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc7", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc8", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc9", "type": "range", "bounds": [-5.0, 5.0]},
-        # {"name": "dc10", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "h_w", "type": "range", "bounds": [200.0, 240.0]},
-        # {"name": "h_s", "type": "range", "bounds": [1.0, 100.0]},
-        {"name": "bot_c_p", "type": "range", "bounds": [1500.0, 1700.0]},
-        # {"name": "bot_rho", "type": "range", "bounds": [1.0, 3.0]},
-        # {"name": "dcdz_s", "type": "range", "bounds": [0.0, 3.0]},
-        {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
-    ]
+    search_space = common.SEARCH_SPACE
     space = SearchSpace([SearchParameter(**d) for d in search_space])
 
     gs = GenerationStrategy(
         steps=[
             GenerationStep(
                 model=Models.SOBOL,
-                num_trials=64,
+                num_trials=NUM_WARMUP,
                 max_parallelism=64,
+                model_kwargs={"seed": 719}
             ),
             GenerationStep(
                 model=Models.GPEI,
-                num_trials=500 - 64,
+                num_trials=NUM_TRIALS - NUM_WARMUP,
                 max_parallelism=None,
                 model_kwargs={"torch_device": device},
                 model_gen_kwargs={
                     "model_gen_options": {
                         "optimizer_kwargs": {
-                            "num_restarts": 120,
+                            "num_restarts": 40,
                             "raw_samples": 4096,
                         }
                     }
-                }
+                },
             ),
         ]
     )
@@ -103,6 +102,7 @@ def main():
         objective=objective,
         search_space=space,
         strategy=gs,
+        monitor=monitor,
     )
     opt.run(name="gpei")
     get_results(

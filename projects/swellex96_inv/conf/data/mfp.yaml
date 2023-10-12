@@ -4,8 +4,8 @@ paths:
   data_path: ${hydra:runtime.cwd}/../data/swellex96_S5_VLA_inv
   env_path: ${paths.data_path}/env_models/swellex96.json
   range_path: ${paths.data_path}/gps/source_tow.csv
-  mfp_path: ${paths.data_path}/acoustic/processed_000/ambiguity_surfaces
-  covariance_path: ${paths.data_path}/acoustic/processed_000
+  mfp_path: ${paths.data_path}/acoustic/processed_001/ambiguity_surfaces
+  covariance_path: ${paths.data_path}/acoustic/processed_001
 frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
 max_workers: 2
 parameters:
@@ -37,7 +37,7 @@ mfp_parameters:
   grid:
     rec_r:
       _target_: numpy.linspace
-      _args_: [0.5, 8.0, 100]
+      _args_: [0.5, 8.0, 40]
     src_z:
       _target_: numpy.linspace
       _args_: [1.0, 200.0, 40]

@@ -26,10 +26,96 @@ def build_environment(
     tilt: Optional[float] = None,
 ) -> dict:
     z_data, c_data = load_ctd_data(ctd_path)
-    slice_every = 40
-    if slice_every:
-        z_data = z_data[::slice_every]
-        c_data = c_data[::slice_every]
+    z_data = np.append(z_data, 217).tolist()
+    c_data = np.append(c_data, c_data[-1]).tolist()
+    return {
+        # 1. General
+        "title": title,
+        "model": model,
+        # 2. Top medium (halfspace) - Not used
+        # 3. Layered media
+        "layerdata": [
+            {"z": z_data, "c_p": c_data, "rho": 1.0},
+            {"z": [217.0, 240.0], "c_p": [1572.3, 1593.0], "rho": 1.76, "a_p": 0.2},
+        ],
+        # 4. Bottom medium
+        "bot_opt": "A",
+        "bot_c_p": 1881.0,
+        "bot_rho": 2.06,
+        "bot_a_p": 0.06,
+        # 5. Speed constraints
+        "clow": 1400.0,
+        "chigh": 1800.0,
+        # 6. Receiver parameters
+        # "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
+        "rec_z": [
+            94.125,
+            99.755,
+            105.38,
+            111.0,
+            116.62,
+            122.25,
+            127.88,
+            139.12,
+            144.74,
+            150.38,
+            155.99,
+            161.62,
+            167.26,
+            172.88,
+            178.49,
+            184.12,
+            189.76,
+            195.38,
+            200.99,
+            206.62,
+            212.25,
+        ],
+        "tilt": tilt,
+        "z_pivot": 217.0,
+    }
+
+
+def format_ssp(z_data: np.ndarray, c_data: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+    z1, c1 = z_data[0], c_data[0]
+
+    # To be estimated:
+    ind2 = np.argmin(np.abs(z_data - 5))
+    z2, c2 = z_data[ind2], c_data[ind2]
+    ind3 = np.argmin(np.abs(z_data - 15))
+    z3, c3 = z_data[ind3], c_data[ind3]
+    ind4 = np.argmin(np.abs(z_data - 30))
+    z4, c4 = z_data[ind4], c_data[ind4]
+    ind5 = np.argmin(np.abs(z_data - 60))
+    z5, c5 = z_data[ind5], c_data[ind5]
+    ind6 = np.argmin(np.abs(z_data - 100))
+    z6, c6 = z_data[ind6], c_data[ind6]
+    return np.array([z1, z2, z3, z4, z5, z6]), np.array([c1, c2, c3, c4, c5, c6])
+
+    # ind2 = np.argmin(np.abs(z_data - 10))
+    # z2, c2 = z_data[ind2], c_data[ind2]
+    # ind3 = np.argmin(np.abs(z_data - 30))
+    # z3, c3 = z_data[ind3], c_data[ind3]
+    # ind4 = np.argmin(np.abs(z_data - 60))
+    # z4, c4 = z_data[ind4], c_data[ind4]
+    # ind5 = np.argmin(np.abs(z_data - 100))
+    # z5, c5 = z_data[ind5], c_data[ind5]
+
+    # return np.array([z1, z2, z3, z4, z5]), np.array([c1, c2, c3, c4, c5])
+
+
+def build_simple_environment(
+    ctd_path: os.PathLike,
+    title: str = "swellex96",
+    model: str = "KRAKEN",
+    tilt: Optional[float] = None,
+) -> dict:
+    z_data, c_data = load_ctd_data(ctd_path)
+    # slice_every = 60
+    # if slice_every:
+    #     z_data = z_data[::slice_every]
+    #     c_data = c_data[::slice_every]
+    z_data, c_data = format_ssp(z_data, c_data)
     print(np.diff(c_data))
     z_data = np.append(z_data, 217).tolist()
     c_data = np.append(c_data, c_data[-1]).tolist()
@@ -53,33 +139,33 @@ def build_environment(
         # "bot_rho": 2.06,
         # "bot_a_p": 0.06,
         # 5. Speed constraints
-        "clow": 0.0,
+        "clow": 1400.0,
         "chigh": 1800.0,
         # 6. Receiver parameters
-        "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
-        # "rec_z": [s
-        #     94.125,
-        #     99.755,
-        #     105.38,
-        #     111.0,
-        #     116.62,
-        #     122.25,
-        #     127.88,
-        #     139.12,
-        #     144.74,
-        #     150.38,
-        #     155.99,
-        #     161.62,
-        #     167.26,
-        #     172.88,
-        #     178.49,
-        #     184.12,
-        #     189.76,
-        #     195.38,
-        #     200.99,
-        #     206.62,
-        #     212.25,
-        # ],
+        # "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
+        "rec_z": [
+            94.125,
+            99.755,
+            105.38,
+            111.0,
+            116.62,
+            122.25,
+            127.88,
+            139.12,
+            144.74,
+            150.38,
+            155.99,
+            161.62,
+            167.26,
+            172.88,
+            178.49,
+            184.12,
+            189.76,
+            195.38,
+            200.99,
+            206.62,
+            212.25,
+        ],
         "tilt": tilt,
         "z_pivot": 217.0,
     }
@@ -101,10 +187,15 @@ def save_to_json(environment: dict, path: os.PathLike) -> None:
 
 
 def main(args: Namespace) -> None:
-    environment = build_environment(
+    main_environment = build_environment(
         ctd_path=args.ctd_path, title=args.title, model=args.model, tilt=args.tilt
     )
-    save_to_json(environment, path=args.destination)
+    simple_environment = build_simple_environment(
+        ctd_path=args.ctd_path, title=args.title, model=args.model, tilt=args.tilt
+    )
+
+    save_to_json(main_environment, path=args.destination / "main_env.json")
+    save_to_json(simple_environment, path=args.destination / "simple_env.json")
 
 
 def parse_arguments():
@@ -119,9 +210,9 @@ def parse_arguments():
     )
     parser.add_argument(
         "--destination",
-        type=str,
+        type=Path,
         help="Path to destination file.",
-        default="../data/swellex96_S5_VLA_inv/env_models/swellex96.json",
+        default="../data/swellex96_S5_VLA_inv/env_models",
     )
     parser.add_argument(
         "--title", type=str, help="Title of the env file.", default="swellex96"

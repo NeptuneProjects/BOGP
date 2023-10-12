@@ -15,13 +15,13 @@ from conf.common import SWELLEX96Paths
 from env import load_from_json
 
 DECLINATION: float = 13.35  # From IGRF model hosted by NOAA NCEI
-NUM_SEGMENTS: int = 82
+NUM_SEGMENTS: int = 123
 TRUE_ARRAY_DEPTH: float = 216.0
 TRUE_DEPTH: float = 60.0
 
 # Define start/end times for resampling
 start = pd.to_datetime(pd.Timestamp(1996, 5, 10, 23, 30, 0))
-end = pd.to_datetime(pd.Timestamp(1996, 5, 11, 0, 0, 0))
+end = pd.to_datetime(pd.Timestamp(1996, 5, 11, 0, 15, 0))
 t = pd.date_range(start, end=end, periods=NUM_SEGMENTS)
 
 
