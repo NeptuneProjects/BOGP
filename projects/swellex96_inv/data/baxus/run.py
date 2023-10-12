@@ -154,7 +154,7 @@ def main():
                     # In this case, the Cholesky decomposition might fail due to numerical instabilities
                     # In this case, we revert to Adam-based optimization
                     print("    Model-fitting error; fitting with Adam.")
-                    optimizer = torch.optim.Adam(
+                    optimizer = torch.optim.AdamW(
                         [{"params": model.parameters()}], lr=0.1
                     )
 
@@ -228,7 +228,7 @@ def main():
             likelihood = GaussianLikelihood(noise_constraint=Interval(1e-8, 1e-3))
             model = SingleTaskGP(X_ei, train_Y, likelihood=likelihood)
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
-            optimizer = torch.optim.Adam([{"params": model.parameters()}], lr=0.1)
+            optimizer = torch.optim.AdamW([{"params": model.parameters()}], lr=0.1)
             model.train()
             model.likelihood.train()
             for _ in range(50):
