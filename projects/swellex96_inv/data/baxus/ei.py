@@ -100,7 +100,7 @@ def loop(
             X = torch.cat((X, candidate), axis=0)
             Y = torch.cat((Y, Y_next), axis=0)
 
-            times.append(time.time - start)
+            times.append(time.time() - start)
 
             # Print current status
             logging.info(f"Trial {len(X)} | Best value: {1 - Y.max().item():.3}")
