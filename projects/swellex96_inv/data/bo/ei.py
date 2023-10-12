@@ -104,5 +104,4 @@ def loop(
             logging.info(f"Trial {len(X)} | Best value: {1 - Y.max().item():.3}")
 
     logging.info(f"Complete; best parameters: {X[Y.argmax()]}")
-    print(times)
     return X, Y, times

@@ -84,6 +84,7 @@ def main(args) -> None:
 
         with open(args.dir / f"{serial_name}.json", "w") as f:
             json.dump(kwargs, f, indent=4)
+        
         np.savez(
             args.dir / serial_name,
             X=X,
