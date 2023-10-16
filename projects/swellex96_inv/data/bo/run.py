@@ -82,21 +82,24 @@ def main(args) -> None:
     for seed in seeds:
         serial_name = f"{args.optim}_{args.budget}-{args.init}_{seed:04d}"
         helpers.initialize_logger_file(args.dir / f"{serial_name}.log", logger, logfmt)
-        
+
         X, Y, times = loop(
-            objective=obj.objective, dtype=dtype, device=device, **{**kwargs | {"seed": seed}}
+            objective=obj.objective,
+            dtype=dtype,
+            device=device,
+            **{**kwargs | {"seed": seed}},
         )
 
         with open(args.dir / f"{serial_name}.json", "w") as f:
             json.dump(kwargs, f, indent=4)
-        
+
         np.savez(
             args.dir / serial_name,
             X=X.detach().cpu().numpy(),
             Y=Y.detach().cpu().numpy(),
             t=np.array(times),
         )
-        
+
         logger.handlers[1].stream.close()
         logger.removeHandler(logger.handlers[1])
         print("_" * 80)
