@@ -62,7 +62,7 @@ VARIABLES = {
 
 SEARCH_SPACE = [
         {"name": "rec_r", "type": "range", "bounds": [TRUE_R-0.25, TRUE_R + 0.25]},
-        {"name": "src_z", "type": "range", "bounds": [50.0, 70.0]},
+        {"name": "src_z", "type": "range", "bounds": [55.0, 65.0]},
         # {"name": "c1", "type": "range", "bounds": [1470.0, 1570.0]},
         {"name": "dc1", "type": "range", "bounds": [-10.0, 10.0]},
         {"name": "dc2", "type": "range", "bounds": [-30.0, 10.0]},
