@@ -84,7 +84,7 @@ def main(args) -> None:
         helpers.initialize_logger_file(args.dir / f"{serial_name}.log", logger, logfmt)
 
         X, Y, times = loop(
-            objective=obj.objective,
+            objective=obj.objective(simulate=args.simulate),
             dtype=dtype,
             device=device,
             **{**kwargs | {"seed": seed}},
@@ -149,6 +149,11 @@ if __name__ == "__main__":
         help="[BAxUS only] Specify number of dummy dimensions.",
         type=int,
         default=100,
+    )
+    parser.add_argument(
+        "--simulate",
+        help="Simulate the objective function.",
+        action="store_true",
     )
     args = parser.parse_args()
     main(args)

@@ -82,15 +82,16 @@ def format_ssp(z_data: np.ndarray, c_data: np.ndarray) -> tuple[np.ndarray, np.n
     # To be estimated:
     ind2 = np.argmin(np.abs(z_data - 5))
     z2, c2 = z_data[ind2], c_data[ind2]
-    ind3 = np.argmin(np.abs(z_data - 15))
-    z3, c3 = z_data[ind3], c_data[ind3]
+    # ind3 = np.argmin(np.abs(z_data - 15))
+    # z3, c3 = z_data[ind3], c_data[ind3]
     ind4 = np.argmin(np.abs(z_data - 30))
     z4, c4 = z_data[ind4], c_data[ind4]
     ind5 = np.argmin(np.abs(z_data - 60))
     z5, c5 = z_data[ind5], c_data[ind5]
     ind6 = np.argmin(np.abs(z_data - 100))
     z6, c6 = z_data[ind6], c_data[ind6]
-    return np.array([z1, z2, z3, z4, z5, z6]), np.array([c1, c2, c3, c4, c5, c6])
+    # return np.array([z1, z2, z3, z4, z5, z6]), np.array([c1, c2, c3, c4, c5, c6])
+    return np.array([z1, z2, z4, z5, z6]), np.array([c1, c2, c4, c5, c6])
 
     # ind2 = np.argmin(np.abs(z_data - 10))
     # z2, c2 = z_data[ind2], c_data[ind2]

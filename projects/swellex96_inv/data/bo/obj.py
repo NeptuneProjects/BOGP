@@ -10,6 +10,7 @@ import numpy as np
 from tritonoa.at.models.kraken.runner import run_kraken
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
+from tritonoa.sp.processing import simulate_covariance
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from conf import common
@@ -35,16 +36,29 @@ def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
     return np.array([(d["bounds"][0], d["bounds"][1]) for d in search_space])
 
 
-def get_objective() -> MatchedFieldProcessor:
+def get_objective(simulate: bool = True) -> MatchedFieldProcessor:
     base_env = utils.load_env_from_json(common.SWELLEX96Paths.simple_environment_data)
-    return MatchedFieldProcessor(
-        runner=run_kraken,
-        covariance_matrix=utils.load_covariance_matrices(
+    if simulate:
+        K = simulate_covariance(
+            runner=run_kraken,
+            parameters=base_env
+            | {
+                "rec_r": common.TRUE_R,
+                "src_z": common.TRUE_SRC_Z,
+                "tilt": common.TRUE_TILT,
+            },
+            freq=common.FREQ,
+        )
+    else:
+        K = utils.load_covariance_matrices(
             paths=utils.get_covariance_matrix_paths(
                 freq=common.FREQ, path=common.SWELLEX96Paths.acoustic_path
             ),
             index=common.TIME_STEP,
-        ),
+        )
+    return MatchedFieldProcessor(
+        runner=run_kraken,
+        covariance_matrix=K,
         freq=common.FREQ,
         parameters=base_env,
         parameter_formatter=formatter.format_parameters,
