@@ -20,26 +20,25 @@ from data import formatter
 sys.path.insert(0, str(Path(__file__).parents[3]))
 from optimization import utils
 
-SIMULATE = True
+SIMULATE = False
 NUM_POINTS = 51
 PLOT = True
 
 
 def compute_sensitivity():
     if SIMULATE:
-        env = utils.load_env_from_json(common.SWELLEX96Paths.simple_environment_data)
+        env = utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data)
         K = simulate_covariance(
             runner=run_kraken,
             parameters=env
             | {
-                "rec_r": common.TRUE_R,
-                "src_z": common.TRUE_SRC_Z,
-                "tilt": common.TRUE_TILT,
+                "rec_r": common.TRUE_VALUES["rec_r"],
+                "src_z": common.TRUE_VALUES["src_z"],
+                "tilt": common.TRUE_VALUES["tilt"],
             },
             freq=common.FREQ,
         )
     else:
-        env = utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data)
         K = utils.load_covariance_matrices(
             paths=utils.get_covariance_matrix_paths(
                 freq=common.FREQ, path=common.SWELLEX96Paths.acoustic_path
@@ -51,7 +50,9 @@ def compute_sensitivity():
         runner=run_kraken,
         covariance_matrix=K,
         freq=common.FREQ,
-        parameters=env,
+        parameters=utils.load_env_from_json(
+            common.SWELLEX96Paths.simple_environment_data
+        ),
         parameter_formatter=formatter.format_parameters,
         beamformer=partial(beamformer, atype="cbf_ml"),
         multifreq_method="product",
