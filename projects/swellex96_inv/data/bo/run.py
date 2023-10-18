@@ -28,6 +28,7 @@ warnings.filterwarnings(
     "ignore", message="A not p.d., added jitter of 1e-08 to the diagonal"
 )
 
+SMOKE_TEST = True
 TRUE_DIM = len(common.SEARCH_SPACE)
 
 
@@ -41,6 +42,15 @@ class Strategy(Enum):
 
     def __str__(self):
         return self.value
+
+
+def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
+    return np.array([(d["bounds"][0], d["bounds"][1]) for d in search_space])
+
+
+def transform_to_original_space(X: np.ndarray, search_space: list[dict]) -> np.ndarray:
+    bounds = get_bounds_from_search_space(search_space)
+    return bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * (X + 1) / 2
 
 
 def get_loop(
@@ -90,17 +100,29 @@ def main(args) -> None:
             device=device,
             **{**kwargs | {"seed": seed}},
         )
+        X, Y, times = (
+            X.detach().cpu().numpy(),
+            Y.detach().cpu().numpy(),
+            np.array(times),
+        )
 
         with open(args.dir / f"{serial_name}.json", "w") as f:
             json.dump(kwargs, f, indent=4)
 
         np.savez(
             args.dir / serial_name,
-            X=X.detach().cpu().numpy(),
-            Y=Y.detach().cpu().numpy(),
-            t=np.array(times),
+            X=X,
+            Y=Y,
+            t=times,
         )
 
+        best_params = X[np.argmin(Y, axis=0)]
+        best_params = transform_to_original_space(best_params, common.SEARCH_SPACE)
+        logger.info("Best parameters:")
+        logger.info(
+            "".join([f"{d['name']}: {v:.2f} | " for d, v in zip(common.SEARCH_SPACE, best_params.squeeze())])[:-3]
+        )
+        
         logger.handlers[1].stream.close()
         logger.removeHandler(logger.handlers[1])
         print("_" * 80)
@@ -113,25 +135,25 @@ if __name__ == "__main__":
         help="Choose an optimization strategy.",
         type=Strategy,
         choices=list(Strategy),
-        default="ei",
+        default="sobol" if SMOKE_TEST else "ei",
     )
     parser.add_argument(
         "--budget",
         help="Choose the total budget of trials (including warmup).",
         type=int,
-        default=500,
+        default=50 if SMOKE_TEST else 500,
     )
     parser.add_argument(
         "--init",
         help="Choose the number of warmup trials.",
         type=int,
-        default=200,
+        default=10 if SMOKE_TEST else 200,
     )
     parser.add_argument(
         "--runs",
         help="Specify the number of MC runs for each strategy.",
         type=int,
-        default=30,
+        default=1 if SMOKE_TEST else 30,
     )
     parser.add_argument(
         "--seed",
