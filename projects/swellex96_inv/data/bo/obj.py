@@ -37,7 +37,7 @@ def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
 
 
 def get_objective(simulate: bool = True) -> MatchedFieldProcessor:
-    base_env = utils.load_env_from_json(common.SWELLEX96Paths.simple_environment_data)
+    base_env = utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data)
     if simulate:
         K = simulate_covariance(
             runner=run_kraken,
