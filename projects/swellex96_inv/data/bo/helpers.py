@@ -34,3 +34,12 @@ def initialize_std_logger(logger: logging.Logger, logfmt: logging.Formatter) -> 
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(logfmt)
     logger.addHandler(ch)
+
+
+def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
+    return np.array([(d["bounds"][0], d["bounds"][1]) for d in search_space])
+
+
+def transform_to_original_space(X: np.ndarray, search_space: list[dict]) -> np.ndarray:
+    bounds = get_bounds_from_search_space(search_space)
+    return bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * (X + 1) / 2
