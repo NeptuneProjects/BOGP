@@ -64,20 +64,19 @@ def format_parameters(
 
     c1 = search_parameters.pop("c1", None)
     dc1 = search_parameters.pop("dc1", None)
-    # dc2 = search_parameters.pop("dc2", None)
+    dc2 = search_parameters.pop("dc2", None)
     dc3 = search_parameters.pop("dc3", None)
     dc4 = search_parameters.pop("dc4", None)
-    dc5 = search_parameters.pop("dc5", None)
+    # dc5 = search_parameters.pop("dc5", None)
 
     if c1 is None:
         c1 = fixed_parameters["layerdata"][0]["c_p"][0]
     c2 = c1 + dc1
-    # c3 = c2 + dc2
+    c3 = c2 + dc2
     c4 = c2 + dc3
     c5 = c4 + dc4
-    c6 = c5 + dc5
-    c7 = c6
-    c_p_values = [c1, c2, c4, c5, c6, c7]
+    c6 = c5
+    c_p_values = [c1, c2, c3, c4, c5, c6]
     fixed_parameters["layerdata"][0]["c_p"] = c_p_values
 
     # Adjust water depth and sound speed profile.
