@@ -28,23 +28,22 @@ if TIME_STEP == 20:
 if TIME_STEP == 50:
     TRUE_R = 4.15
     TRUE_SRC_Z = 66
-TRUE_TILT = 0.4
 TRUE_VALUES = {
     "rec_r": TRUE_R,
     "src_z": TRUE_SRC_Z,
     # "c1": 1522.0,
-    "dc1": -0.573,
-    # "dc2": -15.727,
-    "dc2": -26.103,
-    "dc3": -4.382,
-    "dc4": -2.508,
+    # "dc1": -0.573,
+    "dc2": -15.727,
+    "dc3": -10.376,
+    "dc4": -4.382,
+    "dc5": -2.508,
     "h_w": 217.0,
     # "h_s": 23.0,
     # "c_s": 1572.3,
     # "dcdz_s": 0.9,
     # "bot_c_p": 1572.3,
     # "bot_rho": 1.76,
-    "tilt": TRUE_TILT,
+    "tilt": 0.4,
 }
 
 VARIABLES = {
@@ -64,11 +63,11 @@ SEARCH_SPACE = [
         {"name": "rec_r", "type": "range", "bounds": [TRUE_R-0.25, TRUE_R + 0.25]},
         {"name": "src_z", "type": "range", "bounds": [55.0, 65.0]},
         # {"name": "c1", "type": "range", "bounds": [1470.0, 1570.0]},
-        {"name": "dc1", "type": "range", "bounds": [-10.0, 10.0]},
-        # {"name": "dc2", "type": "range", "bounds": [-30.0, 10.0]},
-        {"name": "dc2", "type": "range", "bounds": [-40.0, 10.0]},
-        {"name": "dc3", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "dc4", "type": "range", "bounds": [-5.0, 5.0]},
+        # {"name": "dc1", "type": "range", "bounds": [-10.0, 10.0]},
+        {"name": "dc2", "type": "range", "bounds": [-40.0, 0.0]},
+        {"name": "dc3", "type": "range", "bounds": [-20.0, 0.0]},
+        {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
+        {"name": "dc5", "type": "range", "bounds": [-5.0, 5.0]},
         # {"name": "h_w", "type": "range", "bounds": [TRUE_VALUES["h_w"] - 3.0, TRUE_VALUES["h_w"] + 3.0]},
         # {"name": "h_s", "type": "range", "bounds": [1.0, 100.0]},
         # {"name": "bot_c_p", "type": "range", "bounds": [1560.0, 1600.0]},

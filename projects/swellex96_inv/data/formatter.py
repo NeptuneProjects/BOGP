@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 
+import matplotlib.pyplot as plt
 import numpy as np
 from scipy.interpolate import CubicSpline
 
@@ -39,21 +40,24 @@ def update_sediment(dz: float, z_values: list) -> list:
 
 
 def update_ssp(data: dict) -> dict:
-    # z = data["z"]
-    # c = data["c_p"]
-    # assert len(z) == len(c)
-    # cs = CubicSpline(z, c, bc_type="clamped")
+    z = data["z"]
+    c = data["c_p"]
+    assert len(z) == len(c)
+    cs = CubicSpline(z, c, bc_type="clamped")
 
-    # # zs = np.linspace(z[0], z[-1], 100)
-    # # data["z"] = zs.tolist()
-    # # data["c_p"] = cs(zs).tolist()
+    # zs = np.linspace(z[0], z[-1], 100)
+    # data["z"] = zs.tolist()
+    # data["c_p"] = cs(zs).tolist()
     
-    # zs = np.linspace(z[1], z[-2], 50).tolist()
-    # z = [z[0]] + zs + [z[-1]]
-    # c = [c[0]] + cs(zs).tolist() + [c[-1]]
-    # data["z"] = z
-    # data["c_p"] = c
+    zs = np.linspace(z[1], z[-2], 50).tolist()
+    z = [z[0]] + zs + [z[-1]]
+    c = [c[0]] + cs(zs).tolist() + [c[-1]]
+    data["z"] = z
+    data["c_p"] = c
 
+    # plt.plot(c, z, "ko-")
+    # plt.gca().invert_yaxis()
+    # plt.show()
     # np.save("ssp.npy", data)
     return data
 
@@ -63,20 +67,22 @@ def format_parameters(
 ) -> dict:
 
     c1 = search_parameters.pop("c1", None)
-    dc1 = search_parameters.pop("dc1", None)
+    # dc1 = search_parameters.pop("dc1", None)
     dc2 = search_parameters.pop("dc2", None)
     dc3 = search_parameters.pop("dc3", None)
     dc4 = search_parameters.pop("dc4", None)
-    # dc5 = search_parameters.pop("dc5", None)
+    dc5 = search_parameters.pop("dc5", None)
 
     if c1 is None:
         c1 = fixed_parameters["layerdata"][0]["c_p"][0]
-    c2 = c1 + dc1
+    c2 = c1
+    # c2 = c1 + dc1
     c3 = c2 + dc2
-    c4 = c2 + dc3
+    c4 = c3 + dc3
     c5 = c4 + dc4
-    c6 = c5
-    c_p_values = [c1, c2, c3, c4, c5, c6]
+    c6 = c5 + dc5
+    c7 = c6
+    c_p_values = [c1, c2, c3, c4, c5, c6, c7]
     fixed_parameters["layerdata"][0]["c_p"] = c_p_values
 
     # Adjust water depth and sound speed profile.
