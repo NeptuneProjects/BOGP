@@ -124,7 +124,7 @@ if __name__ == "__main__":
         "--init",
         help="Choose the number of warmup trials.",
         type=int,
-        default=100,
+        default=200,
     )
     parser.add_argument(
         "--runs",
