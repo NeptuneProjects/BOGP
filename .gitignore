@@ -173,3 +173,4 @@ deprecated/
 outputs/
 tests/
 **/*/notebooks/
+*.png
