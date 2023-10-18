@@ -28,7 +28,7 @@ warnings.filterwarnings(
     "ignore", message="A not p.d., added jitter of 1e-08 to the diagonal"
 )
 
-SMOKE_TEST = True
+SMOKE_TEST = False
 TRUE_DIM = len(common.SEARCH_SPACE)
 
 
