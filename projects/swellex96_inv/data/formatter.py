@@ -73,17 +73,17 @@ def format_parameters(
     dc4 = search_parameters.pop("dc4", None)
     dc5 = search_parameters.pop("dc5", None)
 
-    if c1 is None:
-        c1 = fixed_parameters["layerdata"][0]["c_p"][0]
-    c2 = c1
-    # c2 = c1 + dc1
-    c3 = c2 + dc2
-    c4 = c3 + dc3
-    c5 = c4 + dc4
-    c6 = c5 + dc5
-    c7 = c6
-    c_p_values = [c1, c2, c3, c4, c5, c6, c7]
-    fixed_parameters["layerdata"][0]["c_p"] = c_p_values
+    # if c1 is None:
+    #     c1 = fixed_parameters["layerdata"][0]["c_p"][0]
+    # c2 = c1
+    # # c2 = c1 + dc1
+    # c3 = c2 + dc2
+    # c4 = c3 + dc3
+    # c5 = c4 + dc4
+    # c6 = c5 + dc5
+    # c7 = c6
+    # c_p_values = [c1, c2, c3, c4, c5, c6, c7]
+    # fixed_parameters["layerdata"][0]["c_p"] = c_p_values
 
     # Adjust water depth and sound speed profile.
     h_w = search_parameters.pop("h_w", None)
@@ -146,7 +146,7 @@ def format_parameters(
     # fixed_parameters["layerdata"][1] = sediment_data
 
     # Interpolate SSP using cubic spline
-    new_water_data = update_ssp(fixed_parameters["layerdata"][0])
-    fixed_parameters["layerdata"][0] = new_water_data
+    # new_water_data = update_ssp(fixed_parameters["layerdata"][0])
+    # fixed_parameters["layerdata"][0] = new_water_data
 
     return fixed_parameters | {"freq": freq, "title": title} | search_parameters

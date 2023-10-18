@@ -60,20 +60,20 @@ VARIABLES = {
 }
 
 SEARCH_SPACE = [
-        # {"name": "rec_r", "type": "range", "bounds": [TRUE_R-0.25, TRUE_R + 0.25]},
-        # {"name": "src_z", "type": "range", "bounds": [55.0, 65.0]},
+        {"name": "rec_r", "type": "range", "bounds": [TRUE_R-0.25, TRUE_R + 0.25]},
+        {"name": "src_z", "type": "range", "bounds": [55.0, 65.0]},
         # {"name": "c1", "type": "range", "bounds": [1470.0, 1570.0]},
         # {"name": "dc1", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "dc2", "type": "range", "bounds": [-40.0, 0.0]},
-        {"name": "dc3", "type": "range", "bounds": [-20.0, 0.0]},
-        {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "dc5", "type": "range", "bounds": [-5.0, 5.0]},
+        # {"name": "dc2", "type": "range", "bounds": [-40.0, 0.0]},
+        # {"name": "dc3", "type": "range", "bounds": [-20.0, 0.0]},
+        # {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
+        # {"name": "dc5", "type": "range", "bounds": [-5.0, 5.0]},
         # {"name": "h_w", "type": "range", "bounds": [TRUE_VALUES["h_w"] - 3.0, TRUE_VALUES["h_w"] + 3.0]},
         # {"name": "h_s", "type": "range", "bounds": [1.0, 100.0]},
         # {"name": "bot_c_p", "type": "range", "bounds": [1560.0, 1600.0]},
         # {"name": "bot_rho", "type": "range", "bounds": [1.0, 3.0]},
         # {"name": "dcdz_s", "type": "range", "bounds": [0.0, 3.0]},
-        # {"name": "tilt", "type": "range", "bounds": [-2.0, 2.0]},
+        {"name": "tilt", "type": "range", "bounds": [-2.0, 2.0]},
     ]
 
 @dataclass(frozen=True)
