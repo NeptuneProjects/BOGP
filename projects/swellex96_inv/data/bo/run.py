@@ -14,7 +14,7 @@ import warnings
 
 import numpy as np
 
-import baxus, ei, gibbon, helpers, obj, pi, sobol, ucb
+import baxus, ei, gibbon, helpers, obj, pi, sobol, ucb, grid
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from conf import common
@@ -39,6 +39,7 @@ class Strategy(Enum):
     PI = "pi"
     SOBOL = "sobol"
     UCB = "ucb"
+    GRID = "grid"
 
     def __str__(self):
         return self.value
@@ -67,6 +68,9 @@ def get_loop(
     if optim == Strategy.UCB:
         loop = ucb.loop
         kwargs = ucb.UCBLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init, beta=beta)
+    if optim == Strategy.GRID:
+        loop = grid.loop
+        kwargs = grid.GridLoopArgs(dim=TRUE_DIM, budget=budget)
     return loop, asdict(kwargs)
 
 
@@ -117,6 +121,9 @@ def main(args) -> None:
         logger.handlers[1].stream.close()
         logger.removeHandler(logger.handlers[1])
         print("_" * 80)
+
+        if args.optim == Strategy.GRID:
+            break
 
 
 if __name__ == "__main__":
