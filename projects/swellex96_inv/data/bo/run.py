@@ -44,15 +44,6 @@ class Strategy(Enum):
         return self.value
 
 
-def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
-    return np.array([(d["bounds"][0], d["bounds"][1]) for d in search_space])
-
-
-def transform_to_original_space(X: np.ndarray, search_space: list[dict]) -> np.ndarray:
-    bounds = get_bounds_from_search_space(search_space)
-    return bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * (X + 1) / 2
-
-
 def get_loop(
     optim: Strategy, dummy_dim: int, budget: int, n_init: int, beta: float
 ) -> tuple[callable, dict]:
@@ -117,7 +108,7 @@ def main(args) -> None:
         )
 
         best_params = X[np.argmin(Y, axis=0)]
-        best_params = transform_to_original_space(best_params, common.SEARCH_SPACE)
+        best_params = helpers.transform_to_original_space(best_params, common.SEARCH_SPACE)
         logger.info("Best parameters:")
         logger.info(
             "".join([f"{d['name']}: {v:.2f} | " for d, v in zip(common.SEARCH_SPACE, best_params.squeeze())])[:-3]
