@@ -55,50 +55,31 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(f"Using device: {device}")
 
 
-class qGIBBON(qLowerBoundMaxValueEntropy):
-    ...
-
-
-@acqf_input_constructor(qGIBBON)
-def construct_inputs_qGIBBON(
+@acqf_input_constructor(qLowerBoundMaxValueEntropy)
+def construct_inputs_qLBMES(
     model: Model,
     training_data: MaybeDict[SupervisedDataset],
     bounds: list[tuple[float, float]],
-    objective: Optional[MCAcquisitionObjective] = None,
-    posterior_transform: Optional[PosteriorTransform] = None,
     candidate_size: int = 1000,
-    **kwargs: Any,
+    maximize: bool = True,
+    # TODO: qMES also supports other inputs, such as num_fantasies
 ) -> dict[str, Any]:
-    r"""Construct kwargs for `qMaxValueEntropy` constructor."""
-    inputs_mc = _construct_inputs_mc_base(
-        model=model,
-        objective=objective,
-    )
+    r"""Construct kwargs for `qLowerBoundMaxValueEntropy` constructor."""
 
     X = _get_dataset_field(training_data, "X", first_only=True)
     _kw = {"device": X.device, "dtype": X.dtype}
     _rvs = torch.rand(candidate_size, len(bounds), **_kw)
     _bounds = torch.tensor(bounds, **_kw).transpose(0, 1)
     return {
-        **inputs_mc,
+        "model": model,
         "candidate_set": _bounds[0] + (_bounds[1] - _bounds[0]) * _rvs,
-        "maximize": kwargs.get("maximize", True),
+        "maximize": maximize,
     }
-
-
-# 2. Register default optimizer options
-@optimizer_argparse.register(qGIBBON)
-def _argparse_my_acqf(
-    acqf: qGIBBON, sequential: bool = True
-) -> dict:
-    return {
-        "sequential": sequential
-    }  # default to sequentially optimizing batches of queries
 
 
 def main():
     time_step = 20
-    base_env = utils.load_env_from_json(common.SWELLEX96Paths.environment_data)
+    base_env = utils.load_env_from_json(common.SWELLEX96Paths.simple_environment_data)
 
     processor = MatchedFieldProcessor(
         runner=run_kraken,
@@ -124,20 +105,20 @@ def main():
     search_space = [
         range_space,
         {"name": "src_z", "type": "range", "bounds": [40.0, 80.0]},
-        {"name": "c1", "type": "range", "bounds": [1500.0, 1550.0]},
+        # {"name": "c1", "type": "range", "bounds": [1500.0, 1550.0]},
         {"name": "dc1", "type": "range", "bounds": [-40.0, 40.0]},
         {"name": "dc2", "type": "range", "bounds": [-10.0, 10.0]},
         {"name": "dc3", "type": "range", "bounds": [-5.0, 5.0]},
         {"name": "dc4", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc5", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc6", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc7", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc8", "type": "range", "bounds": [-5.0, 5.0]},
-        {"name": "dc9", "type": "range", "bounds": [-5.0, 5.0]},
+        # {"name": "dc5", "type": "range", "bounds": [-5.0, 5.0]},
+        # {"name": "dc6", "type": "range", "bounds": [-5.0, 5.0]},
+        # {"name": "dc7", "type": "range", "bounds": [-5.0, 5.0]},
+        # {"name": "dc8", "type": "range", "bounds": [-5.0, 5.0]},
+        # {"name": "dc9", "type": "range", "bounds": [-5.0, 5.0]},
         # {"name": "dc10", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "h_w", "type": "range", "bounds": [200.0, 240.0]},
+        # {"name": "h_w", "type": "range", "bounds": [200.0, 240.0]},
         # {"name": "h_s", "type": "range", "bounds": [1.0, 100.0]},
-        {"name": "bot_c_p", "type": "range", "bounds": [1500.0, 1700.0]},
+        # {"name": "bot_c_p", "type": "range", "bounds": [1500.0, 1700.0]},
         # {"name": "bot_rho", "type": "range", "bounds": [1.0, 3.0]},
         # {"name": "dcdz_s", "type": "range", "bounds": [0.0, 3.0]},
         {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
@@ -171,7 +152,7 @@ def main():
                         mll_class=ExactMarginalLogLikelihood,
                     ),
                     # "botorch_acqf_class": qMaxValueEntropy,
-                    "botorch_acqf_class": qGIBBON,
+                    "botorch_acqf_class": qLowerBoundMaxValueEntropy,
                     "torch_device": device,
                 },
                 model_gen_kwargs={
