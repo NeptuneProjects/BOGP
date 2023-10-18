@@ -4,6 +4,7 @@
 import argparse
 from dataclasses import asdict
 from enum import Enum
+from functools import partial
 import json
 import logging
 from pathlib import Path
@@ -84,7 +85,7 @@ def main(args) -> None:
         helpers.initialize_logger_file(args.dir / f"{serial_name}.log", logger, logfmt)
 
         X, Y, times = loop(
-            objective=obj.objective(simulate=args.simulate),
+            objective=partial(obj.objective, simulate=args.simulate),
             dtype=dtype,
             device=device,
             **{**kwargs | {"seed": seed}},
