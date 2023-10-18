@@ -135,7 +135,7 @@ if __name__ == "__main__":
         help="Choose an optimization strategy.",
         type=Strategy,
         choices=list(Strategy),
-        default="sobol" if SMOKE_TEST else "ucb",
+        default="sobol" if SMOKE_TEST else "ei",
     )
     parser.add_argument(
         "--budget",
