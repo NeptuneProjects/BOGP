@@ -27,6 +27,7 @@ class UCBLoopArgs:
     num_restarts: int = 40
     raw_samples: int = 1024
     seed: int = 0
+    beta: float = 1.0
 
 
 def loop(
@@ -39,6 +40,7 @@ def loop(
     num_restarts,
     raw_samples,
     seed: int = 0,
+    beta: float = 1.0,
     *args,
     **kwargs,
 ) -> tuple[torch.tensor, torch.tensor]:
@@ -77,7 +79,7 @@ def loop(
                 optimizer.step()
 
             # Create a batch
-            ucb = UpperConfidenceBound(model)
+            ucb = UpperConfidenceBound(model, beta)
             candidate, acq_value = optimize_acqf(
                 ucb,
                 bounds=torch.stack(

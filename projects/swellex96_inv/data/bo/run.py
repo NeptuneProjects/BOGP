@@ -54,7 +54,7 @@ def transform_to_original_space(X: np.ndarray, search_space: list[dict]) -> np.n
 
 
 def get_loop(
-    optim: Strategy, dummy_dim: int, budget: int, n_init: int
+    optim: Strategy, dummy_dim: int, budget: int, n_init: int, beta: float
 ) -> tuple[callable, dict]:
     if optim == Strategy.BAXUS:
         loop = baxus.loop
@@ -75,13 +75,13 @@ def get_loop(
         kwargs = sobol.SobolLoopArgs(dim=TRUE_DIM, budget=budget)
     if optim == Strategy.UCB:
         loop = ucb.loop
-        kwargs = ucb.UCBLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
+        kwargs = ucb.UCBLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init, beta=beta)
     return loop, asdict(kwargs)
 
 
 def main(args) -> None:
     loop, kwargs = get_loop(
-        args.optim, dummy_dim=args.ndummy, budget=args.budget, n_init=args.init
+        args.optim, dummy_dim=args.ndummy, budget=args.budget, n_init=args.init, beta=args.beta
     )
     dtype = kwargs.pop("dtype", None)
     device = kwargs.pop("device", None)
@@ -135,7 +135,7 @@ if __name__ == "__main__":
         help="Choose an optimization strategy.",
         type=Strategy,
         choices=list(Strategy),
-        default="sobol" if SMOKE_TEST else "ei",
+        default="sobol" if SMOKE_TEST else "ucb",
     )
     parser.add_argument(
         "--budget",
@@ -172,6 +172,12 @@ if __name__ == "__main__":
         help="[BAxUS only] Specify number of dummy dimensions.",
         type=int,
         default=100,
+    )
+    parser.add_argument(
+        "--beta",
+        help="[UCB only] Specify beta for exploration/exploitation.",
+        type=float,
+        default=1.0,
     )
     parser.add_argument(
         "--simulate",
