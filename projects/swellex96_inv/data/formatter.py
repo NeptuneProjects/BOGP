@@ -40,20 +40,20 @@ def update_sediment(dz: float, z_values: list) -> list:
 
 
 def update_ssp(data: dict) -> dict:
-    z = data["z"]
-    c = data["c_p"]
-    assert len(z) == len(c)
-    cs = CubicSpline(z, c, bc_type="clamped")
+    # z = data["z"]
+    # c = data["c_p"]
+    # assert len(z) == len(c)
+    # cs = CubicSpline(z, c, bc_type="clamped")
 
-    # zs = np.linspace(z[0], z[-1], 100)
-    # data["z"] = zs.tolist()
-    # data["c_p"] = cs(zs).tolist()
+    # # zs = np.linspace(z[0], z[-1], 100)
+    # # data["z"] = zs.tolist()
+    # # data["c_p"] = cs(zs).tolist()
     
-    zs = np.linspace(z[1], z[-2], 50).tolist()
-    z = [z[0]] + zs + [z[-1]]
-    c = [c[0]] + cs(zs).tolist() + [c[-1]]
-    data["z"] = z
-    data["c_p"] = c
+    # zs = np.linspace(z[1], z[-2], 50).tolist()
+    # z = [z[0]] + zs + [z[-1]]
+    # c = [c[0]] + cs(zs).tolist() + [c[-1]]
+    # data["z"] = z
+    # data["c_p"] = c
 
     # plt.plot(c, z, "ko-")
     # plt.gca().invert_yaxis()
