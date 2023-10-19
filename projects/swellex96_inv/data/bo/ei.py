@@ -40,7 +40,7 @@ def loop(
     seed: int = 0,
     *args,
     **kwargs,
-) -> tuple[torch.tensor, torch.tensor]:
+) -> tuple[torch.tensor, torch.tensor, list[float]]:
     logging.info(f"Running GP/EI on {device.type.upper()}.")
 
     start = time.time()
