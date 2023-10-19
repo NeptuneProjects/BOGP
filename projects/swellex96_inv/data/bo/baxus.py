@@ -3,6 +3,7 @@
 from dataclasses import dataclass, field
 import logging
 import math
+import time
 from typing import Optional
 import warnings
 
@@ -22,7 +23,7 @@ import numpy as np
 import torch
 from torch.quasirandom import SobolEngine
 
-import helpers
+import common, helpers
 
 MAX_CHOLESKY_SIZE = float("inf")  # Always use Cholesky
 
@@ -272,29 +273,37 @@ def loop(
     seed: int = 0,
     *args,
     **kwargs,
-)  -> tuple[torch.tensor, torch.tensor]:
+) -> tuple[torch.tensor, torch.tensor, list[float]]:
     logging.info(f"Running BAxUS on {device}")
     state = BaxusState(dim=dim, eval_budget=budget - n_init)
     S = embedding_matrix(
         input_dim=state.dim, target_dim=state.d_init, dtype=dtype, device=device
     )
 
+    start = time.time()
+
     X_target = helpers.get_initial_points(state.d_init, n_init, dtype, device, seed)
     X_input = X_target @ S
-    Y = torch.tensor(
+    Y = -torch.tensor(
         objective(X_input.detach().cpu().numpy(), true_dim=true_dim),
         dtype=dtype,
         device=device,
     )
 
-    logging.info(
-        f"{n_init} warmup trials complete. | Best value: {1 - Y.max().item():.3}"
+    stop = time.time() - start
+    times = [stop / n_init for _ in range(n_init)]
+
+    logging.info(f"{n_init} warmup trials complete.")
+    helpers.log_best_value_and_parameters(
+        X_input[:, :true_dim].detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
     )
     logging.info("Commencing Bayesian optimization.")
 
     # Disable input scaling checks as we normalize to [-1, 1]
     with botorch.settings.validate_input_scaling(False):
         for _ in range(budget - n_init):  # Run until evaluation budget depleted
+            start = time.time()
+
             # Fit a GP model
             train_Y = (Y - Y.mean()) / Y.std()
             likelihood = GaussianLikelihood(noise_constraint=Interval(1e-8, 1e-3))
@@ -367,7 +376,7 @@ def loop(
             # Y_next = torch.tensor(
             #     [branin_emb(x) for x in X_next_input], dtype=DTYPE, device=DEVICE
             # ).unsqueeze(-1)
-            Y_next = torch.tensor(
+            Y_next = -torch.tensor(
                 objective(X_next_input.detach().cpu().numpy(), true_dim=true_dim),
                 dtype=dtype,
                 device=device,
@@ -381,9 +390,19 @@ def loop(
             X_target = torch.cat((X_target, X_next_target), dim=0)
             Y = torch.cat((Y, Y_next), dim=0)
 
+            times.append(time.time() - start)
+
             # Print current status
+            print("-" * 100)
+            logging.info(f"BAxUS | Trial {len(X_input)}")
+            helpers.log_current_value_and_parameters(
+                X_input[:, :true_dim].detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
+            )
+            helpers.log_best_value_and_parameters(
+                X_input[:, :true_dim].detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
+            )
             logging.info(
-                f"Trial {len(X_input)} | d={len(X_target.T)} | Best value: {1 - state.best_value:.3} | TR length: {state.length:.3}"
+                f"Dim: {len(X_target.T)} | TR length: {state.length:.3}"
             )
 
             if state.restart_triggered:
@@ -399,4 +418,4 @@ def loop(
                 state.success_counter = 0
 
     logging.info(f"Complete.")
-    return X_input, Y
+    return X_input[:, :true_dim], -Y, times
