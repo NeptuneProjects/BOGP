@@ -32,12 +32,12 @@ TRUE_VALUES = {
     "rec_r": TRUE_R,
     "src_z": TRUE_SRC_Z,
     # "c1": 1522.0,
-    # "dc1": -0.573,
+    "dc1": -0.573,
     "dc2": -15.727,
     "dc3": -10.376,
     "dc4": -4.382,
     "dc5": -2.508,
-    "h_w": 217.0,
+    # "h_w": 217.0,
     # "h_s": 23.0,
     # "c_s": 1572.3,
     # "dcdz_s": 0.9,
@@ -73,7 +73,7 @@ SEARCH_SPACE = [
         # {"name": "bot_c_p", "type": "range", "bounds": [1560.0, 1600.0]},
         # {"name": "bot_rho", "type": "range", "bounds": [1.0, 3.0]},
         # {"name": "dcdz_s", "type": "range", "bounds": [0.0, 3.0]},
-        {"name": "tilt", "type": "range", "bounds": [-2.0, 2.0]},
+        # {"name": "tilt", "type": "range", "bounds": [-2.0, 2.0]},
     ]
 
 @dataclass(frozen=True)
