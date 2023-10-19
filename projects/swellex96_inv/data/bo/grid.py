@@ -32,5 +32,4 @@ def loop(
     end = time.time() - start
     times = [(i + 1) * end / len(X) for i in range(len(X))]
 
-    logging.info(f"Trial {len(X)} | Best value: {1 - Y.max().item():.3}")
     return X, Y, times

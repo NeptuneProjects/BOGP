@@ -13,12 +13,13 @@ from tritonoa.sp.mfp import MatchedFieldProcessor
 from tritonoa.sp.processing import simulate_covariance
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
-from conf import common
+# from conf import common
 from data import formatter
 
 sys.path.insert(0, str(Path(__file__).parents[4]))
 from optimization import utils
 
+import common
 
 def convert_tensor_to_parameters(x: np.ndarray) -> dict:
     return [
@@ -28,8 +29,7 @@ def convert_tensor_to_parameters(x: np.ndarray) -> dict:
 
 def evaluate_objective(objective: callable, parameters: list[dict]) -> list[float]:
     with ThreadPoolExecutor(max_workers=min(len(parameters), 64)) as executor:
-        results = executor.map(objective, parameters)
-    return [1 - result for result in results]
+        return list(executor.map(objective, parameters))
 
 
 def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
@@ -37,7 +37,6 @@ def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
 
 
 def get_objective(simulate: bool = True) -> MatchedFieldProcessor:
-    base_env = utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data)
     if simulate:
         K = simulate_covariance(
             runner=run_kraken,
@@ -60,7 +59,7 @@ def get_objective(simulate: bool = True) -> MatchedFieldProcessor:
         runner=run_kraken,
         covariance_matrix=K,
         freq=common.FREQ,
-        parameters=base_env,
+        parameters=utils.load_env_from_json(common.SWELLEX96Paths.simple_environment_data),
         parameter_formatter=formatter.format_parameters,
         beamformer=partial(beamformer, atype="cbf_ml"),
         multifreq_method="product",

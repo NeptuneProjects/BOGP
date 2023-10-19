@@ -27,10 +27,9 @@ PLOT = True
 
 def compute_sensitivity():
     if SIMULATE:
-        env = utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data)
         K = simulate_covariance(
             runner=run_kraken,
-            parameters=env
+            parameters=utils.load_env_from_json(common.SWELLEX96Paths.simple_environment_data)
             | {
                 "rec_r": common.TRUE_VALUES["rec_r"],
                 "src_z": common.TRUE_VALUES["src_z"],

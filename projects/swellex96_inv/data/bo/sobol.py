@@ -43,7 +43,4 @@ def loop(
     stop = time.time() - start
     times = [stop / budget for _ in range(budget)]
 
-    logging.info(
-        f"{budget} Sobol trials complete. | Best value: {1 - Y.max().item():.3}"
-    )
     return X, Y, times

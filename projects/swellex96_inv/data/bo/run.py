@@ -12,12 +12,13 @@ import random
 import sys
 import warnings
 
+import matplotlib.pyplot as plt
 import numpy as np
 
-import baxus, ei, gibbon, helpers, obj, pi, sobol, ucb, grid
+import baxus, ei, gibbon, helpers, obj, pi, sobol, ucb, grid, common
 
-sys.path.insert(0, str(Path(__file__).parents[2]))
-from conf import common
+# sys.path.insert(0, str(Path(__file__).parents[2]))
+# from conf import common
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -84,7 +85,7 @@ def main(args) -> None:
     random.seed(args.seed)
     seeds = helpers.get_random_seeds(args.runs)
 
-    print("_" * 80)
+    print("=" * 100)
     for seed in seeds:
         serial_name = f"{args.optim}_{args.budget}-{args.init}_{seed:04d}"
         helpers.initialize_logger_file(args.dir / f"{serial_name}.log", logger, logfmt)
@@ -111,16 +112,17 @@ def main(args) -> None:
             t=times,
         )
 
-        best_params = X[np.argmin(Y, axis=0)]
-        best_params = helpers.transform_to_original_space(best_params, common.SEARCH_SPACE)
-        logger.info("Best parameters:")
-        logger.info(
-            "".join([f"{d['name']}: {v:.2f} | " for d, v in zip(common.SEARCH_SPACE, best_params.squeeze())])[:-3]
-        )
+        print("-" * 100)
+        logger.info("*** Optimization complete. ***")
+        helpers.log_best_value_and_parameters(X, Y, common.SEARCH_SPACE)
+        # logger.info("Best parameters:")
+        # logger.info(
+        #     "".join([f"{d['name']}: {v:.2f} | " for d, v in zip(common.SEARCH_SPACE, best_params.squeeze())])[:-3]
+        # )
         
         logger.handlers[1].stream.close()
         logger.removeHandler(logger.handlers[1])
-        print("_" * 80)
+        print("=" * 100)
 
         if args.optim == Strategy.GRID:
             break

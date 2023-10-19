@@ -2,6 +2,7 @@
 
 import logging
 from pathlib import Path
+from typing import Optional
 
 import numpy as np
 import torch
@@ -43,3 +44,41 @@ def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
 def transform_to_original_space(X: np.ndarray, search_space: list[dict]) -> np.ndarray:
     bounds = get_bounds_from_search_space(search_space)
     return bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * (X + 1) / 2
+
+
+def get_best_params(X: np.ndarray, Y: np.ndarray, search_space: dict) -> np.ndarray:
+    best_params = X[np.argmin(Y, axis=0)]
+    return transform_to_original_space(
+        best_params, search_space
+    )
+
+
+def log_current_value_and_parameters(X: np.ndarray, Y: np.ndarray, search_space: dict, strategy: Optional[str] = None) -> None:
+    logging.info(
+        f"[Current] Value: {Y[-1].item():.5f} | Parameters: "
+        + "".join(
+            [
+                f"{d['name']}: {v:.2f} | "
+                for d, v in zip(
+                    search_space,
+                    transform_to_original_space(
+                        X[-1], search_space
+                    ).squeeze(),
+                )
+            ]
+        )[:-3]
+    )
+
+def log_best_value_and_parameters(X: np.ndarray, Y: np.ndarray, search_space: dict) -> None:
+    best_params = get_best_params(
+        X, Y, search_space
+    )
+    logging.info(
+        f"   [Best] Value: {Y.min().item():.5f} | Parameters: "
+        + "".join(
+            [
+                f"{d['name']}: {v:.2f} | "
+                for d, v in zip(search_space, best_params.squeeze())
+            ]
+        )[:-3]
+    )

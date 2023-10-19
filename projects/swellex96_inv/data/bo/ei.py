@@ -13,7 +13,7 @@ from gpytorch.likelihoods import GaussianLikelihood
 from gpytorch.mlls import ExactMarginalLogLikelihood
 import torch
 
-import helpers
+import common, helpers
 
 
 @dataclass
@@ -42,17 +42,18 @@ def loop(
     **kwargs,
 ) -> tuple[torch.tensor, torch.tensor]:
     logging.info(f"Running GP/EI on {device.type.upper()}.")
-    
+
     start = time.time()
-    
+
     X = helpers.get_initial_points(dim, n_init, dtype, device, seed)
-    Y = torch.tensor(objective(X.detach().cpu().numpy()), dtype=dtype, device=device)
+    Y = -torch.tensor(objective(X.detach().cpu().numpy()), dtype=dtype, device=device)
 
     stop = time.time() - start
     times = [stop / n_init for _ in range(n_init)]
-    
-    logging.info(
-        f"{n_init} warmup trials complete. | Best value: {1 - Y.max().item():.3}"
+
+    logging.info(f"{n_init} warmup trials complete.")
+    helpers.log_best_value_and_parameters(
+        X.detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
     )
     logging.info("Commencing Bayesian optimization.")
 
@@ -77,7 +78,7 @@ def loop(
 
             # Create a batch
             ei = ExpectedImprovement(model, train_Y.max())
-            candidate, acq_value = optimize_acqf(
+            candidate, _ = optimize_acqf(
                 ei,
                 bounds=torch.stack(
                     [
@@ -89,7 +90,7 @@ def loop(
                 num_restarts=num_restarts,
                 raw_samples=raw_samples,
             )
-            Y_next = torch.tensor(
+            Y_next = -torch.tensor(
                 objective(candidate.detach().cpu().numpy()),
                 dtype=dtype,
                 device=device,
@@ -102,7 +103,13 @@ def loop(
             times.append(time.time() - start)
 
             # Print current status
-            logging.info(f"Trial {len(X)} | Best value: {1 - Y.max().item():.3}")
+            print("-" * 100)
+            logging.info(f"GP/EI | Trial {len(X)}")
+            helpers.log_current_value_and_parameters(
+                X.detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
+            )
+            helpers.log_best_value_and_parameters(
+                X.detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
+            )
 
-    logging.info(f"Complete; best parameters: {X[Y.argmax()]}")
-    return X, Y, times
+    return X, -Y, times
