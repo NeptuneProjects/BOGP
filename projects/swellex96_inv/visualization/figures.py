@@ -31,10 +31,19 @@ def get_concat_h(im1, im2, im3):
     dst.paste(im3, (im1.width + im2.width + 2 * h_pad, 0))
     return dst
 
-def figure02():
+
+def figure01():
+    import sobol_demo
+    sobol_demo.sample_comparison().savefig(savepath / "figure01.pdf", bbox_inches="tight", dpi=1000)
+
+
+def figure03():
     images = [Image.open(x) for x in ["environment.png", "sensitivity_sim.png", "sensitivity_exp.png"]]
-    get_concat_h(images[0], images[1], images[2]).save(savepath / "figure02.pdf", "PDF", resolution=1000)
-    
+    get_concat_h(images[0], images[1], images[2]).save(savepath / "figure03.pdf", "PDF", resolution=1000)
+
+
+
 
 if __name__ == "__main__":
-    figure02()
+    figure01()
+    # figure03()

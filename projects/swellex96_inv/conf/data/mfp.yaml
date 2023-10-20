@@ -6,7 +6,8 @@ paths:
   range_path: ${paths.data_path}/gps/source_tow.csv
   mfp_path: ${paths.data_path}/acoustic/processed_001/ambiguity_surfaces
   covariance_path: ${paths.data_path}/acoustic/processed_001
-frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
+# frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
+frequencies: [201, 235, 283, 338, 388]
 max_workers: 2
 parameters:
   indexed:

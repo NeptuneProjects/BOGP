@@ -12,38 +12,47 @@ FREQ = [
     # 112.0,
     # 130.0,
     148.0,
-    166.0,
+    # 166.0,
     201.0,
     # 235.0,
-    # 283.0,
+    283.0,
     # 338.0,
-    # 388.0,
+    388.0,
 ]
 SWELLEX96PATH = Path("../data/swellex96_S5_VLA_inv")
 
-TIME_STEP = 20
+TIME_STEP = 121
 if TIME_STEP == 20:
     TRUE_R = 5.87
     TRUE_SRC_Z = 59.0
+    TILT = 0.5
+    H_W = 217.0
 if TIME_STEP == 50:
     TRUE_R = 4.15
     TRUE_SRC_Z = 66
+    TILT = 0.5
+    H_W = 217.0
+if TIME_STEP == 121:
+    TRUE_R = 1.07
+    TRUE_SRC_Z = 71.11
+    TILT = 2.0
+    H_W = 217.5
 TRUE_VALUES = {
     "rec_r": TRUE_R,
     "src_z": TRUE_SRC_Z,
+    "tilt": TILT,
+    "h_w": H_W,
     # "c1": 1522.0,
     # "dc1": -0.573,
-    "dc2": -21.594,
-    "dc3": -7.273,
-    "dc4": -2.362,
-    "dc5": -1.764,
-    "h_w": 217.0,
-    # "h_s": 23.0,
-    # "c_s": 1572.3,
-    # "dcdz_s": 0.9,
-    # "bot_c_p": 1572.3,
-    # "bot_rho": 1.76,
-    "tilt": 0.5,
+    # "dc2": -21.594,
+    # "dc3": -7.273,
+    # "dc4": -2.362,
+    # "dc5": -1.764,
+    "h_sed": 23.0,
+    "c_p_sed_top": 1572.3,
+    "dc_p_sed": 20.7,
+    # "a_p_sed": 0.2,
+    # "rho_sed": 1.76,
 }
 
 VARIABLES = {
@@ -61,19 +70,20 @@ VARIABLES = {
 
 SEARCH_SPACE = [
         {"name": "rec_r", "type": "range", "bounds": [TRUE_R-0.25, TRUE_R + 0.25]},
-        {"name": "src_z", "type": "range", "bounds": [55.0, 65.0]},
+        {"name": "src_z", "type": "range", "bounds": [60.0, 80.0]},
+        {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
+        {"name": "h_w", "type": "range", "bounds": [TRUE_VALUES["h_w"] - 5.0, TRUE_VALUES["h_w"] + 5.0]},
         # {"name": "c1", "type": "range", "bounds": [1470.0, 1570.0]},
         # {"name": "dc1", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "dc2", "type": "range", "bounds": [-40.0, 0.0]},
-        {"name": "dc3", "type": "range", "bounds": [-20.0, 0.0]},
-        {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "dc5", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "h_w", "type": "range", "bounds": [TRUE_VALUES["h_w"] - 5.0, TRUE_VALUES["h_w"] + 5.0]},
-        # {"name": "h_s", "type": "range", "bounds": [1.0, 100.0]},
-        # {"name": "bot_c_p", "type": "range", "bounds": [1560.0, 1600.0]},
-        # {"name": "bot_rho", "type": "range", "bounds": [1.0, 3.0]},
-        # {"name": "dcdz_s", "type": "range", "bounds": [0.0, 3.0]},
-        {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
+        # {"name": "dc2", "type": "range", "bounds": [-40.0, 0.0]},
+        # {"name": "dc3", "type": "range", "bounds": [-20.0, 0.0]},
+        # {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
+        # {"name": "dc5", "type": "range", "bounds": [-10.0, 10.0]},
+        {"name": "h_sed", "type": "range", "bounds": [10.0, 40.0]},
+        {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1580.0]},
+        {"name": "dc_p_sed", "type": "range", "bounds": [0.0, 50.0]},
+        # {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
+        # {"name": "rho_sed", "type": "range", "bounds": [0.5, 3.0]},
     ]
 
 @dataclass(frozen=True)

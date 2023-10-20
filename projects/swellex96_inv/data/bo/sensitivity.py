@@ -28,7 +28,7 @@ def compute_sensitivity():
     if SIMULATE:
         K = simulate_covariance(
             runner=run_kraken,
-            parameters=utils.load_env_from_json(common.SWELLEX96Paths.simple_environment_data)
+            parameters=utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data)
             | {
                 "rec_r": common.TRUE_VALUES["rec_r"],
                 "src_z": common.TRUE_VALUES["src_z"],
@@ -49,7 +49,7 @@ def compute_sensitivity():
         covariance_matrix=K,
         freq=common.FREQ,
         parameters=utils.load_env_from_json(
-            common.SWELLEX96Paths.simple_environment_data
+            common.SWELLEX96Paths.main_environment_data
         ),
         parameter_formatter=param_map.format_parameters,
         beamformer=partial(beamformer, atype="cbf_ml"),
@@ -113,6 +113,7 @@ def plot_sensitivity(sensitivities: np.ndarray):
         ax.axvline(common.TRUE_VALUES[parameter["name"]], color="k", linestyle="--")
         ax.legend()
 
+    fig.suptitle(f"{common.FREQ} Hz")
     plt.tight_layout()
     plt.show()
     return

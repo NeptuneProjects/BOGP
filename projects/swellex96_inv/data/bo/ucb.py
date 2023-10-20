@@ -106,7 +106,7 @@ def loop(
 
             # Print current status
             print("-" * 100)
-            logging.info(f"GP/EI | Trial {len(X)}")
+            logging.info(f"GP/UCB | Trial {len(X)}")
             helpers.log_current_value_and_parameters(
                 X.detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
             )

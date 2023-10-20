@@ -37,12 +37,13 @@ def build_environment(
         "layerdata": [
             {"z": z_data, "c_p": c_data, "rho": 1.0},
             {"z": [217.0, 240.0], "c_p": [1572.3, 1593.0], "rho": 1.76, "a_p": 0.2},
+            {"z": [240.0, 1040.0], "c_p": [1881.0, 3245.0], "rho": 2.06, "a_p": 0.06},
         ],
         # 4. Bottom medium
         "bot_opt": "A",
-        "bot_c_p": 1881.0,
-        "bot_rho": 2.06,
-        "bot_a_p": 0.06,
+        "bot_c_p": 5200.0,
+        "bot_rho": 2.66,
+        "bot_a_p": 0.02,
         # 5. Speed constraints
         "clow": 1400.0,
         "chigh": 1800.0,
