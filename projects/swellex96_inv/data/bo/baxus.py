@@ -35,7 +35,7 @@ class BAxUSLoopArgs:
     n_init: int = 100
     dtype: torch.dtype = torch.double
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    dummy_dim: Optional[int] = 100
+    dummy_dim: Optional[int] = 200
     num_restarts: int = 40
     raw_samples: int = 1024
     dim: int = field(init=False)
@@ -408,9 +408,13 @@ def loop(
             if state.restart_triggered:
                 state.restart_triggered = False
                 logging.info("Increasing target space dimensionality...")
-                S, X_target = increase_embedding_and_observations(
-                    S, X_target, state.new_bins_on_split, dtype, device
-                )
+                try:
+                    S, X_target = increase_embedding_and_observations(
+                        S, X_target, state.new_bins_on_split, dtype, device
+                    )
+                except TypeError:
+                    logging.info(f"Unable to increase target space dimensionality; optimization terminating.")
+                    return X_input[:, :true_dim], -Y, times
                 logging.info(f"New dimensionality: {len(S)}")
                 state.target_dim = len(S)
                 state.length = state.length_init
