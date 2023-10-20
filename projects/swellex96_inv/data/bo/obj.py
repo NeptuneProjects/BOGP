@@ -12,14 +12,10 @@ from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
 from tritonoa.sp.processing import simulate_covariance
 
-sys.path.insert(0, str(Path(__file__).parents[2]))
-# from conf import common
-from data import formatter
-
 sys.path.insert(0, str(Path(__file__).parents[4]))
 from optimization import utils
 
-import common
+import common, param_map
 
 def convert_tensor_to_parameters(x: np.ndarray) -> dict:
     return [
@@ -60,7 +56,7 @@ def get_objective(simulate: bool = True) -> MatchedFieldProcessor:
         covariance_matrix=K,
         freq=common.FREQ,
         parameters=utils.load_env_from_json(common.SWELLEX96Paths.simple_environment_data),
-        parameter_formatter=formatter.format_parameters,
+        parameter_formatter=param_map.format_parameters,
         beamformer=partial(beamformer, atype="cbf_ml"),
         multifreq_method="product",
     )
