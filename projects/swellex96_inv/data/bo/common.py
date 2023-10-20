@@ -23,8 +23,8 @@ SWELLEX96PATH = Path("../data/swellex96_S5_VLA_inv")
 
 TIME_STEP = 20
 if TIME_STEP == 20:
-    TRUE_R = 5.8
-    TRUE_SRC_Z = 60
+    TRUE_R = 5.87
+    TRUE_SRC_Z = 59.0
 if TIME_STEP == 50:
     TRUE_R = 4.15
     TRUE_SRC_Z = 66
@@ -32,18 +32,18 @@ TRUE_VALUES = {
     "rec_r": TRUE_R,
     "src_z": TRUE_SRC_Z,
     # "c1": 1522.0,
-    "dc1": -0.573,
-    "dc2": -15.727,
-    "dc3": -10.376,
-    "dc4": -4.382,
-    "dc5": -2.508,
+    # "dc1": -0.573,
+    "dc2": -21.594,
+    "dc3": -7.273,
+    "dc4": -2.362,
+    "dc5": -1.764,
     "h_w": 217.0,
     # "h_s": 23.0,
     # "c_s": 1572.3,
     # "dcdz_s": 0.9,
     # "bot_c_p": 1572.3,
     # "bot_rho": 1.76,
-    "tilt": 0.4,
+    "tilt": 0.5,
 }
 
 VARIABLES = {
@@ -61,19 +61,19 @@ VARIABLES = {
 
 SEARCH_SPACE = [
         {"name": "rec_r", "type": "range", "bounds": [TRUE_R-0.25, TRUE_R + 0.25]},
-        {"name": "src_z", "type": "range", "bounds": [50.0, 70.0]},
+        {"name": "src_z", "type": "range", "bounds": [55.0, 65.0]},
         # {"name": "c1", "type": "range", "bounds": [1470.0, 1570.0]},
-        {"name": "dc1", "type": "range", "bounds": [-10.0, 10.0]},
+        # {"name": "dc1", "type": "range", "bounds": [-10.0, 10.0]},
         {"name": "dc2", "type": "range", "bounds": [-40.0, 0.0]},
         {"name": "dc3", "type": "range", "bounds": [-20.0, 0.0]},
         {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "dc5", "type": "range", "bounds": [-5.0, 5.0]},
+        {"name": "dc5", "type": "range", "bounds": [-10.0, 10.0]},
         {"name": "h_w", "type": "range", "bounds": [TRUE_VALUES["h_w"] - 5.0, TRUE_VALUES["h_w"] + 5.0]},
         # {"name": "h_s", "type": "range", "bounds": [1.0, 100.0]},
         # {"name": "bot_c_p", "type": "range", "bounds": [1560.0, 1600.0]},
         # {"name": "bot_rho", "type": "range", "bounds": [1.0, 3.0]},
         # {"name": "dcdz_s", "type": "range", "bounds": [0.0, 3.0]},
-        {"name": "tilt", "type": "range", "bounds": [-2.0, 2.0]},
+        {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
     ]
 
 @dataclass(frozen=True)
