@@ -114,5 +114,4 @@ def loop(
                 X.detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
             )
 
-    logging.info(f"Complete; best parameters: {X[Y.argmax()]}")
     return X, -Y, times
