@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 import logging
+import time
 
 import botorch
 from botorch.acquisition.max_value_entropy_search import qLowerBoundMaxValueEntropy
@@ -12,7 +13,7 @@ from gpytorch.likelihoods import GaussianLikelihood
 from gpytorch.mlls import ExactMarginalLogLikelihood
 import torch
 
-import helpers
+import common, helpers
 
 
 @dataclass
@@ -39,13 +40,20 @@ def loop(
     seed: int = 0,
     *args,
     **kwargs,
-) -> tuple[torch.tensor, torch.tensor]:
+) -> tuple[torch.tensor, torch.tensor, list[float]]:
     logging.info(f"Running GP/qGIBBON on {device.type.upper()}.")
-    X = helpers.get_initial_points(dim, n_init, dtype, device, seed)
-    Y = torch.tensor(objective(X.detach().cpu().numpy()), dtype=dtype, device=device)
 
-    logging.info(
-        f"{n_init} warmup trials complete. | Best value: {1 - Y.max().item():.3}"
+    start = time.time()
+
+    X = helpers.get_initial_points(dim, n_init, dtype, device, seed)
+    Y = -torch.tensor(objective(X.detach().cpu().numpy()), dtype=dtype, device=device)
+
+    stop = time.time() - start
+    times = [stop / n_init for _ in range(n_init)]
+
+    logging.info(f"{n_init} warmup trials complete.")
+    helpers.log_best_value_and_parameters(
+        X.detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
     )
     logging.info("Commencing Bayesian optimization.")
 
@@ -68,7 +76,7 @@ def loop(
 
             # Create a batch
             qGIBBON = qLowerBoundMaxValueEntropy(model, X)
-            candidate, acq_value = optimize_acqf(
+            candidate, _ = optimize_acqf(
                 qGIBBON,
                 bounds=torch.stack(
                     [
@@ -80,7 +88,7 @@ def loop(
                 num_restarts=num_restarts,
                 raw_samples=raw_samples,
             )
-            Y_next = torch.tensor(
+            Y_next = -torch.tensor(
                 objective(candidate.detach().cpu().numpy()),
                 dtype=dtype,
                 device=device,
@@ -91,7 +99,13 @@ def loop(
             Y = torch.cat((Y, Y_next), axis=0)
 
             # Print current status
-            logging.info(f"Trial {len(X)} | Best value: {1 - Y.max().item():.3}")
+            print("-" * 100)
+            logging.info(f"GP/EI | Trial {len(X)}")
+            helpers.log_current_value_and_parameters(
+                X.detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
+            )
+            helpers.log_best_value_and_parameters(
+                X.detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
+            )
 
-    logging.info(f"Complete; best parameters: {X[Y.argmax()]}")
-    return X, Y
+    return X, -Y, times
