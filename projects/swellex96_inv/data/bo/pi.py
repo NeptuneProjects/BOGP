@@ -70,7 +70,7 @@ def loop(
             optimizer = torch.optim.AdamW([{"params": model.parameters()}], lr=0.1)
             model.train()
             model.likelihood.train()
-            for _ in range(50):
+            for _ in range(100):
                 optimizer.zero_grad()
                 output = model(X)
                 loss = -mll(output, train_Y.squeeze())
@@ -79,7 +79,7 @@ def loop(
 
             # Create a batch
             pi = ProbabilityOfImprovement(model, train_Y.max())
-            candidate, acq_value = optimize_acqf(
+            candidate, _ = optimize_acqf(
                 pi,
                 bounds=torch.stack(
                     [

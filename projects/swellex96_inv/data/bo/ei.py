@@ -69,7 +69,7 @@ def loop(
             optimizer = torch.optim.AdamW([{"params": model.parameters()}], lr=0.1)
             model.train()
             model.likelihood.train()
-            for _ in range(50):
+            for _ in range(100):
                 optimizer.zero_grad()
                 output = model(X)
                 loss = -mll(output, train_Y.squeeze())
