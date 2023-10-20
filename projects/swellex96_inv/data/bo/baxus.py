@@ -274,7 +274,7 @@ def loop(
     *args,
     **kwargs,
 ) -> tuple[torch.tensor, torch.tensor, list[float]]:
-    logging.info(f"Running BAxUS on {device}")
+    logging.info(f"Running BAxUS on {device.type.upper()}")
     state = BaxusState(dim=dim, eval_budget=budget - n_init)
     S = embedding_matrix(
         input_dim=state.dim, target_dim=state.d_init, dtype=dtype, device=device
