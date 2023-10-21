@@ -19,7 +19,7 @@ from optimization import utils
 
 import common, param_map
 
-SIMULATE = False
+SIMULATE = True
 NUM_POINTS = 51
 PLOT = True
 

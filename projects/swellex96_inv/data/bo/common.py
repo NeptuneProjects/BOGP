@@ -51,21 +51,25 @@ TRUE_VALUES = {
     "h_sed": 23.0,
     "c_p_sed_top": 1572.3,
     "dc_p_sed": 20.7,
-    # "a_p_sed": 0.2,
-    # "rho_sed": 1.76,
+    "a_p_sed": 0.2,
+    "rho_sed": 1.76,
 }
 
 VARIABLES = {
     "rec_r": "$r_\mathrm{src}$ [km]",
     "src_z": "$z_\mathrm{src}$ [m]",
-    "dc1": "$\Delta c_1$ [m/s]",
-    "dc2": "$\Delta c_2$ [m/s]",
-    "dc3": "$\Delta c_3$ [m/s]",
-    "dc4": "$\Delta c_4$ [m/s]",
-    "dc5": "$\Delta c_5$ [m/s]",
-    "h_w": "$h_\mathrm{w}$ [m]",
-    "bot_c_p": "$c_\mathrm{b}$ [m/s]",
+    "h_w": "$h_w$ [m]",
     "tilt": "$\\tau$ [$^\circ$]",
+    "h_sed": "$h_s$ [m]",
+    "c_p_sed_top": "$c_{s,t}$ [m/s]",
+    "dc_p_sed": "$c_{s,b}$ [m/s]",
+    "a_p_sed": "$\\alpha_s$ [dB/$\lambda$]",
+    "rho_sed": "$\\rho_s$ [g/cm$^3$]",
+    # "dc1": "$\Delta c_1$ [m/s]",
+    # "dc2": "$\Delta c_2$ [m/s]",
+    # "dc3": "$\Delta c_3$ [m/s]",
+    # "dc4": "$\Delta c_4$ [m/s]",
+    # "dc5": "$\Delta c_5$ [m/s]",
 }
 
 SEARCH_SPACE = [
@@ -82,8 +86,8 @@ SEARCH_SPACE = [
         {"name": "h_sed", "type": "range", "bounds": [10.0, 40.0]},
         {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1580.0]},
         {"name": "dc_p_sed", "type": "range", "bounds": [0.0, 50.0]},
-        # {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
-        # {"name": "rho_sed", "type": "range", "bounds": [0.5, 3.0]},
+        {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
+        {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
     ]
 
 @dataclass(frozen=True)

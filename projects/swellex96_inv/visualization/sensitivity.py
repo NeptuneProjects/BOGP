@@ -10,7 +10,7 @@ import numpy as np
 import scienceplots
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from conf import common
+from data.bo import common
 
 plt.style.use(["science", "ieee"])
 
@@ -43,16 +43,21 @@ def plot_sensitivity(
             ax.set_ylabel("$\\bar{\phi}(\mathbf{x})$ [dB]")
 
         parameter = sensitivities[i]
-        B = parameter["value"]
+        if parameter["name"] == "dc_p_sed":
+            B = parameter["value"] + sensitivities[i - 1]["value"]
+            xlim = [min(parameter["space"] + sensitivities[i - 1]["value"]), max(parameter["space"] + sensitivities[i - 1]["value"])]
+        else:
+            B = parameter["value"]
+            xlim = [min(parameter["space"]), max(parameter["space"])]
         B = 1 - B
         B = 10 * np.log10(B / B.max())
 
         ax.plot(parameter["space"], B, label=parameter["name"])
         ax.axvline(common.TRUE_VALUES[parameter["name"]], color="k", linestyle="--")
-        ax.set_xlim([min(parameter["space"]), max(parameter["space"])])
-        ax.set_ylim([-10.0, 0.5])
-        ax.set_yticks([-9, -6, -3, 0])
-        ax.set_yticks(np.linspace(-10, 0, 11), minor=True)
+        ax.set_xlim(xlim)
+        ax.set_ylim([-6.0, 0.5])
+        ax.set_yticks([-6, -3, 0])
+        ax.set_yticks(np.linspace(-6, 0, 7), minor=True)
         ax.set_xlabel(common.VARIABLES[parameter["name"]], labelpad=0)
 
     if subfiglabel:
