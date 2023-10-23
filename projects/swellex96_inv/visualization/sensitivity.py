@@ -31,13 +31,13 @@ def plot_sensitivity(
         nrows=nrows,
         ncols=ncols,
         figsize=(3, 4),
-        gridspec_kw={"hspace": 0.7, "wspace": 0.3},
+        gridspec_kw={"hspace": 0.5, "wspace": 0.25},
     )
     for i, ax in enumerate(axs.reshape(-1)):
         if i >= len(sensitivities):
             ax.axis("off")
             continue
-        if i != 0:
+        if i not in [0, 3, 6]:
             ax.set_yticklabels([])
         if i == 0:
             ax.set_ylabel("$\\bar{\phi}(\mathbf{x})$ [dB]")
@@ -45,7 +45,10 @@ def plot_sensitivity(
         parameter = sensitivities[i]
         if parameter["name"] == "dc_p_sed":
             B = parameter["value"] + sensitivities[i - 1]["value"]
-            xlim = [min(parameter["space"] + sensitivities[i - 1]["value"]), max(parameter["space"] + sensitivities[i - 1]["value"])]
+            xlim = [
+                min(parameter["space"] + sensitivities[i - 1]["value"]),
+                max(parameter["space"] + sensitivities[i - 1]["value"]),
+            ]
         else:
             B = parameter["value"]
             xlim = [min(parameter["space"]), max(parameter["space"])]
@@ -55,9 +58,14 @@ def plot_sensitivity(
         ax.plot(parameter["space"], B, label=parameter["name"])
         ax.axvline(common.TRUE_VALUES[parameter["name"]], color="k", linestyle="--")
         ax.set_xlim(xlim)
-        ax.set_ylim([-6.0, 0.5])
-        ax.set_yticks([-6, -3, 0])
-        ax.set_yticks(np.linspace(-6, 0, 7), minor=True)
+        if parameter["name"] in ["rec_r", "src_z", "tilt"]:
+            ax.set_ylim([-9.0, 0.5])
+            ax.set_yticks([-9, -6, -3, 0])
+            ax.set_yticks(np.linspace(-9, 0, 4), minor=True)
+        else:
+            ax.set_ylim([-3.0, 0.2])
+            ax.set_yticks([-3, -2, -1, 0])
+            ax.set_yticks(np.linspace(-3, 0, 4), minor=True)
         ax.set_xlabel(common.VARIABLES[parameter["name"]], labelpad=0)
 
     if subfiglabel:
@@ -66,7 +74,7 @@ def plot_sensitivity(
         )
     if title:
         fig.suptitle(title, y=0.93)
-    
+
     return fig
 
 
