@@ -19,7 +19,7 @@ from optimization import utils
 
 import common, param_map
 
-SIMULATE = True
+SIMULATE = False
 NUM_POINTS = 51
 PLOT = True
 
@@ -28,7 +28,9 @@ def compute_sensitivity():
     if SIMULATE:
         K = simulate_covariance(
             runner=run_kraken,
-            parameters=utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data)
+            parameters=utils.load_env_from_json(
+                common.SWELLEX96Paths.main_environment_data
+            )
             | {
                 "rec_r": common.TRUE_VALUES["rec_r"],
                 "src_z": common.TRUE_VALUES["src_z"],
