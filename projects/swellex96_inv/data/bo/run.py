@@ -76,6 +76,8 @@ def get_loop(
 
 
 def main(args) -> None:
+    Path.mkdir(args.dir / args.serial, parents=True, exist_ok=True)
+
     loop, kwargs = get_loop(
         args.optim, dummy_dim=args.ndummy, budget=args.budget, n_init=args.init, beta=args.beta
     )
@@ -102,7 +104,7 @@ def main(args) -> None:
             np.array(times),
         )
 
-        with open(args.dir / f"{fname}.json", "w") as f:
+        with open(args.dir / args.serial / f"{fname}.json", "w") as f:
             json.dump(kwargs, f, indent=4)
 
         np.savez(
