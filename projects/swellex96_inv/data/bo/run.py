@@ -87,8 +87,8 @@ def main(args) -> None:
 
     print("=" * 100)
     for seed in seeds:
-        serial_name = f"{args.optim}_{args.budget}-{args.init}_{seed:04d}"
-        helpers.initialize_logger_file(args.dir / f"{serial_name}.log", logger, logfmt)
+        fname = f"{args.optim}_{args.budget}-{args.init}_{seed:04d}"
+        helpers.initialize_logger_file(args.dir / f"{fname}.log", logger, logfmt)
 
         X, Y, times = loop(
             objective=partial(obj.objective, simulate=args.simulate),
@@ -102,11 +102,11 @@ def main(args) -> None:
             np.array(times),
         )
 
-        with open(args.dir / f"{serial_name}.json", "w") as f:
+        with open(args.dir / f"{fname}.json", "w") as f:
             json.dump(kwargs, f, indent=4)
 
         np.savez(
-            args.dir / serial_name,
+            args.dir / fname,
             X=X,
             Y=Y,
             t=times,
@@ -166,6 +166,12 @@ if __name__ == "__main__":
         help="Directory to save outputs.",
         type=Path,
         default=common.SWELLEX96Paths.outputs / "runs",
+    )
+    parser.add_argument(
+        "--serial",
+        help="Specify the serial name (appended to --dir).",
+        type=str,
+        default="",
     )
     parser.add_argument(
         "--ndummy",
