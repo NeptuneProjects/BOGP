@@ -108,7 +108,7 @@ def main(args) -> None:
             json.dump(kwargs, f, indent=4)
 
         np.savez(
-            args.dir / fname,
+            args.dir / args.serial / fname,
             X=X,
             Y=Y,
             t=times,
