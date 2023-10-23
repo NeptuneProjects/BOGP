@@ -90,7 +90,7 @@ def main(args) -> None:
     print("=" * 100)
     for seed in seeds:
         fname = f"{args.optim}_{args.budget}-{args.init}_{seed:04d}"
-        helpers.initialize_logger_file(args.dir / f"{fname}.log", logger, logfmt)
+        helpers.initialize_logger_file(args.dir / args.serial / f"{fname}.log", logger, logfmt)
 
         X, Y, times = loop(
             objective=partial(obj.objective, simulate=args.simulate),
