@@ -13,9 +13,9 @@ FREQ = [
     # 130.0,
     148.0,
     # 166.0,
-    201.0,
-    # 235.0,
-    283.0,
+    # 201.0,
+    235.0,
+    # 283.0,
     # 338.0,
     388.0,
 ]
@@ -84,10 +84,10 @@ SEARCH_SPACE = [
         # {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
         # {"name": "dc5", "type": "range", "bounds": [-10.0, 10.0]},
         {"name": "h_sed", "type": "range", "bounds": [10.0, 40.0]},
-        {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1580.0]},
+        {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1640.0]},
         {"name": "dc_p_sed", "type": "range", "bounds": [0.0, 50.0]},
-        {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
-        {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
+        # {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
+        # {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
     ]
 
 @dataclass(frozen=True)
