@@ -161,7 +161,6 @@ def main():
     data_exp = helpers.load_data(
         path, "exp_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
-    data_exp.to_csv("data.csv")
     fig = performance_plot([data_sim, data_exp])
     return fig
 
