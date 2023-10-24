@@ -23,10 +23,13 @@ savepath = Path.cwd().parent / "reports/manuscripts/202310_JASA"
 # g.map_diag(sns.kdeplot, lw=2)
 # plt.show()
 
+
 def get_concat_h(im1, im2, im3):
     h_pad = 100
-    dst = Image.new("RGB", (im1.width + im2.width + im3.width + 2 * h_pad, im2.height), "WHITE")
-    dst.paste(im1, (0, 0)) 
+    dst = Image.new(
+        "RGB", (im1.width + im2.width + im3.width + 2 * h_pad, im2.height), "WHITE"
+    )
+    dst.paste(im1, (0, 0))
     dst.paste(im2, (im1.width + h_pad, 0))
     dst.paste(im3, (im1.width + im2.width + 2 * h_pad, 0))
     return dst
@@ -34,16 +37,38 @@ def get_concat_h(im1, im2, im3):
 
 def figure01():
     import sobol_demo
-    sobol_demo.sample_comparison().savefig(savepath / "figure01.pdf", bbox_inches="tight", dpi=1000)
+
+    sobol_demo.sample_comparison().savefig(
+        savepath / "figure01.pdf", bbox_inches="tight", dpi=1000
+    )
 
 
 def figure03():
-    images = [Image.open(x) for x in ["environment.png", "sensitivity_sim.png", "sensitivity_exp.png"]]
-    get_concat_h(images[0], images[1], images[2]).save(savepath / "figure03.pdf", "PDF", resolution=1000)
+    images = [
+        Image.open(x)
+        for x in ["environment.png", "sensitivity_sim.png", "sensitivity_exp.png"]
+    ]
+    get_concat_h(images[0], images[1], images[2]).save(
+        savepath / "figure03.pdf", "PDF", resolution=1000
+    )
 
 
+def figure04():
+    import obj_performance
+
+    obj_performance.main().savefig(
+        savepath / "figure04.pdf", bbox_inches="tight", dpi=1000
+    )
+
+
+def figure05():
+    import param_est
+
+    param_est.main().savefig(savepath / "figure05.pdf", bbox_inches="tight", dpi=1000)
 
 
 if __name__ == "__main__":
-    figure01()
-    figure03()
+    # figure01()
+    # figure03()
+    # figure04()
+    figure05()
