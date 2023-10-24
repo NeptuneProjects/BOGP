@@ -51,6 +51,7 @@ TRUE_VALUES = {
     "h_sed": 23.0,
     "c_p_sed_top": 1572.3,
     "dc_p_sed": 20.7,
+    "c_p_sed_bot": 1593.0,
     "a_p_sed": 0.2,
     "rho_sed": 1.76,
 }
@@ -89,6 +90,15 @@ SEARCH_SPACE = [
         # {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
         # {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
     ]
+
+
+STRATEGY_COLORS = {
+    "EI": "blue",
+    "UCB": "green",
+    "Sobol": "red",
+    "BAxUS": "orange",
+}
+
 
 @dataclass(frozen=True)
 class SWELLEX96Paths:

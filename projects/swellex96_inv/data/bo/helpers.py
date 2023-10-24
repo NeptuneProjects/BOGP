@@ -2,9 +2,11 @@
 
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import Generator, Optional
 
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 from torch.quasirandom import SobolEngine
 
@@ -48,12 +50,12 @@ def transform_to_original_space(X: np.ndarray, search_space: list[dict]) -> np.n
 
 def get_best_params(X: np.ndarray, Y: np.ndarray, search_space: dict) -> np.ndarray:
     best_params = X[np.argmin(Y, axis=0)]
-    return transform_to_original_space(
-        best_params, search_space
-    )
+    return transform_to_original_space(best_params, search_space)
 
 
-def log_current_value_and_parameters(X: np.ndarray, Y: np.ndarray, search_space: dict, strategy: Optional[str] = None) -> None:
+def log_current_value_and_parameters(
+    X: np.ndarray, Y: np.ndarray, search_space: dict, strategy: Optional[str] = None
+) -> None:
     logging.info(
         f"[Current] Value: {Y[-1].item():.5f} | Parameters: "
         + "".join(
@@ -61,18 +63,17 @@ def log_current_value_and_parameters(X: np.ndarray, Y: np.ndarray, search_space:
                 f"{d['name']}: {v:.2f} | "
                 for d, v in zip(
                     search_space,
-                    transform_to_original_space(
-                        X[-1], search_space
-                    ).squeeze(),
+                    transform_to_original_space(X[-1], search_space).squeeze(),
                 )
             ]
         )[:-3]
     )
 
-def log_best_value_and_parameters(X: np.ndarray, Y: np.ndarray, search_space: dict) -> None:
-    best_params = get_best_params(
-        X, Y, search_space
-    )
+
+def log_best_value_and_parameters(
+    X: np.ndarray, Y: np.ndarray, search_space: dict
+) -> None:
+    best_params = get_best_params(X, Y, search_space)
     logging.info(
         f"   [Best] Value: {Y.min().item():.5f} | Parameters: "
         + "".join(
@@ -82,3 +83,131 @@ def log_best_value_and_parameters(X: np.ndarray, Y: np.ndarray, search_space: di
             ]
         )[:-3]
     )
+
+
+def parse_name(name: str) -> tuple[str, int, int, str]:
+    strategy_names = {
+        "ei": "EI",
+        "pi": "PI",
+        "ucb": "UCB",
+        "sobol": "Sobol",
+        "baxus": "BAxUS",
+    }
+
+    parts = name.strip(".npz").split("_")
+    strategy = parts[0]
+    parts1 = parts[1].split("-")
+    n_iter = int(parts1[0])
+    n_init = int(parts1[1])
+    seed = parts[2]
+
+    return strategy_names[strategy], n_iter, n_init, seed
+
+
+def record_best_evaluations(
+    df: pd.DataFrame, search_space: list[dict], true_values: dict
+) -> pd.DataFrame:
+    search_parameters = [d["name"] for d in search_space] + ["c_p_sed_bot"]
+    # Iterate through the dataframe and record the running best evaluation and the corresponding parameters.
+    best_obj = np.inf
+    best_params = np.zeros(len(search_parameters))
+    best_obj_history = []
+    best_params_history = []
+    for i in range(df.shape[0]):
+        if df["obj"][i] < best_obj:
+            best_obj = df["obj"][i]
+            best_params = df[search_parameters].iloc[i].values
+        best_obj_history.append(best_obj)
+        best_params_history.append(best_params)
+
+    df["best_obj"] = best_obj_history
+    for i, param in enumerate(search_parameters):
+        df["best_" + param] = np.array(best_params_history)[:, i]
+        df["best_" + param + "_err"] = np.abs(df[param] - true_values[param])
+
+    return df
+
+
+def construct_run_df(
+    f: Path, search_space: list[dict], true_values: dict
+) -> pd.DataFrame:
+    search_parameters = [d["name"] for d in search_space]
+    columns = (
+        [
+            "Strategy",
+            "Trial",
+            "n_iter",
+            "n_init",
+            "seed",
+            "wall_time",
+            "obj",
+            "best_obj",
+        ]
+        + search_parameters
+        + [("best_" + p) for p in search_parameters]
+        + [("best_" + p + "_err") for p in search_parameters]
+    )
+    data = np.load(f)
+    X = transform_to_original_space(data["X"], search_space=search_space)
+    Y = data["Y"]
+    t = data["t"]
+
+    df = pd.DataFrame(columns=columns)
+    strategy, n_iter, n_init, seed = parse_name(f.name)
+
+    df["Trial"] = np.arange(X.shape[0]) + 1
+
+    for param, j in zip(search_parameters, range(X.shape[1])):
+        df[param] = X[:, j]
+    
+    df = compute_c_p_sed_bot(df)
+
+    df["obj"] = Y
+    df["Strategy"] = strategy
+    df["n_iter"] = n_iter
+    df["n_init"] = n_init
+    df["seed"] = seed
+    # df["wall_time"] = pd.TimedeltaIndex(np.cumsum(t), unit="s")
+    df["wall_time"] = np.cumsum(t)
+    df = record_best_evaluations(df, search_space, true_values)
+
+    return df
+
+
+def compute_c_p_sed_bot(df: pd.DataFrame) -> pd.DataFrame:
+    df["c_p_sed_bot"] = df["c_p_sed_top"] + df["dc_p_sed"]
+    df["best_c_p_sed_bot"] = np.nan
+    df["best_c_p_sed_bot_err"] = np.nan
+    return df
+
+
+def construct_agg_df(
+    files: Generator, search_space: list[dict], true_values: dict
+) -> pd.DataFrame:
+    return pd.concat([construct_run_df(f, search_space, true_values) for f in files])
+
+
+def load_data(
+    path: Path, pattern: str, search_space: list[dict], true_values: dict
+) -> pd.DataFrame:
+    return construct_agg_df(path.glob(pattern), search_space, true_values)
+
+
+def adjust_subplotxticklabels(
+    ax: plt.Axes, low: Optional[int] = None, high: Optional[int] = None
+) -> None:
+    ticklabels = ax.get_xticklabels()
+    if low is not None:
+        ticklabels[low].set_ha("left")
+    if high is not None:
+        ticklabels[high].set_ha("right")
+
+
+def adjust_subplotyticklabels(
+    ax: plt.Axes, low: Optional[int] = None, high: Optional[int] = None
+) -> None:
+    ticklabels = ax.get_yticklabels()
+    if low is not None:
+        ticklabels[low].set_va("bottom")
+    if high is not None:
+        ticklabels[high].set_va("top")
