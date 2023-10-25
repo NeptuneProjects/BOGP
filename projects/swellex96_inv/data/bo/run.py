@@ -36,6 +36,7 @@ class Strategy(Enum):
     SOBOL = "sobol"
     UCB = "ucb"
     GRID = "grid"
+    RANDOM = "random"
 
     def __str__(self):
         return self.value
