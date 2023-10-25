@@ -20,8 +20,8 @@ plt.style.use(["science", "ieee", "std-colors"])
 
 MODES = ["Simulated", "Experimental"]
 N_INIT = 200
-YLIM = [(1e-6, 1.0), (0.04, 1.0)]
-YTICKS = [[1e-6, 1e-4, 1e-2, 1.0], [0.05, 0.1, 0.5, 1.0]]
+YLIM = [(1e-8, 1.0), (0.04, 1.0)]
+YTICKS = [[1e-8, 1e-6, 1e-4, 1e-2, 1.0], [0.05, 0.1, 0.5, 1.0]]
 
 
 def plot_performance_history(
@@ -94,16 +94,27 @@ def plot_est_dist(df: pd.DataFrame, ax: Optional[plt.Axes] = None) -> plt.Axes:
         (df["Strategy"] == "Sobol")
         | ((df["Strategy"] != "Sobol") & (df["n_init"] == N_INIT))
     )
-    dfp = df.loc[sel]
-    sns.violinplot(
+    dfp = df.loc[sel].sort_values(by="Strategy")
+    # sns.violinplot(
+    #     x="Strategy",
+    #     y="best_obj",
+    #     hue="Strategy",
+    #     data=dfp,
+    #     ax=ax,
+    #     zorder=50,
+    #     inner=None,
+    #     palette=common.STRATEGY_COLORS,
+    # )
+    print(dfp["Strategy"].unique())
+    sns.boxplot(
+        data=dfp,
         x="Strategy",
         y="best_obj",
         hue="Strategy",
-        data=dfp,
-        ax=ax,
-        zorder=50,
-        inner=None,
+        whis=[0, 100],
+        width=0.6,
         palette=common.STRATEGY_COLORS,
+        ax=ax,
     )
     ax.set_xlabel(None)
     ax.set_ylabel(None)
