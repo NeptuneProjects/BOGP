@@ -174,3 +174,4 @@ outputs/
 tests/
 **/*/notebooks/
 *.png
+*.csv
