@@ -9,16 +9,11 @@ import json
 import logging
 from pathlib import Path
 import random
-import sys
 import warnings
 
-import matplotlib.pyplot as plt
 import numpy as np
 
-import baxus, ei, gibbon, helpers, obj, pi, sobol, ucb, grid, common
-
-# sys.path.insert(0, str(Path(__file__).parents[2]))
-# from conf import common
+import baxus, ei, gibbon, helpers, obj, pi, sobol, ucb, grid, common, rand
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -72,6 +67,9 @@ def get_loop(
     if optim == Strategy.GRID:
         loop = grid.loop
         kwargs = grid.GridLoopArgs(dim=TRUE_DIM, budget=budget)
+    if optim == Strategy.RANDOM:
+        loop = rand.loop
+        kwargs = rand.RandomLoopArgs(dim=TRUE_DIM, budget=budget)
     return loop, asdict(kwargs)
 
 
