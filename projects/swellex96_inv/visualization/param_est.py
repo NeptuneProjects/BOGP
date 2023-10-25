@@ -34,7 +34,7 @@ def plot_param_dist(data: np.ndarray, bounds: list, ax: Optional[plt.Axes] = Non
 
 def plot_parameter_estimates(data: list[pd.DataFrame]) -> plt.Figure:
     fig, axs = plt.subplots(
-        nrows=2, ncols=7, figsize=(8, 3), gridspec_kw={"wspace": 0.1, "hspace": 0.2}
+        nrows=2, ncols=7, figsize=(8, 1.5), gridspec_kw={"wspace": 0.1, "hspace": 0.4}
     )
 
     for i, axrow in enumerate(axs):
@@ -52,7 +52,7 @@ def plot_parameter_estimates(data: list[pd.DataFrame]) -> plt.Figure:
             
             ax = plot_param_dist(df[f"best_{param_name}"], bounds, ax=ax)
             
-            ax.text(0, 1.05, f"({ascii_lowercase[7 * i + j]})", transform=ax.transAxes)
+            ax.text(0, 1.07, f"({ascii_lowercase[7 * i + j]})", transform=ax.transAxes)
             ax.axvline(
                 true_value,
                 color="k",
@@ -77,7 +77,7 @@ def main():
         path, "sim_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
     data_exp = helpers.load_data(
-        path, "exp_ucb_b1/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+        path, "exp_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
     data_sim.to_csv("data.csv")
     fig = plot_parameter_estimates(
