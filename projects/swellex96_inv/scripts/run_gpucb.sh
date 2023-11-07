@@ -23,8 +23,8 @@ CUDA_VISIBLE_DEVICES=0 python projects/swellex96_inv/data/bo/run.py --optim=ucb 
 # CUDA_VISIBLE_DEVICES=0 python projects/swellex96_inv/data/bo/run.py --optim=ucb --beta=5 --init=200 --serial=exp_ucb_b5
 
 # In-progress
-CUDA_VISIBLE_DEVICES=0 python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=200 --serial=sim_ucb_b1 --simulate
 
 
 # Completed
+# CUDA_VISIBLE_DEVICES=0 python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=200 --serial=sim_ucb_b1 --simulate
 # CUDA_VISIBLE_DEVICES=1 python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=200 --serial=exp_ucb_b1
