@@ -20,8 +20,9 @@ plt.style.use(["science", "ieee", "std-colors"])
 
 MODES = ["Simulated", "Experimental"]
 N_INIT = 200
-YLIM = [(1e-8, 1.0), (0.04, 1.0)]
-YTICKS = [[1e-8, 1e-6, 1e-4, 1e-2, 1.0], [0.05, 0.1, 0.5, 1.0]]
+YLIM = [(1e-8, 1.0), (0.07, 1.0)]
+YTICKS = [[1e-8, 1e-6, 1e-4, 1e-2, 1.0], [0.07, 0.1, 0.5, 1.0]]
+YTICKLABELS = [["$10^{-8}$", "$10^{-6}$", "$10^{-4}$", "$10^{-2}$", "$10^{0}$"], ["0.07", "0.1", "0.5", "1"]]
 
 
 def plot_performance_history(
@@ -80,7 +81,8 @@ def plot_wall_time(df: pd.DataFrame, ax: Optional[plt.Axes] = None):
                 dfp["wall_time"],
                 dfp["best_obj"],
                 color=common.STRATEGY_COLORS[strategy],
-                alpha=0.25,
+                alpha=0.5,
+                linewidth=0.75,
             )
 
     return ax
@@ -90,22 +92,15 @@ def plot_est_dist(df: pd.DataFrame, ax: Optional[plt.Axes] = None) -> plt.Axes:
     if ax is None:
         ax = plt.gca()
 
-    sel = (df["Trial"] == 500) & (
-        (df["Strategy"] == "Sobol")
-        | ((df["Strategy"] != "Sobol") & (df["n_init"] == N_INIT))
-    )
-    dfp = df.loc[sel].sort_values(by="Strategy")
-    # sns.violinplot(
-    #     x="Strategy",
-    #     y="best_obj",
-    #     hue="Strategy",
-    #     data=dfp,
-    #     ax=ax,
-    #     zorder=50,
-    #     inner=None,
-    #     palette=common.STRATEGY_COLORS,
+    # sel = (df["Trial"] == 500) & (
+    #     (df["Strategy"] == "Sobol")
+    #     | ((df["Strategy"] != "Sobol") & (df["n_init"] == N_INIT))
     # )
-    print(dfp["Strategy"].unique())
+    sel = ((df["Strategy"] == "Sobol") & (df["Trial"] == 50000)) | (
+        (df["Strategy"] != "Sobol") & (df["n_init"] == N_INIT) & (df["Trial"] == 500)
+    )
+
+    dfp = df.loc[sel].sort_values(by="Strategy")
     sns.boxplot(
         data=dfp,
         x="Strategy",
@@ -120,7 +115,6 @@ def plot_est_dist(df: pd.DataFrame, ax: Optional[plt.Axes] = None) -> plt.Axes:
     ax.set_ylabel(None)
     ax.set_axisbelow(True)
     ax.tick_params(axis="x", which="minor", bottom=False, top=False)
-
     return ax
 
 
@@ -133,9 +127,12 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
         axrow = axs[i]
         ax = axrow[0]
         ax = plot_performance_history(df, ax=ax)
+        ax.set_xlim(-5, 505)
 
         ax = axrow[1]
         ax = plot_wall_time(df, ax=ax)
+        # ax.set_xscale("log")
+        ax.set_xlim(-10, 3000)
 
         ax = axrow[2]
         ax = plot_est_dist(df, ax=ax)
@@ -156,9 +153,17 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
             ax.set_ylim(YLIM[i])
             ax.set_yticks(YTICKS[i])
             ax.set_xticklabels([]) if i != 1 else None
-            ax.set_yticklabels([]) if j != 0 else ax.set_yticklabels(YTICKS[i])
+            ax.set_yticklabels([]) if j != 0 else ax.set_yticklabels(YTICKLABELS[i])
             ax.set_ylabel(
-                f"{MODES[i]}\n$\hat{{\phi}}(\mathbf{{m}})$"
+                "$\widehat{{\phi}}$", rotation=0
+            ) if j == 0 else None
+            ax.text(
+                -0.28,
+                0.5,
+                f"{MODES[i]} data",
+                transform=ax.transAxes,
+                va="center",
+                rotation=90,
             ) if j == 0 else None
 
     return fig

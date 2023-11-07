@@ -92,6 +92,7 @@ def parse_name(name: str) -> tuple[str, int, int, str]:
         "ucb": "UCB",
         "sobol": "Sobol",
         "baxus": "BAxUS",
+        "random": "Random",
     }
 
     parts = name.strip(".npz").split("_")

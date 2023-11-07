@@ -97,6 +97,7 @@ STRATEGY_COLORS = {
     "UCB": "green",
     "Sobol": "red",
     "BAxUS": "orange",
+    "Random": "green",
 }
 
 
