@@ -1,6 +1,9 @@
-# Bayesian optimization with Gaussian process surrogate model for acoustic source localization and array tilt/azimuth estimation
+# Bayesian optimization for geoacoustic inversion
 
-This repository contains the code used to perform acoustic source localization and array tilt/azimuth estimation using Bayesian optimization with a Gaussian process surrogate model. This work was submitted to the Journal of the Acoustical Society of America:
+This repository contains the code used to perform geoacoustic inversion using Bayesian optimization.
+<!-- This work was submitted to the Journal of the Acoustical Society of America:
+
+> W. F. Jenkins II, P. Gerstoft, and Y. Park, “Bayesian optimization for geoacoustic inversion,” Submitted to J. Acoust. Soc. Am., Dec. 2023. -->
 
 ## Installation
 
