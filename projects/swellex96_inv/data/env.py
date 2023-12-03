@@ -81,13 +81,13 @@ def format_ssp(z_data: np.ndarray, c_data: np.ndarray) -> tuple[np.ndarray, np.n
     z1, c1 = z_data[0], c_data[0]
 
     # To be estimated:
-    ind2 = np.argmin(np.abs(z_data - 5))
+    ind2 = np.argmin(np.abs(z_data - 20))
     z2, c2 = z_data[ind2], c_data[ind2]
-    ind3 = np.argmin(np.abs(z_data - 20))
+    ind3 = np.argmin(np.abs(z_data - 40))
     z3, c3 = z_data[ind3], c_data[ind3]
-    ind4 = np.argmin(np.abs(z_data - 40))
+    ind4 = np.argmin(np.abs(z_data - 60))
     z4, c4 = z_data[ind4], c_data[ind4]
-    ind5 = np.argmin(np.abs(z_data - 70))
+    ind5 = np.argmin(np.abs(z_data - 80))
     z5, c5 = z_data[ind5], c_data[ind5]
     ind6 = np.argmin(np.abs(z_data - 100))
     z6, c6 = z_data[ind6], c_data[ind6]
@@ -113,15 +113,13 @@ def build_simple_environment(
         "layerdata": [
             {"z": z_data, "c_p": c_data, "rho": 1.0},
             {"z": [217.0, 240.0], "c_p": [1572.3, 1593.0], "rho": 1.76, "a_p": 0.2},
+            {"z": [240.0, 1040.0], "c_p": [1881.0, 3245.0], "rho": 2.06, "a_p": 0.06},
         ],
         # 4. Bottom medium
         "bot_opt": "A",
-        "bot_c_p": 1881.0,
-        "bot_rho": 2.06,
-        "bot_a_p": 0.06,
-        # "bot_c_p": 1881.0,
-        # "bot_rho": 2.06,
-        # "bot_a_p": 0.06,
+        "bot_c_p": 5200.0,
+        "bot_rho": 2.66,
+        "bot_a_p": 0.02,
         # 5. Speed constraints
         "clow": 1400.0,
         "chigh": 1800.0,
