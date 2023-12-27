@@ -82,7 +82,7 @@ def figure05():
 def figure06():
     import warmup_perf
 
-    warmup_perf.main().savefig(savepath / "figure07.pdf", bbox_inches="tight", dpi=1000)
+    warmup_perf.main().savefig(savepath / "figure06.pdf", bbox_inches="tight", dpi=1000)
 
 if __name__ == "__main__":
     # figure01()
