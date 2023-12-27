@@ -73,13 +73,13 @@ def figure05():
     param_est.main().savefig(savepath / "figure05.pdf", bbox_inches="tight", dpi=1000)
 
 
+# def figure06():
+#     import equiv_time
+
+#     equiv_time.main().savefig(savepath / "figure06.pdf", bbox_inches="tight", dpi=1000)
+
+
 def figure06():
-    import equiv_time
-
-    equiv_time.main().savefig(savepath / "figure06.pdf", bbox_inches="tight", dpi=1000)
-
-
-def figure07():
     import warmup_perf
 
     warmup_perf.main().savefig(savepath / "figure07.pdf", bbox_inches="tight", dpi=1000)
@@ -90,5 +90,4 @@ if __name__ == "__main__":
     # figure03()
     # figure04()
     # figure05()
-    # figure06()
-    figure07()
+    figure06()
