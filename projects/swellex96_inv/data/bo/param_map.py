@@ -43,10 +43,7 @@ def update_sediment(dz: float, z_values: list) -> list:
 def update_ssp(data: dict) -> dict:
     z = data["z"]
     c = data["c_p"]
-    print(len(z))
-    print(z)
-    print(len(c))
-    print(c)
+
     # assert len(z) == len(c)
     # cs = CubicSpline(z, c, bc_type="clamped")
     cs = Akima1DInterpolator(z, c)
@@ -205,7 +202,12 @@ def format_parameters(
     c6 = c5 + dc5
     c7 = c6
     c_p_values = [c1, c2, c3, c4, c5, c6, c7]
-    fixed_parameters["layerdata"][0]["c_p"] = c_p_values
+    
+    num_extra = len(fixed_parameters["layerdata"][0]["c_p"]) - len(c_p_values)
+    if num_extra > 0:
+        [c_p_values.append(fixed_parameters["layerdata"][0]["c_p"][-1]) for i in range(num_extra)]
+    else:
+        fixed_parameters["layerdata"][0]["c_p"] = c_p_values
 
     # Interpolate SSP using cubic spline
     new_water_data = update_ssp(fixed_parameters["layerdata"][0])
