@@ -74,19 +74,19 @@ VARIABLES = {
 }
 
 SEARCH_SPACE = [
-        # {"name": "rec_r", "type": "range", "bounds": [TRUE_R-0.25, TRUE_R + 0.25]},
-        # {"name": "src_z", "type": "range", "bounds": [60.0, 80.0]},
-        # {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
-        # {"name": "h_w", "type": "range", "bounds": [TRUE_VALUES["h_w"] - 5.0, TRUE_VALUES["h_w"] + 5.0]},
+        {"name": "rec_r", "type": "range", "bounds": [TRUE_R-0.25, TRUE_R + 0.25]},
+        {"name": "src_z", "type": "range", "bounds": [60.0, 80.0]},
+        {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
+        {"name": "h_w", "type": "range", "bounds": [TRUE_VALUES["h_w"] - 5.0, TRUE_VALUES["h_w"] + 5.0]},
         # {"name": "c1", "type": "range", "bounds": [1470.0, 1570.0]},
         {"name": "dc1", "type": "range", "bounds": [-40.0, 20.0]},
         {"name": "dc2", "type": "range", "bounds": [-20.0, 10.0]},
         {"name": "dc3", "type": "range", "bounds": [-10.0, 10.0]},
         {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
         {"name": "dc5", "type": "range", "bounds": [-10.0, 10.0]},
-        # {"name": "h_sed", "type": "range", "bounds": [10.0, 40.0]},
-        # {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1640.0]},
-        # {"name": "dc_p_sed", "type": "range", "bounds": [0.0, 50.0]},
+        {"name": "h_sed", "type": "range", "bounds": [10.0, 40.0]},
+        {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1640.0]},
+        {"name": "dc_p_sed", "type": "range", "bounds": [0.0, 50.0]},
         # {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
         # {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
     ]
