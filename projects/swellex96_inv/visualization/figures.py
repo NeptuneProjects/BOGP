@@ -87,7 +87,7 @@ def figure06():
 if __name__ == "__main__":
     # figure01()
     # figure02()
-    figure03()
+    # figure03()
     # figure04()
     # figure05()
     figure06()
