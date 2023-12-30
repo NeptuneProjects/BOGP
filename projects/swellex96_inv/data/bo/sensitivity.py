@@ -51,7 +51,8 @@ def compute_sensitivity():
         covariance_matrix=K,
         freq=common.FREQ,
         parameters=utils.load_env_from_json(
-            common.SWELLEX96Paths.main_environment_data
+            # common.SWELLEX96Paths.main_environment_data
+            common.SWELLEX96Paths.simple_environment_data
         ),
         parameter_formatter=param_map.format_parameters,
         beamformer=partial(beamformer, atype="cbf_ml"),
