@@ -31,19 +31,20 @@ def plot_sensitivity(
         nrows=nrows,
         ncols=ncols,
         figsize=(3, 4),
-        gridspec_kw={"hspace": 0.5, "wspace": 0.25},
+        gridspec_kw={"hspace": 0.6, "wspace": 0.25},
     )
     for i, ax in enumerate(axs.reshape(-1)):
         if i >= len(sensitivities):
             ax.axis("off")
             continue
-        if i not in [0, 3, 6]:
+        if i % 3 != 0:
             ax.set_yticklabels([])
         if i == 0:
             ax.set_ylabel("$\phi(\mathbf{x})$ [dB]")
 
         parameter = sensitivities[i]
-        if parameter["name"] == "dc_p_sed":
+        # if parameter["name"] == "dc_p_sed":
+        if "dc" in parameter["name"]:
             B = parameter["value"] + sensitivities[i - 1]["value"]
             xlim = [
                 min(parameter["space"] + sensitivities[i - 1]["value"]),
@@ -58,7 +59,8 @@ def plot_sensitivity(
         ax.plot(parameter["space"], B, label=parameter["name"])
         ax.axvline(common.TRUE_VALUES[parameter["name"]], color="k", linestyle="--")
         ax.set_xlim(xlim)
-        if parameter["name"] in ["rec_r", "src_z", "tilt"]:
+
+        if i in [0, 1, 2]:
             ax.set_ylim([-9.0, 0.5])
             ax.set_yticks([-9, -6, -3, 0])
             ax.set_yticks(np.linspace(-9, 0, 4), minor=True)

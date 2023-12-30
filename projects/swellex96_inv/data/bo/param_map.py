@@ -3,7 +3,7 @@
 from typing import Optional
 
 import numpy as np
-from scipy.interpolate import CubicSpline
+from scipy.interpolate import Akima1DInterpolator, CubicSpline
 
 
 def update_depth_and_ssp(
@@ -43,8 +43,10 @@ def update_sediment(dz: float, z_values: list) -> list:
 def update_ssp(data: dict) -> dict:
     z = data["z"]
     c = data["c_p"]
-    assert len(z) == len(c)
-    cs = CubicSpline(z, c, bc_type="clamped")
+
+    # assert len(z) == len(c)
+    # cs = CubicSpline(z, c, bc_type="clamped")
+    cs = Akima1DInterpolator(z, c)
 
     # zs = np.linspace(z[0], z[-1], 100)
     # data["z"] = zs.tolist()
@@ -186,27 +188,29 @@ def format_parameters(
         fixed_parameters, search_parameters, rho_sed
     )
 
-    # c1 = search_parameters.pop("c1", None)
-    # # dc1 = search_parameters.pop("dc1", None)
-    # dc2 = search_parameters.pop("dc2", None)
-    # dc3 = search_parameters.pop("dc3", None)
-    # dc4 = search_parameters.pop("dc4", None)
-    # dc5 = search_parameters.pop("dc5", None)
+    c1 = search_parameters.pop("c1", fixed_parameters["layerdata"][0]["c_p"][0])
+    dc1 = search_parameters.pop("dc1", None)
+    dc2 = search_parameters.pop("dc2", None)
+    dc3 = search_parameters.pop("dc3", None)
+    dc4 = search_parameters.pop("dc4", None)
+    dc5 = search_parameters.pop("dc5", None)
 
-    # if c1 is None:
-    #     c1 = fixed_parameters["layerdata"][0]["c_p"][0]
-    # c2 = c1
-    # # c2 = c1 + dc1
-    # c3 = c2 + dc2
-    # c4 = c3 + dc3
-    # c5 = c4 + dc4
-    # c6 = c5 + dc5
-    # c7 = c6
-    # c_p_values = [c1, c2, c3, c4, c5, c6, c7]
-    # fixed_parameters["layerdata"][0]["c_p"] = c_p_values
+    c2 = c1 + dc1
+    c3 = c2 + dc2
+    c4 = c3 + dc3
+    c5 = c4 + dc4
+    c6 = c5 + dc5
+    c7 = c6
+    c_p_values = [c1, c2, c3, c4, c5, c6, c7]
+    
+    num_extra = len(fixed_parameters["layerdata"][0]["c_p"]) - len(c_p_values)
+    if num_extra > 0:
+        [c_p_values.append(fixed_parameters["layerdata"][0]["c_p"][-1]) for i in range(num_extra)]
+    else:
+        fixed_parameters["layerdata"][0]["c_p"] = c_p_values
 
-    # # Interpolate SSP using cubic spline
-    # new_water_data = update_ssp(fixed_parameters["layerdata"][0])
-    # fixed_parameters["layerdata"][0] = new_water_data
+    # Interpolate SSP using cubic spline
+    new_water_data = update_ssp(fixed_parameters["layerdata"][0])
+    fixed_parameters["layerdata"][0] = new_water_data
 
     return fixed_parameters | {"freq": freq, "title": title} | search_parameters

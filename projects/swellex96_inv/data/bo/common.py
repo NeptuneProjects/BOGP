@@ -36,18 +36,18 @@ if TIME_STEP == 121:
     TRUE_R = 1.07
     TRUE_SRC_Z = 71.11
     TILT = 2.0
-    H_W = 217.5
+    H_W = 217
 TRUE_VALUES = {
     "rec_r": TRUE_R,
     "src_z": TRUE_SRC_Z,
     "tilt": TILT,
     "h_w": H_W,
-    # "c1": 1522.0,
-    # "dc1": -0.573,
-    # "dc2": -21.594,
-    # "dc3": -7.273,
-    # "dc4": -2.362,
-    # "dc5": -1.764,
+    "c1": 1522.0,
+    "dc1": -22.167,
+    "dc2": -7.273,
+    "dc3": -1.618,
+    "dc4": -1.279,
+    "dc5": -1.229,
     "h_sed": 23.0,
     "c_p_sed_top": 1572.3,
     "dc_p_sed": 20.7,
@@ -63,14 +63,14 @@ VARIABLES = {
     "tilt": "$\\tau$ [$^\circ$]",
     "h_sed": "$h_s$ [m]",
     "c_p_sed_top": "$c_{s,t}$ [m/s]",
-    "dc_p_sed": "$c_{s,b}$ [m/s]",
+    "dc_p_sed": "$\delta c_s$ [m/s]",
     "a_p_sed": "$\\alpha_s$ [dB/$\lambda$]",
     "rho_sed": "$\\rho_s$ [g/cm$^3$]",
-    # "dc1": "$\Delta c_1$ [m/s]",
-    # "dc2": "$\Delta c_2$ [m/s]",
-    # "dc3": "$\Delta c_3$ [m/s]",
-    # "dc4": "$\Delta c_4$ [m/s]",
-    # "dc5": "$\Delta c_5$ [m/s]",
+    "dc1": "$\delta c_1$ [m/s]",
+    "dc2": "$\delta c_2$ [m/s]",
+    "dc3": "$\delta c_3$ [m/s]",
+    "dc4": "$\delta c_4$ [m/s]",
+    "dc5": "$\delta c_5$ [m/s]",
 }
 
 SEARCH_SPACE = [
@@ -78,15 +78,15 @@ SEARCH_SPACE = [
         {"name": "src_z", "type": "range", "bounds": [60.0, 80.0]},
         {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
         {"name": "h_w", "type": "range", "bounds": [TRUE_VALUES["h_w"] - 5.0, TRUE_VALUES["h_w"] + 5.0]},
-        # {"name": "c1", "type": "range", "bounds": [1470.0, 1570.0]},
-        # {"name": "dc1", "type": "range", "bounds": [-10.0, 10.0]},
-        # {"name": "dc2", "type": "range", "bounds": [-40.0, 0.0]},
-        # {"name": "dc3", "type": "range", "bounds": [-20.0, 0.0]},
-        # {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
-        # {"name": "dc5", "type": "range", "bounds": [-10.0, 10.0]},
         {"name": "h_sed", "type": "range", "bounds": [10.0, 40.0]},
         {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1640.0]},
         {"name": "dc_p_sed", "type": "range", "bounds": [0.0, 50.0]},
+        # {"name": "c1", "type": "range", "bounds": [1470.0, 1570.0]},
+        {"name": "dc1", "type": "range", "bounds": [-40.0, 20.0]},
+        {"name": "dc2", "type": "range", "bounds": [-20.0, 10.0]},
+        {"name": "dc3", "type": "range", "bounds": [-10.0, 10.0]},
+        {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
+        {"name": "dc5", "type": "range", "bounds": [-10.0, 10.0]},
         # {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
         # {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
     ]
