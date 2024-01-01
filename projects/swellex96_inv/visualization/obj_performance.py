@@ -120,7 +120,7 @@ def plot_est_dist(df: pd.DataFrame, ax: Optional[plt.Axes] = None) -> plt.Axes:
 
 def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
     fig, axs = plt.subplots(
-        nrows=2, ncols=3, figsize=(8, 4.5), gridspec_kw={"wspace": 0.05, "hspace": 0.2}
+        nrows=2, ncols=3, figsize=(8, 3), gridspec_kw={"wspace": 0.05, "hspace": 0.2}
     )
 
     for i, df in enumerate(data):
@@ -169,15 +169,16 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
     return fig
 
 
-def main():
+def main(prepend=""):
     path = common.SWELLEX96Paths.outputs / "runs"
     data_sim = helpers.load_data(
-        path, "sim_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+        path, f"{prepend}sim_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
     data_exp = helpers.load_data(
-        path, "exp_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+        path, f"{prepend}exp_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
     fig = performance_plot([data_sim, data_exp])
+    # fig = performance_plot([data_exp, data_exp])
     return fig
 
 

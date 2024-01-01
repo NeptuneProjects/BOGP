@@ -13,6 +13,8 @@ from conf import common
 
 savepath = Path.cwd().parent / "reports/manuscripts/202310_JASA"
 
+SAVE_KWARGS = {"bbox_inches": "tight", "dpi": 1000}
+
 # sns.set_theme(style="white")
 
 # df = sns.load_dataset("penguins")
@@ -38,15 +40,13 @@ def get_concat_h(im1, im2, im3):
 def figure01():
     import sobol_demo
 
-    sobol_demo.sample_comparison().savefig(
-        savepath / "figure01.pdf", bbox_inches="tight", dpi=1000
-    )
+    sobol_demo.sample_comparison().savefig(savepath / "figure01.pdf", **SAVE_KWARGS)
 
 
 def figure02():
     import bo_example
 
-    bo_example.main().savefig(savepath / "figure02.pdf", bbox_inches="tight", dpi=1000)
+    bo_example.main().savefig(savepath / "figure02.pdf", **SAVE_KWARGS)
 
 
 def figure03():
@@ -62,27 +62,38 @@ def figure03():
 def figure04():
     import obj_performance
 
-    obj_performance.main().savefig(
-        savepath / "figure04.pdf", bbox_inches="tight", dpi=1000
-    )
+    obj_performance.main().savefig(savepath / "figure04.pdf", **SAVE_KWARGS)
 
 
 def figure05():
     import param_est
 
-    param_est.main().savefig(savepath / "figure05.pdf", bbox_inches="tight", dpi=1000)
-
-
-# def figure06():
-#     import equiv_time
-
-#     equiv_time.main().savefig(savepath / "figure06.pdf", bbox_inches="tight", dpi=1000)
+    param_est.main().savefig(savepath / "figure05.pdf", **SAVE_KWARGS)
 
 
 def figure06():
+    import obj_performance
+
+    obj_performance.main(prepend="full_").savefig(
+        savepath / "figure06.pdf", **SAVE_KWARGS
+    )
+
+
+def figure07():
+    import param_est
+
+    param_est.main(prepend="full_").savefig(savepath / "figure07.pdf", **SAVE_KWARGS)
+
+
+def figure08():
     import warmup_perf
 
-    warmup_perf.main().savefig(savepath / "figure06.pdf", bbox_inches="tight", dpi=1000)
+    warmup_perf.main().savefig(savepath / "figure08.pdf", **SAVE_KWARGS)
+
+
+def figure09():
+    pass
+
 
 if __name__ == "__main__":
     # figure01()
@@ -90,4 +101,7 @@ if __name__ == "__main__":
     # figure03()
     # figure04()
     # figure05()
-    figure06()
+    # figure06()
+    figure07()
+    # figure08()
+    # figure09()
