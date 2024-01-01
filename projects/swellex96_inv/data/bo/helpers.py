@@ -108,7 +108,14 @@ def parse_name(name: str) -> tuple[str, int, int, str]:
 def record_best_evaluations(
     df: pd.DataFrame, search_space: list[dict], true_values: dict
 ) -> pd.DataFrame:
-    search_parameters = [d["name"] for d in search_space] + ["c_p_sed_bot"]
+    search_parameters = [d["name"] for d in search_space] + [
+        "c_p_sed_bot",
+        # "c2",
+        # "c3",
+        # "c4",
+        # "c5",
+        # "c6",
+    ]
     # Iterate through the dataframe and record the running best evaluation and the corresponding parameters.
     best_obj = np.inf
     best_params = np.zeros(len(search_parameters))
@@ -160,8 +167,9 @@ def construct_run_df(
 
     for param, j in zip(search_parameters, range(X.shape[1])):
         df[param] = X[:, j]
-    
+
     df = compute_c_p_sed_bot(df)
+    # df = compute_ssp(df)
 
     df["obj"] = Y
     df["Strategy"] = strategy
@@ -180,6 +188,29 @@ def compute_c_p_sed_bot(df: pd.DataFrame) -> pd.DataFrame:
     df["best_c_p_sed_bot"] = np.nan
     df["best_c_p_sed_bot_err"] = np.nan
     return df
+
+
+# def compute_ssp(df: pd.DataFrame) -> pd.DataFrame:
+#     df["c2"] = 1522.0 + df["dc1"]
+#     df["best_c2"] = np.nan
+#     df["best_c2_err"] = np.nan
+
+#     df["c3"] = df["c2"] + df["dc2"]
+#     df["best_c3"] = np.nan
+#     df["best_c3_err"] = np.nan
+
+#     df["c4"] = df["c3"] + df["dc3"]
+#     df["best_c4"] = np.nan
+#     df["best_c4_err"] = np.nan
+
+#     df["c5"] = df["c4"] + df["dc4"]
+#     df["best_c5"] = np.nan
+#     df["best_c5_err"] = np.nan
+
+#     df["c6"] = df["c5"] + df["dc5"]
+#     df["best_c6"] = np.nan
+#     df["best_c6_err"] = np.nan
+#     return df
 
 
 def construct_agg_df(
