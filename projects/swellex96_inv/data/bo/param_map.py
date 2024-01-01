@@ -3,7 +3,7 @@
 from typing import Optional
 
 import numpy as np
-from scipy.interpolate import Akima1DInterpolator, CubicSpline
+from scipy.interpolate import Akima1DInterpolator
 
 
 def update_depth_and_ssp(
@@ -189,17 +189,22 @@ def format_parameters(
     )
 
     c1 = search_parameters.pop("c1", fixed_parameters["layerdata"][0]["c_p"][0])
-    dc1 = search_parameters.pop("dc1", None)
-    dc2 = search_parameters.pop("dc2", None)
-    dc3 = search_parameters.pop("dc3", None)
-    dc4 = search_parameters.pop("dc4", None)
-    dc5 = search_parameters.pop("dc5", None)
+    c2 = search_parameters.pop("c2", None)
+    c3 = search_parameters.pop("c3", None)
+    c4 = search_parameters.pop("c4", None)
+    c5 = search_parameters.pop("c5", None)
+    c6 = search_parameters.pop("c6", None)
+    # dc1 = search_parameters.pop("dc1", None)
+    # dc2 = search_parameters.pop("dc2", None)
+    # dc3 = search_parameters.pop("dc3", None)
+    # dc4 = search_parameters.pop("dc4", None)
+    # dc5 = search_parameters.pop("dc5", None)
 
-    c2 = c1 + dc1
-    c3 = c2 + dc2
-    c4 = c3 + dc3
-    c5 = c4 + dc4
-    c6 = c5 + dc5
+    # c2 = c1 + dc1
+    # c3 = c2 + dc2
+    # c4 = c3 + dc3
+    # c5 = c4 + dc4
+    # c6 = c5 + dc5
     c7 = c6
     c_p_values = [c1, c2, c3, c4, c5, c6, c7]
     

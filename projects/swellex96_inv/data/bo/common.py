@@ -55,6 +55,11 @@ TRUE_VALUES = {
     "a_p_sed": 0.2,
     "rho_sed": 1.76,
 }
+TRUE_VALUES["c2"] = TRUE_VALUES["c1"] + TRUE_VALUES["dc1"]
+TRUE_VALUES["c3"] = TRUE_VALUES["c2"] + TRUE_VALUES["dc2"]
+TRUE_VALUES["c4"] = TRUE_VALUES["c3"] + TRUE_VALUES["dc3"]
+TRUE_VALUES["c5"] = TRUE_VALUES["c4"] + TRUE_VALUES["dc4"]
+TRUE_VALUES["c6"] = TRUE_VALUES["c5"] + TRUE_VALUES["dc5"]
 
 VARIABLES = {
     "rec_r": "$r_\mathrm{src}$ [km]",
@@ -64,13 +69,19 @@ VARIABLES = {
     "h_sed": "$h_s$ [m]",
     "c_p_sed_top": "$c_{s,t}$ [m/s]",
     "dc_p_sed": "$\delta c_s$ [m/s]",
+    "c_p_sed_bot": "$c_{s,b}$ [m/s]",
     "a_p_sed": "$\\alpha_s$ [dB/$\lambda$]",
     "rho_sed": "$\\rho_s$ [g/cm$^3$]",
-    "dc1": "$\delta c_1$ [m/s]",
-    "dc2": "$\delta c_2$ [m/s]",
-    "dc3": "$\delta c_3$ [m/s]",
-    "dc4": "$\delta c_4$ [m/s]",
-    "dc5": "$\delta c_5$ [m/s]",
+    # "dc1": "$\delta c_1$ [m/s]",
+    # "dc2": "$\delta c_2$ [m/s]",
+    # "dc3": "$\delta c_3$ [m/s]",
+    # "dc4": "$\delta c_4$ [m/s]",
+    # "dc5": "$\delta c_5$ [m/s]",
+    "c2": "$c_2$ [m/s]",
+    "c3": "$c_3$ [m/s]",
+    "c4": "$c_4$ [m/s]",
+    "c5": "$c_5$ [m/s]",
+    "c6": "$c_6$ [m/s]",
 }
 
 SEARCH_SPACE = [
@@ -81,12 +92,17 @@ SEARCH_SPACE = [
         {"name": "h_sed", "type": "range", "bounds": [10.0, 40.0]},
         {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1640.0]},
         {"name": "dc_p_sed", "type": "range", "bounds": [0.0, 50.0]},
+        {"name": "c2", "type": "range", "bounds": [1460.0, 1540.0]},
+        {"name": "c3", "type": "range", "bounds": [1460.0, 1540.0]},
+        {"name": "c4", "type": "range", "bounds": [1460.0, 1500.0]},
+        {"name": "c5", "type": "range", "bounds": [1460.0, 1500.0]},
+        {"name": "c6", "type": "range", "bounds": [1460.0, 1500.0]},
+        # {"name": "dc1", "type": "range", "bounds": [-40.0, 20.0]},
+        # {"name": "dc2", "type": "range", "bounds": [-20.0, 10.0]},
+        # {"name": "dc3", "type": "range", "bounds": [-10.0, 10.0]},
+        # {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
+        # {"name": "dc5", "type": "range", "bounds": [-10.0, 10.0]},
         # {"name": "c1", "type": "range", "bounds": [1470.0, 1570.0]},
-        {"name": "dc1", "type": "range", "bounds": [-40.0, 20.0]},
-        {"name": "dc2", "type": "range", "bounds": [-20.0, 10.0]},
-        {"name": "dc3", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
-        {"name": "dc5", "type": "range", "bounds": [-10.0, 10.0]},
         # {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
         # {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
     ]
