@@ -63,7 +63,7 @@ def figure_1() -> plt.Figure:
     # True function
     ax.plot(x_t, f, color="k", label="$\phi(\mathbf{m})$")
     # Observed data
-    ax.scatter(x, y, color="k", marker="o", facecolor="none", label="$\mathbf{y}$")
+    ax.scatter(x, y, color="k", marker="o", facecolor="none", label="$\\boldsymbol{\phi}(\mathbf{M})$")
     # Posterior mean
     ax.plot(x_t, mu, color="k", linestyle="--", label="$\mu(\mathbf{m})$")
     # Posterior uncertainty
@@ -83,7 +83,7 @@ def figure_1() -> plt.Figure:
         linefmt=":",
         basefmt=" ",
         bottom=-0.2,
-        label="$y_{t+1}$",
+        label="$\phi(\mathbf{m}_{t+1})$",
     )
     markerline.set_markerfacecolor("none")
     ax.set_xlim(xlim)
