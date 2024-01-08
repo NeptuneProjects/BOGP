@@ -171,13 +171,13 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
 
 def main(prepend=""):
     path = common.SWELLEX96Paths.outputs / "runs"
-    data_sim = helpers.load_data(
-        path, f"{prepend}sim_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
-    )
+    # data_sim = helpers.load_data(
+    #     path, f"{prepend}sim_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+    # )
     data_exp = helpers.load_data(
         path, f"{prepend}exp_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
-    fig = performance_plot([data_sim, data_exp])
+    fig = performance_plot([data_exp, data_exp])
     # fig = performance_plot([data_exp, data_exp])
     return fig
 

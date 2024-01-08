@@ -40,7 +40,7 @@ def plot_sensitivity(
         if i % 3 != 0:
             ax.set_yticklabels([])
         if i == 0:
-            ax.set_ylabel("$\phi(\mathbf{x})$ [dB]")
+            ax.set_ylabel("$\phi(\mathbf{m})$ [dB]")
 
         parameter = sensitivities[i]
         # if parameter["name"] == "dc_p_sed":

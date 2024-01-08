@@ -188,12 +188,13 @@ def plot_parameter_estimates_full(data: list[pd.DataFrame]) -> plt.Figure:
 
 def main(prepend=""):
     path = common.SWELLEX96Paths.outputs / "runs"
-    data_sim = helpers.load_data(
-        path, f"{prepend}sim_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
-    )
+    # data_sim = helpers.load_data(
+    #     path, f"{prepend}sim_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+    # )
     data_exp = helpers.load_data(
         path, f"{prepend}exp_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
+    data_sim = data_exp
 
     # data_sim.to_csv("data.csv")
     if prepend == "full_":
