@@ -65,54 +65,54 @@ def plot_environment(subfiglabel: str = None):
     # Water SSP
     ax.plot(waterdata["c_p"], waterdata["z"])
 
-    c_label = 1478.5
-    # 0 m
-    z_ = 0
-    c_ = waterdata["c_p"][0]
-    ax.scatter(c_, 2, marker="o", color="k", s=10)
-    ax.annotate("$c_1$", xy=(c_, 2), xytext=(c_label, z_ + 10), arrowprops=dict(arrowstyle="->"))
+    # c_label = 1478.5
+    # # 0 m
+    # z_ = 0
+    # c_ = waterdata["c_p"][0]
+    # ax.scatter(c_, 2, marker="o", color="k", s=10)
+    # ax.annotate("$c_1$", xy=(c_, 2), xytext=(c_label, z_ + 10), arrowprops=dict(arrowstyle="->"))
 
-    # 20 m
-    z_ = 20
-    ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
-    c_ = waterdata["c_p"][ind]
-    ax.scatter(c_, z_, marker="o", color="k", s=10)
-    ax.annotate("$c_2$", xy=(c_, z_), xytext=(c_label, z_), arrowprops=dict(arrowstyle="->"))
+    # # 20 m
+    # z_ = 20
+    # ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
+    # c_ = waterdata["c_p"][ind]
+    # ax.scatter(c_, z_, marker="o", color="k", s=10)
+    # ax.annotate("$c_2$", xy=(c_, z_), xytext=(c_label, z_), arrowprops=dict(arrowstyle="->"))
 
-    # 40 m
-    z_ = 40
-    ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
-    c_ = waterdata["c_p"][ind]
-    ax.scatter(c_, z_, marker="o", color="k", s=10)
-    ax.text(c_label, z_, "$c_3$")
+    # # 40 m
+    # z_ = 40
+    # ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
+    # c_ = waterdata["c_p"][ind]
+    # ax.scatter(c_, z_, marker="o", color="k", s=10)
+    # ax.text(c_label, z_, "$c_3$")
 
-    # 60 m
-    z_ = 60
-    ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
-    c_ = waterdata["c_p"][ind]
-    ax.scatter(c_, z_, marker="o", color="k", s=10)
-    ax.text(c_label, z_, "$c_4$")
+    # # 60 m
+    # z_ = 60
+    # ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
+    # c_ = waterdata["c_p"][ind]
+    # ax.scatter(c_, z_, marker="o", color="k", s=10)
+    # ax.text(c_label, z_, "$c_4$")
 
-    # 80 m
-    z_ = 80
-    ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
-    c_ = waterdata["c_p"][ind]
-    ax.scatter(c_, z_, marker="o", color="k", s=10)
-    ax.text(c_label, z_, "$c_5$")
+    # # 80 m
+    # z_ = 80
+    # ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
+    # c_ = waterdata["c_p"][ind]
+    # ax.scatter(c_, z_, marker="o", color="k", s=10)
+    # ax.text(c_label, z_, "$c_5$")
 
-    # 100 m
-    z_ = 100
-    ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
-    c_ = waterdata["c_p"][ind]
-    ax.scatter(c_, z_, marker="o", color="k", s=10)
-    ax.text(c_label, z_, "$c_6$")
+    # # 100 m
+    # z_ = 100
+    # ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
+    # c_ = waterdata["c_p"][ind]
+    # ax.scatter(c_, z_, marker="o", color="k", s=10)
+    # ax.text(c_label, z_, "$c_6$")
 
-    # 217 m
-    z_ = 215
-    ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
-    c_ = waterdata["c_p"][ind]
-    ax.scatter(c_, z_, marker="o", color="k", s=10)
-    ax.text(c_label, z_ - 2, "$c_7$")
+    # # 217 m
+    # z_ = 215
+    # ind = np.argmin(np.abs(np.array(waterdata["z"]) - z_))
+    # c_ = waterdata["c_p"][ind]
+    # ax.scatter(c_, z_, marker="o", color="k", s=10)
+    # ax.text(c_label, z_ - 2, "$c_7$")
 
 
     # Sediment 1

@@ -188,12 +188,28 @@ def format_parameters(
         fixed_parameters, search_parameters, rho_sed
     )
 
-    c1 = search_parameters.pop("c1", fixed_parameters["layerdata"][0]["c_p"][0])
-    c2 = search_parameters.pop("c2", None)
+    # Adjust SSP
+    z3 = search_parameters.pop("z3", None)
     c3 = search_parameters.pop("c3", None)
-    c4 = search_parameters.pop("c4", None)
-    c5 = search_parameters.pop("c5", None)
-    c6 = search_parameters.pop("c6", None)
+    dc3 = search_parameters.pop("dc3", None)
+    if z3 is not None and c3 is not None:
+        z1, c1 = 0.0, 1522.0
+        z2, c2 = 5.0, 1522.0
+        z4 = 100.0
+        c4 = c3 + dc3
+        c5 = c4
+        water_data = fixed_parameters["layerdata"][0]
+        water_data["z"] = [z1, z2, z3, z4, h_w]
+        water_data["c_p"] = [c1, c2, c3, c4, c5]
+        fixed_parameters["layerdata"][0] = water_data
+
+
+    # c1 = search_parameters.pop("c1", fixed_parameters["layerdata"][0]["c_p"][0])
+    # c2 = search_parameters.pop("c2", None)
+    # c3 = search_parameters.pop("c3", None)
+    # c4 = search_parameters.pop("c4", None)
+    # c5 = search_parameters.pop("c5", None)
+    # c6 = search_parameters.pop("c6", None)
     # dc1 = search_parameters.pop("dc1", None)
     # dc2 = search_parameters.pop("dc2", None)
     # dc3 = search_parameters.pop("dc3", None)
@@ -205,17 +221,17 @@ def format_parameters(
     # c4 = c3 + dc3
     # c5 = c4 + dc4
     # c6 = c5 + dc5
-    c7 = c6
-    c_p_values = [c1, c2, c3, c4, c5, c6, c7]
+    # c7 = c6
+    # c_p_values = [c1, c2, c3, c4, c5, c6, c7]
     
-    num_extra = len(fixed_parameters["layerdata"][0]["c_p"]) - len(c_p_values)
-    if num_extra > 0:
-        [c_p_values.append(fixed_parameters["layerdata"][0]["c_p"][-1]) for i in range(num_extra)]
-    else:
-        fixed_parameters["layerdata"][0]["c_p"] = c_p_values
+    # num_extra = len(fixed_parameters["layerdata"][0]["c_p"]) - len(c_p_values)
+    # if num_extra > 0:
+    #     [c_p_values.append(fixed_parameters["layerdata"][0]["c_p"][-1]) for i in range(num_extra)]
+    # else:
+    #     fixed_parameters["layerdata"][0]["c_p"] = c_p_values
 
     # Interpolate SSP using cubic spline
-    new_water_data = update_ssp(fixed_parameters["layerdata"][0])
-    fixed_parameters["layerdata"][0] = new_water_data
+    # new_water_data = update_ssp(fixed_parameters["layerdata"][0])
+    # fixed_parameters["layerdata"][0] = new_water_data
 
     return fixed_parameters | {"freq": freq, "title": title} | search_parameters
