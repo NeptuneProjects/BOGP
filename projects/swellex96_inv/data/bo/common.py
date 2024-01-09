@@ -96,7 +96,7 @@ SEARCH_SPACE = [
         {"name": "h_sed", "type": "range", "bounds": [10.0, 40.0]},
         {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1640.0]},
         {"name": "dc_p_sed", "type": "range", "bounds": [0.0, 50.0]},
-        {"name": "z3", "type": "range", "bounds": [10.0, 99.0]},
+        {"name": "z3", "type": "range", "bounds": [10.0, 60.0]},
         {"name": "c3", "type": "range", "bounds": [1480.0, 1520.0]},
         # {"name": "dc3", "type": "range", "bounds": [-20.0, 0.0]},
         # {"name": "c2", "type": "range", "bounds": [1460.0, 1540.0]},
