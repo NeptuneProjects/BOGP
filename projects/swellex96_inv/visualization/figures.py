@@ -82,7 +82,7 @@ def figure06():
 def figure07():
     import param_est
 
-    param_est.main(prepend="full_").savefig(savepath / "figure07.pdf", **SAVE_KWARGS)
+    param_est.main(prepend="thermo_").savefig(savepath / "figure07.pdf", **SAVE_KWARGS)
 
 
 def figure08():
@@ -98,10 +98,10 @@ def figure09():
 if __name__ == "__main__":
     # figure01()
     # figure02()
-    figure03()
+    # figure03()
     # figure04()
     # figure05()
     # figure06()
-    # figure07()
+    figure07()
     # figure08()
     # figure09()

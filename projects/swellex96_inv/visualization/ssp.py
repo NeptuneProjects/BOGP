@@ -22,12 +22,10 @@ from optimization import utils
 
 
 def plot_ssp(data: list[pd.DataFrame]) -> plt.Figure:
-
     env = utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data)
     waterdata = env["layerdata"][0]
 
     df = data[1]
-    print(df.columns)
 
     c1 = 1522
     # c2 = df["best_c2"]
@@ -40,43 +38,45 @@ def plot_ssp(data: list[pd.DataFrame]) -> plt.Figure:
     # c = np.array([c1, c2, c3, c4, c5, c6, c7])
     # z = np.array([0, 20, 40, 60, 80, 100, 217])
 
-    c2 = c1
-    c3 = 1487
+    c3 = df["best_c3"]
+    # c4 = df["best_c4"]
     c4 = c3
-    c1 = np.ones_like(c4) * c1
+    c1 = np.ones_like(c3) * c1
+    c2 = c1
     c = np.array([c1, c2, c3, c4])
-    z = np.array([0, 5, 40, 217])
 
+    z3 = df["best_z3"]
+    z4 = df["best_h_w"]
+    z = np.array([np.zeros_like(z3), np.ones_like(z3) * 5, z3, np.ones_like(z3) * z4])
 
     for i in range(c.shape[1]):
-        zs = np.linspace(z[1], z[-2], 50).tolist()
-        cs = Akima1DInterpolator(z, c[:, i])
+        # zs = np.linspace(z[1], z[-2], 50).tolist()
+        # cs = Akima1DInterpolator(z, c[:, i])
 
-        zq = [z[0]] + zs + [z[-1]]
-        cq = [c[0, i]] + cs(zs).tolist() + [c[-1, i]]
-        plt.plot(cq, zq, "k")
-    
+        # zq = [z[0]] + zs + [z[-1]]
+        # cq = [c[0, i]] + cs(zs).tolist() + [c[-1, i]]
+        # plt.plot(cq, zq, "k")
+
+        plt.plot(c[:, i], z[:, i], "k", alpha=0.5)
+
     plt.plot(waterdata["c_p"], waterdata["z"], "r")
+    plt.xlabel("Sound speed (m/s)")
+    plt.ylabel("Depth (m)")
 
     plt.gca().invert_yaxis()
     plt.show()
-
-    # plt.plot(c, z)
-
-    return
 
 
 def main():
     path = common.SWELLEX96Paths.outputs / "runs"
     # data_sim = helpers.load_data(
-    #     path, f"full_sim_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+    #     path, f"thermo_sim_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     # )
     data_exp = helpers.load_data(
-        path, f"full_exp_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+        path, f"thermo_exp_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
     data_sim = data_exp
     plot_ssp([data_sim[data_sim["Trial"] == 500], data_exp[data_exp["Trial"] == 500]])
-    return
 
 
 if __name__ == "__main__":

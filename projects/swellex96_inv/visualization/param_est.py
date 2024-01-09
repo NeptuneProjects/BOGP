@@ -76,14 +76,16 @@ def plot_parameter_estimates(data: list[pd.DataFrame]) -> plt.Figure:
 
 
 def plot_parameter_estimates_full(data: list[pd.DataFrame]) -> plt.Figure:
-    YLIM = [[0, 25], [0, 25]]
+    YLIM = [[0, 20], [0, 20]]
+    NCOLS = 5
+    NROWS = 2
 
     fig = plt.figure(figsize=(8, 4))
     gs_outer = gridspec.GridSpec(nrows=2, ncols=1, figure=fig, hspace=0.45)
 
     # Tranche 1 of parameters
     gs_inner = gridspec.GridSpecFromSubplotSpec(
-        nrows=2, ncols=6, subplot_spec=gs_outer[0], wspace=0.1, hspace=0.4
+        nrows=NROWS, ncols=NCOLS, subplot_spec=gs_outer[0], wspace=0.1, hspace=0.4
     )
 
     for i in range(gs_inner.get_geometry()[0]):
@@ -102,7 +104,9 @@ def plot_parameter_estimates_full(data: list[pd.DataFrame]) -> plt.Figure:
 
             ax = plot_param_dist(data[i][f"best_{param_name}"], bounds, ax=ax)
 
-            ax.text(0, 1.07, f"({ascii_lowercase[6 * i + j]})", transform=ax.transAxes)
+            ax.text(
+                0, 1.07, f"({ascii_lowercase[NCOLS * i + j]})", transform=ax.transAxes
+            )
             ax.axvline(
                 true_value,
                 color="k",
@@ -120,55 +124,57 @@ def plot_parameter_estimates_full(data: list[pd.DataFrame]) -> plt.Figure:
 
     # Tranche 2 of parameters
     gs_inner = gridspec.GridSpecFromSubplotSpec(
-        nrows=2, ncols=6, subplot_spec=gs_outer[1], wspace=0.1, hspace=0.4
+        nrows=NROWS, ncols=NCOLS, subplot_spec=gs_outer[1], wspace=0.1, hspace=0.4
     )
 
     for i in range(gs_inner.get_geometry()[0]):
-        for j in range(gs_inner.get_geometry()[1]):
+        for j in range(gs_inner.get_geometry()[1] - 1):
             ax = fig.add_subplot(gs_inner[i, j])
 
             ax.grid(True, linestyle="dotted")
 
-            param_name = common.SEARCH_SPACE[j + 6]["name"]
-            param_label = common.VARIABLES[common.SEARCH_SPACE[j + 6]["name"]]
-            bounds = common.SEARCH_SPACE[j + 6]["bounds"]
-            true_value = common.TRUE_VALUES[common.SEARCH_SPACE[j + 6]["name"]]
+            param_name = common.SEARCH_SPACE[j + NCOLS]["name"]
+            param_label = common.VARIABLES[common.SEARCH_SPACE[j + NCOLS]["name"]]
+            bounds = common.SEARCH_SPACE[j + NCOLS]["bounds"]
+            true_value = common.TRUE_VALUES[common.SEARCH_SPACE[j + NCOLS]["name"]]
             if param_name == "dc_p_sed":
                 param_name = "c_p_sed_bot"
                 param_label = common.VARIABLES[param_name]
-                bounds = [1540, 1690]
+                bounds = [1540.0, 1690.0]
                 true_value = 1593.0
-            if param_name == "dc1":
-                param_name = "c2"
-                param_label = common.VARIABLES[param_name]
-                bounds = [1480, 1540]
-                true_value = 1499.833
-            if param_name == "dc2":
-                param_name = "c3"
-                param_label = common.VARIABLES[param_name]
-                bounds = [1480, 1540]
-                true_value = 1492.56
+            # if param_name == "dc1":
+            #     param_name = "c2"
+            #     param_label = common.VARIABLES[param_name]
+            #     bounds = [1480, 1540]
+            #     true_value = 1499.833
+            # if param_name == "dc2":
+            #     param_name = "c3"
+            #     param_label = common.VARIABLES[param_name]
+            #     bounds = [1480, 1540]
+            #     true_value = 1492.56
             if param_name == "dc3":
                 param_name = "c4"
                 param_label = common.VARIABLES[param_name]
-                bounds = [1480, 1540]
-                true_value = 1490.942
-            if param_name == "dc4":
-                param_name = "c5"
-                param_label = common.VARIABLES[param_name]
-                bounds = [1480, 1540]
-                true_value = 1489.663
-            if param_name == "dc5":
-                param_name = "c6"
-                param_label = common.VARIABLES[param_name]
-                bounds = [1480, 1540]
-                true_value = 1488.434
-                
+                bounds = [1460.0, 1520.0]
+                true_value = 1488.0
+                print(data[i][f"best_{param_name}"])
+            # if param_name == "dc4":
+            #     param_name = "c5"
+            #     param_label = common.VARIABLES[param_name]
+            #     bounds = [1480, 1540]
+            #     true_value = 1489.663
+            # if param_name == "dc5":
+            #     param_name = "c6"
+            #     param_label = common.VARIABLES[param_name]
+            #     bounds = [1480, 1540]
+            #     true_value = 1488.434
 
             ax = plot_param_dist(data[i][f"best_{param_name}"], bounds, ax=ax)
-            print(data[i][f"best_{param_name}"])
             ax.text(
-                0, 1.07, f"({ascii_lowercase[6 * i + j + 12]})", transform=ax.transAxes
+                0,
+                1.07,
+                f"({ascii_lowercase[NCOLS * i + j + 10]})",
+                transform=ax.transAxes,
             )
             ax.axvline(
                 true_value,
@@ -197,7 +203,7 @@ def main(prepend=""):
     data_sim = data_exp
 
     # data_sim.to_csv("data.csv")
-    if prepend == "full_":
+    if prepend in ["full_", "thermo_"]:
         fig = plot_parameter_estimates_full(
             [data_sim[data_sim["Trial"] == 500], data_exp[data_exp["Trial"] == 500]]
         )
@@ -209,4 +215,4 @@ def main(prepend=""):
 
 
 if __name__ == "__main__":
-    main(prepend="full_")
+    main(prepend="thermo_")
