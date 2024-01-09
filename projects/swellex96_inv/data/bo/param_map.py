@@ -191,16 +191,15 @@ def format_parameters(
     # Adjust SSP
     z3 = search_parameters.pop("z3", None)
     c3 = search_parameters.pop("c3", None)
-    dc3 = search_parameters.pop("dc3", None)
+    # dc3 = search_parameters.pop("dc3", None)
     if z3 is not None and c3 is not None:
         z1, c1 = 0.0, 1522.0
         z2, c2 = 5.0, 1522.0
-        z4 = 100.0
-        c4 = c3 + dc3
-        c5 = c4
+        # c4 = c3 + dc3
+        c4 = c3
         water_data = fixed_parameters["layerdata"][0]
-        water_data["z"] = [z1, z2, z3, z4, h_w]
-        water_data["c_p"] = [c1, c2, c3, c4, c5]
+        water_data["z"] = [z1, z2, z3, h_w]
+        water_data["c_p"] = [c1, c2, c3, c4]
         fixed_parameters["layerdata"][0] = water_data
 
 
