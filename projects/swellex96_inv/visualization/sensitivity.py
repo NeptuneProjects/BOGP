@@ -65,9 +65,9 @@ def plot_sensitivity(
             ax.set_yticks([-9, -6, -3, 0])
             ax.set_yticks(np.linspace(-9, 0, 4), minor=True)
         else:
-            ax.set_ylim([-2.0, 0.2])
-            ax.set_yticks([-2, -1, 0])
-            ax.set_yticks(np.linspace(-2, 0, 3), minor=True)
+            ax.set_ylim([-3.0, 0.2])
+            ax.set_yticks([-3, -2, -1, 0])
+            ax.set_yticks(np.linspace(-3, 0, 4), minor=True)
         ax.set_xlabel(common.VARIABLES[parameter["name"]], labelpad=0)
 
     if subfiglabel:

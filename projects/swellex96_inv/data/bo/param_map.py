@@ -46,17 +46,17 @@ def update_ssp(data: dict) -> dict:
 
     # assert len(z) == len(c)
     # cs = CubicSpline(z, c, bc_type="clamped")
-    cs = Akima1DInterpolator(z, c)
+    # cs = Akima1DInterpolator(z, c)
 
     # zs = np.linspace(z[0], z[-1], 100)
     # data["z"] = zs.tolist()
     # data["c_p"] = cs(zs).tolist()
 
-    zs = np.linspace(z[1], z[-2], 50).tolist()
-    z = [z[0]] + zs + [z[-1]]
-    c = [c[0]] + cs(zs).tolist() + [c[-1]]
-    data["z"] = z
-    data["c_p"] = c
+    # zs = np.linspace(z[1], z[-2], 50).tolist()
+    # z = [z[0]] + zs + [z[-1]]
+    # c = [c[0]] + cs(zs).tolist() + [c[-1]]
+    # data["z"] = z
+    # data["c_p"] = c
 
     # plt.plot(c, z, "ko-")
     # plt.gca().invert_yaxis()
@@ -189,18 +189,26 @@ def format_parameters(
     )
 
     # Adjust SSP
-    z3 = search_parameters.pop("z3", None)
+    c1 = 1522.0
+    c2 = 1522.0
     c3 = search_parameters.pop("c3", None)
-    # dc3 = search_parameters.pop("dc3", None)
-    if z3 is not None and c3 is not None:
-        z1, c1 = 0.0, 1522.0
-        z2, c2 = 5.0, 1522.0
-        # c4 = c3 + dc3
-        c4 = c3
-        water_data = fixed_parameters["layerdata"][0]
-        water_data["z"] = [z1, z2, z3, h_w]
-        water_data["c_p"] = [c1, c2, c3, c4]
-        fixed_parameters["layerdata"][0] = water_data
+    c4 = search_parameters.pop("c4", None)
+    c5 = search_parameters.pop("c5", None)
+    c6 = search_parameters.pop("c6", None)
+    c7 = c6
+    water_data = fixed_parameters["layerdata"][0]
+    water_data["z"] = [0.0, 5.0, 30.0, 60.0, 100.0, 150.0, h_w]
+    water_data["c_p"] = [c1, c2, c3, c4, c5, c6, c7]
+
+    # if z3 is not None and c3 is not None:
+    #     z1, c1 = 0.0, 1522.0
+    #     z2, c2 = 5.0, 1522.0
+    #     # c4 = c3 + dc3
+    #     c4 = c3
+    #     water_data = fixed_parameters["layerdata"][0]
+    #     water_data["z"] = [z1, z2, z3, h_w]
+    #     water_data["c_p"] = [c1, c2, c3, c4]
+    #     fixed_parameters["layerdata"][0] = water_data
 
 
     # c1 = search_parameters.pop("c1", fixed_parameters["layerdata"][0]["c_p"][0])
