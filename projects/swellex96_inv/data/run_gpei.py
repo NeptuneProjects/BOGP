@@ -7,7 +7,6 @@ import sys
 
 from ax.modelbridge.generation_strategy import GenerationStep, GenerationStrategy
 from ax.modelbridge.registry import Models
-import numpy as np
 from oao.objective import NoiselessFormattedObjective
 from oao.optimizer import BayesianOptimization
 from oao.results import get_results

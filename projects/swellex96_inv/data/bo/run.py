@@ -116,11 +116,6 @@ def main(args) -> None:
         print("-" * 100)
         logger.info("*** Optimization complete. ***")
         helpers.log_best_value_and_parameters(X, Y, common.SEARCH_SPACE)
-        # logger.info("Best parameters:")
-        # logger.info(
-        #     "".join([f"{d['name']}: {v:.2f} | " for d, v in zip(common.SEARCH_SPACE, best_params.squeeze())])[:-3]
-        # )
-        
         logger.handlers[1].stream.close()
         logger.removeHandler(logger.handlers[1])
         print("=" * 100)
