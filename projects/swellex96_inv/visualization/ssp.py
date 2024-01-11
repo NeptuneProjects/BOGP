@@ -27,27 +27,38 @@ def plot_ssp(data: list[pd.DataFrame]) -> plt.Figure:
 
     df = data[1]
 
-    c1 = 1522
     # c2 = df["best_c2"]
-    # c3 = df["best_c3"]
-    # c4 = df["best_c4"]
-    # c5 = df["best_c5"]
-    # c6 = df["best_c6"]
-    # c7 = c6
+    c3 = df["best_c3"].values
+    c4 = df["best_c4"].values
+    c5 = df["best_c5"].values
+    c6 = df["best_c6"].values
+    c7 = c6
+    c1 = 1522 * np.ones_like(c3)
+    c2 = c1
     # c1 = np.ones_like(c7) * c1
     # c = np.array([c1, c2, c3, c4, c5, c6, c7])
     # z = np.array([0, 20, 40, 60, 80, 100, 217])
 
-    c3 = df["best_c3"]
-    # c4 = df["best_c4"]
-    c4 = c3
-    c1 = np.ones_like(c3) * c1
-    c2 = c1
-    c = np.array([c1, c2, c3, c4])
+    # c3 = df["best_c3"]
+    # # c4 = df["best_c4"]
+    # c4 = c3
+    # c1 = np.ones_like(c3) * c1
+    # c2 = c1
+    # c = np.array([c1, c2, c3, c4])
 
-    z3 = df["best_z3"]
-    z4 = df["best_h_w"]
-    z = np.array([np.zeros_like(z3), np.ones_like(z3) * 5, z3, np.ones_like(z3) * z4])
+    # z3 = df["best_z3"]
+    # z = np.array([np.zeros_like(z3), np.ones_like(z3) * 5, z3, np.ones_like(z3) * z4])
+
+    z1 = np.zeros_like(c1)
+    z2 = 5 * np.ones_like(c1)
+    z3 = 30 * np.ones_like(c1)
+    z4 = 60 * np.ones_like(c1)
+    z5 = 100 * np.ones_like(c1)
+    z6 = 150 * np.ones_like(c1)
+    z7 = df["best_h_w"].values
+
+    z = np.array([z1, z2, z3, z4, z5, z6, z7])
+    c = np.array([c1, c2, c3, c4, c5, c6, c7])
 
     for i in range(c.shape[1]):
         # zs = np.linspace(z[1], z[-2], 50).tolist()
@@ -73,7 +84,7 @@ def main():
     #     path, f"thermo_sim_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     # )
     data_exp = helpers.load_data(
-        path, f"thermo_exp_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+        path, f"full_exp_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
     data_sim = data_exp
     plot_ssp([data_sim[data_sim["Trial"] == 500], data_exp[data_exp["Trial"] == 500]])

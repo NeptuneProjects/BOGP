@@ -112,7 +112,7 @@ def record_best_evaluations(
         "c_p_sed_bot",
         # "c2",
         # "c3",
-        "c4",
+        # "c4",
         # "c5",
         # "c6",
     ]
@@ -169,7 +169,7 @@ def construct_run_df(
         df[param] = X[:, j]
 
     df = compute_c_p_sed_bot(df)
-    df = compute_ssp(df)
+    # df = compute_ssp(df)
 
     df["obj"] = Y
     df["Strategy"] = strategy
@@ -192,9 +192,9 @@ def compute_c_p_sed_bot(df: pd.DataFrame) -> pd.DataFrame:
 
 def compute_ssp(df: pd.DataFrame) -> pd.DataFrame:
 
-    df["c4"] = df["c3"]
-    df["best_c4"] = np.nan
-    df["best_c4_err"] = np.nan
+    # df["c4"] = df["c3"]
+    # df["best_c4"] = np.nan
+    # df["best_c4_err"] = np.nan
 
 #     df["c2"] = 1522.0 + df["dc1"]
 #     df["best_c2"] = np.nan
