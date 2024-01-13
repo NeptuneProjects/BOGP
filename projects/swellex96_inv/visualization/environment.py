@@ -65,11 +65,28 @@ def plot_environment(subfiglabel: str = None):
     # Water SSP
     ax.plot(waterdata["c_p"], waterdata["z"])
 
+    # c1 = 1522.0
+    # c2 = c1
+    # c3 = 1490.0
+    # c4 = c3
+    # c = [c1, c2, c3, c4]
+    # z1 = 2.0
+    # z2 = 5.0
+    # z3 = 30.0
+    # z4 = 215.0
+    # z = [z1, z2, z3, z4]
+
+    # ax.plot(c, z, "ko--", linewidth=0.5, markersize=3)
+    # ax.annotate("$c_1$", xy=(c1, 2), xytext=(1540, 10), arrowprops=dict(arrowstyle="->"), fontsize=7)
+    # ax.annotate("$c_2$", xy=(c2, z2), xytext=(1540, 20), arrowprops=dict(arrowstyle="->"), fontsize=7)
+    # ax.text(1480, z3, "$c_3$", fontsize=7)
+    # ax.text(1480, z4 - 1, "$c_4$", fontsize=7)
+
     # c_label = 1478.5
     # # 0 m
     # z_ = 0
     # c_ = waterdata["c_p"][0]
-    # ax.scatter(c_, 2, marker="o", color="k", s=10)
+    # ax.scatter(c_, 2, marker="o ", color="k", s=10)
     # ax.annotate("$c_1$", xy=(c_, 2), xytext=(c_label, z_ + 10), arrowprops=dict(arrowstyle="->"))
 
     # # 20 m
@@ -173,6 +190,8 @@ def plot_environment(subfiglabel: str = None):
     )
     ax.add_patch(arr)
     ax.text((SRC_XLOC + VLA_XLOC) / 2, 65, "$r_\mathrm{src}=1.0$ km", ha="center", va="center", fontsize=7)
+
+    ax.patch.set_alpha(0)
 
     # Sediment 1
     ax.fill_between([xlim[0], xlim[1]], boundary_locs[1], boundary_locs[2], alpha=0.25, **SHADED_KWARGS)

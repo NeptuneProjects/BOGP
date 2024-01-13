@@ -3,7 +3,7 @@
 from typing import Optional
 
 import numpy as np
-from scipy.interpolate import Akima1DInterpolator
+# from scipy.interpolate import Akima1DInterpolator
 
 
 def update_depth_and_ssp(
@@ -40,9 +40,9 @@ def update_sediment(dz: float, z_values: list) -> list:
     return [el + dz for el in z_values]
 
 
-def update_ssp(data: dict) -> dict:
-    z = data["z"]
-    c = data["c_p"]
+# def update_ssp(data: dict) -> dict:
+#     z = data["z"]
+#     c = data["c_p"]
 
     # assert len(z) == len(c)
     # cs = CubicSpline(z, c, bc_type="clamped")
@@ -62,7 +62,7 @@ def update_ssp(data: dict) -> dict:
     # plt.gca().invert_yaxis()
     # plt.show()
     # np.save("ssp.npy", data)
-    return data
+    # return data
 
 
 def format_h_w(
@@ -189,16 +189,16 @@ def format_parameters(
     )
 
     # Adjust SSP
-    c1 = 1522.0
-    c2 = 1522.0
-    c3 = search_parameters.pop("c3", None)
-    c4 = search_parameters.pop("c4", None)
-    c5 = search_parameters.pop("c5", None)
-    c6 = search_parameters.pop("c6", None)
-    c7 = c6
-    water_data = fixed_parameters["layerdata"][0]
-    water_data["z"] = [0.0, 5.0, 30.0, 60.0, 100.0, 150.0, h_w]
-    water_data["c_p"] = [c1, c2, c3, c4, c5, c6, c7]
+    # c1 = 1522.0
+    # c2 = 1522.0
+    # c3 = search_parameters.pop("c3", None)
+    # c4 = search_parameters.pop("c4", None)
+    # c5 = search_parameters.pop("c5", None)
+    # c6 = search_parameters.pop("c6", None)
+    # c7 = c6
+    # water_data = fixed_parameters["layerdata"][0]
+    # water_data["z"] = [0.0, 5.0, 30.0, 60.0, 100.0, 150.0, h_w]
+    # water_data["c_p"] = [c1, c2, c3, c4, c5, c6, c7]
 
     # if z3 is not None and c3 is not None:
     #     z1, c1 = 0.0, 1522.0

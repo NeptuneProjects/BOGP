@@ -52,15 +52,15 @@ TRUE_VALUES = {
     "c_p_sed_top": 1572.3,
     "dc_p_sed": 20.7,
     "c_p_sed_bot": 1593.0,
-    # "a_p_sed": 0.2,
-    # "rho_sed": 1.76,
-    "c1": 1522.0,
-    "c2": 1522.0,
-    "c3": 1495.274,
-    "c4": 1490.892,
-    "c5": 1488.394,
-    "c6": 1488.89,
-    "c7": 1488.89,
+    "a_p_sed": 0.2,
+    "rho_sed": 1.76,
+    # "c1": 1522.0,
+    # "c2": 1522.0,
+    # "c3": 1495.274,
+    # "c4": 1490.892,
+    # "c5": 1488.394,
+    # "c6": 1488.89,
+    # "c7": 1488.89,
 }
 # TRUE_VALUES["c2"] = TRUE_VALUES["c1"] + TRUE_VALUES["dc1"]
 # TRUE_VALUES["c3"] = TRUE_VALUES["c2"] + TRUE_VALUES["dc2"]
@@ -77,12 +77,12 @@ VARIABLES = {
     "c_p_sed_top": "$c_{s,t}$ [m/s]",
     "dc_p_sed": "$\delta c_s$ [m/s]",
     "c_p_sed_bot": "$c_{s,b}$ [m/s]",
-    "c3": "$c_3$ [m/s]",
-    "c4": "$c_4$ [m/s]",
-    "c5": "$c_5$ [m/s]",
-    "c6": "$c_6$ [m/s]",
-    # "a_p_sed": "$\\alpha_s$ [dB/$\lambda$]",
-    # "rho_sed": "$\\rho_s$ [g/cm$^3$]",
+    # "c3": "$c_3$ [m/s]",
+    # "c4": "$c_4$ [m/s]",
+    # "c5": "$c_5$ [m/s]",
+    # "c6": "$c_6$ [m/s]",
+    "a_p_sed": "$\\alpha_s$ [dB/$\lambda$]",
+    "rho_sed": "$\\rho_s$ [g/cm$^3$]",
     # "dc1": "$\delta c_1$ [m/s]",
     # "dc2": "$\delta c_2$ [m/s]",
     # "dc4": "$\delta c_4$ [m/s]",
@@ -100,11 +100,13 @@ SEARCH_SPACE = [
         {"name": "h_sed", "type": "range", "bounds": [10.0, 40.0]},
         {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1640.0]},
         {"name": "dc_p_sed", "type": "range", "bounds": [0.0, 50.0]},
+        # {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
+        # {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
         # {"name": "z3", "type": "range", "bounds": [10.0, 60.0]},
-        {"name": "c3", "type": "range", "bounds": [1480.0, 1520.0]}, # 30 m
-        {"name": "c4", "type": "range", "bounds": [1480.0, 1520.0]}, # 60 m
-        {"name": "c5", "type": "range", "bounds": [1480.0, 1520.0]}, # 100 m
-        {"name": "c6", "type": "range", "bounds": [1480.0, 1520.0]}, # 150 m
+        # {"name": "c3", "type": "range", "bounds": [1480.0, 1520.0]}, # 30 m
+        # {"name": "c4", "type": "range", "bounds": [1480.0, 1520.0]}, # 60 m
+        # {"name": "c5", "type": "range", "bounds": [1480.0, 1520.0]}, # 100 m
+        # {"name": "c6", "type": "range", "bounds": [1480.0, 1520.0]}, # 150 m
         # {"name": "dc3", "type": "range", "bounds": [-20.0, 0.0]},
         # {"name": "c2", "type": "range", "bounds": [1460.0, 1540.0]},
         # {"name": "c5", "type": "range", "bounds": [1460.0, 1500.0]},
@@ -115,15 +117,13 @@ SEARCH_SPACE = [
         # {"name": "dc4", "type": "range", "bounds": [-10.0, 10.0]},
         # {"name": "dc5", "type": "range", "bounds": [-10.0, 10.0]},
         # {"name": "c1", "type": "range", "bounds": [1470.0, 1570.0]},
-        # {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
-        # {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
     ]
 
 
 STRATEGY_COLORS = {
-    "EI": "blue",
-    "UCB": "green",
     "Sobol": "red",
+    "UCB": "green",
+    "EI": "blue",
     "BAxUS": "orange",
     "Random": "green",
 }

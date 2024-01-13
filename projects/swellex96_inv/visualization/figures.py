@@ -72,36 +72,22 @@ def figure05():
 
 
 def figure06():
-    import obj_performance
+    import param_est
 
-    obj_performance.main(prepend="full_").savefig(
-        savepath / "figure06.pdf", **SAVE_KWARGS
-    )
+    param_est.main(strategy="sobol_50k").savefig(savepath / "figure06.pdf", **SAVE_KWARGS)
 
 
 def figure07():
-    import param_est
-
-    param_est.main(prepend="thermo_").savefig(savepath / "figure07.pdf", **SAVE_KWARGS)
-
-
-def figure08():
     import warmup_perf
 
-    warmup_perf.main().savefig(savepath / "figure08.pdf", **SAVE_KWARGS)
-
-
-def figure09():
-    pass
+    warmup_perf.main().savefig(savepath / "figure07.pdf", **SAVE_KWARGS)
 
 
 if __name__ == "__main__":
     # figure01()
     # figure02()
     # figure03()
-    # figure04()
+    figure04()
     # figure05()
     # figure06()
-    figure07()
-    # figure08()
-    # figure09()
+    # figure07()

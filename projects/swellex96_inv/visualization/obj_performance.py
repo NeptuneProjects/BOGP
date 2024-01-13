@@ -22,7 +22,16 @@ MODES = ["Simulated", "Experimental"]
 N_INIT = 200
 YLIM = [(1e-8, 1.0), (0.07, 1.0)]
 YTICKS = [[1e-8, 1e-6, 1e-4, 1e-2, 1.0], [0.07, 0.1, 0.5, 1.0]]
-YTICKLABELS = [["$10^{-8}$", "$10^{-6}$", "$10^{-4}$", "$10^{-2}$", "$10^{0}$"], ["0.07", "0.1", "0.5", "1"]]
+YTICKLABELS = [
+    ["$10^{-8}$", "$10^{-6}$", "$10^{-4}$", "$10^{-2}$", "$10^{0}$"],
+    ["0.07", "0.1", "0.5", "1"],
+]
+SORTING_RULE = {
+    "Sobol": 0,
+    "Random": 1,
+    "UCB": 2,
+    "EI": 3,
+}
 
 
 def plot_performance_history(
@@ -31,7 +40,9 @@ def plot_performance_history(
     if ax is None:
         ax = plt.gca()
 
-    for strategy in df["Strategy"].unique():
+    strategies = sorted(list(df["Strategy"].unique()), key=SORTING_RULE.__getitem__)
+
+    for strategy in strategies:
         if strategy != "Sobol":
             df_ = df[df["n_init"] == N_INIT]
         else:
@@ -41,7 +52,6 @@ def plot_performance_history(
         )
 
         mean = dfp.mean(axis=1)
-        # std = dfp.std(axis=1)
         min_ = dfp.min(axis=1)
         max_ = dfp.max(axis=1)
         ax.plot(dfp.index, mean, color=common.STRATEGY_COLORS[strategy])
@@ -67,7 +77,9 @@ def plot_wall_time(df: pd.DataFrame, ax: Optional[plt.Axes] = None):
     if ax is None:
         ax = plt.gca()
 
-    for strategy in df["Strategy"].unique():
+    strategies = sorted(list(df["Strategy"].unique()), key=SORTING_RULE.__getitem__)
+
+    for strategy in strategies:
         for seed in df["seed"].unique():
             if strategy != "Sobol":
                 dfp = df.loc[
@@ -89,18 +101,18 @@ def plot_wall_time(df: pd.DataFrame, ax: Optional[plt.Axes] = None):
 
 
 def plot_est_dist(df: pd.DataFrame, ax: Optional[plt.Axes] = None) -> plt.Axes:
+
+    # def sort_func():
+    #     return
+
     if ax is None:
         ax = plt.gca()
 
-    # sel = (df["Trial"] == 500) & (
-    #     (df["Strategy"] == "Sobol")
-    #     | ((df["Strategy"] != "Sobol") & (df["n_init"] == N_INIT))
-    # )
     sel = ((df["Strategy"] == "Sobol") & (df["Trial"] == 50000)) | (
         (df["Strategy"] != "Sobol") & (df["n_init"] == N_INIT) & (df["Trial"] == 500)
     )
 
-    dfp = df.loc[sel].sort_values(by="Strategy")
+    dfp = df.loc[sel].sort_values(by="Strategy", key=lambda x: x.apply(lambda y: SORTING_RULE.get(y, 1000)))
     sns.boxplot(
         data=dfp,
         x="Strategy",
@@ -131,7 +143,6 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
 
         ax = axrow[1]
         ax = plot_wall_time(df, ax=ax)
-        # ax.set_xscale("log")
         ax.set_xlim(-10, 3000)
 
         ax = axrow[2]
@@ -154,9 +165,7 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
             ax.set_yticks(YTICKS[i])
             ax.set_xticklabels([]) if i != 1 else None
             ax.set_yticklabels([]) if j != 0 else ax.set_yticklabels(YTICKLABELS[i])
-            ax.set_ylabel(
-                "$\widehat{{\phi}}$", rotation=0
-            ) if j == 0 else None
+            ax.set_ylabel("$\widehat{{\phi}}$", rotation=0) if j == 0 else None
             ax.text(
                 -0.28,
                 0.5,
@@ -166,19 +175,40 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
                 rotation=90,
             ) if j == 0 else None
 
+
+            if i == 1 and j == 1:
+                strategies = sorted(list(df["Strategy"].unique()), key=SORTING_RULE.__getitem__)
+                handles = [
+                    plt.Line2D(
+                        [0],
+                        [0],
+                        color=common.STRATEGY_COLORS[strategy],
+                        label=strategy,
+                    )
+                    for strategy in strategies
+                ]
+
+                ax.legend(
+                    handles=handles,
+                    loc="upper center",
+                    bbox_to_anchor=(0.5, -0.35),
+                    ncol=3,
+                    frameon=False,
+                    borderaxespad=0.0,
+                )
+
     return fig
 
 
 def main(prepend=""):
     path = common.SWELLEX96Paths.outputs / "runs"
-    # data_sim = helpers.load_data(
-    #     path, f"{prepend}sim_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
-    # )
+    data_sim = helpers.load_data(
+        path, f"{prepend}sim_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+    )
     data_exp = helpers.load_data(
         path, f"{prepend}exp_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
-    fig = performance_plot([data_exp, data_exp])
-    # fig = performance_plot([data_exp, data_exp])
+    fig = performance_plot([data_sim, data_exp])
     return fig
 
 
