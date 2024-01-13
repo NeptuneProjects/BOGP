@@ -192,24 +192,37 @@ def plot_parameter_estimates_full(data: list[pd.DataFrame]) -> plt.Figure:
     return fig
 
 
-def main(prepend=""):
+def main(strategy="ei", prepend=""):
     path = common.SWELLEX96Paths.outputs / "runs"
-    # data_sim = helpers.load_data(
-    #     path, f"{prepend}sim_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
-    # )
-    data_exp = helpers.load_data(
-        path, f"{prepend}exp_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+    data_sim = helpers.load_data(
+        path, f"{prepend}sim_{strategy}/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
-    data_sim = data_exp
-
+    data_exp = helpers.load_data(
+        path, f"{prepend}exp_{strategy}/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+    )
+    # data_sim = data_exp
     # data_sim.to_csv("data.csv")
+
+    if "sobol" in strategy:
+        last_trial = 50000
+    else:
+        last_trial = 500
+
     if prepend in ["full_", "thermo_"]:
+        print("Plotting full inversion.")
         fig = plot_parameter_estimates_full(
-            [data_sim[data_sim["Trial"] == 500], data_exp[data_exp["Trial"] == 500]]
+            [
+                data_sim[data_sim["Trial"] == last_trial],
+                data_exp[data_exp["Trial"] == last_trial],
+            ]
         )
     else:
+        print("Plotting seabed inversion.")
         fig = plot_parameter_estimates(
-            [data_sim[data_sim["Trial"] == 500], data_exp[data_exp["Trial"] == 500]]
+            [
+                data_sim[data_sim["Trial"] == last_trial],
+                data_exp[data_exp["Trial"] == last_trial],
+            ]
         )
     return fig
 
