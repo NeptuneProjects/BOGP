@@ -175,3 +175,5 @@ tests/
 **/*/notebooks/
 *.png
 *.csv
+*.pkl
+*.npz
