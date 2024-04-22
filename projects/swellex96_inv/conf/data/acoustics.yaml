@@ -52,6 +52,6 @@ configs:
       window:
         _target_: functools.partial
         _args_: ["${get_method:numpy.hanning}"]
-    max_workers: 13
+    max_workers: 3
     normalize_covariance: true
     covariance_averaging: 8
