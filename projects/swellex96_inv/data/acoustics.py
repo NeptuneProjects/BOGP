@@ -88,7 +88,9 @@ class ProcessConfig:
 
 def convert(config: ConversionConfig) -> None:
     log.info("Converting SIO files to specified formats.")
-    print(config.paths.source.glob(config.glob_pattern))
+    print(config.paths.source)
+    print(config.glob_pattern)
+    print(list(config.paths.source.glob(config.glob_pattern)))
     handler = SIODataHandler(files=config.paths.source.glob(config.glob_pattern))
     handler.convert(
         fmt=config.fmt,
