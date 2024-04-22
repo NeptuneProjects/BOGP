@@ -36,7 +36,7 @@ configs:
       _target_: __main__.ProcessPaths
       source: ${configs.data_path}/processed/merged001.npz
       destination: ${configs.data_path}/processed_001
-    frequencies: [49, 64, 79, 94, 112, 130, 148, 166, 201, 235, 283, 338, 388]
+    frequencies: [148, 235, 388]
     samples_per_segment: 8192
     segments_every_n: 4096
     fs: 1500
