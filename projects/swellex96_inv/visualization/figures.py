@@ -11,7 +11,7 @@ import seaborn as sns
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from conf import common
 
-savepath = Path.cwd().parent / "reports/manuscripts/202310_JASA"
+savepath = Path.cwd().parent / "reports/manuscripts/202401_JASA"
 
 SAVE_KWARGS = {"bbox_inches": "tight", "dpi": 1000}
 
@@ -37,50 +37,50 @@ def get_concat_h(im1, im2, im3):
     return dst
 
 
-def figure01():
-    import sobol_demo
+# def figure01():
+#     import sobol_demo
 
-    sobol_demo.sample_comparison().savefig(savepath / "figure01.pdf", **SAVE_KWARGS)
+#     sobol_demo.sample_comparison().savefig(savepath / "figure01.pdf", **SAVE_KWARGS)
+
+def figure01():
+    import bo_ucb_example, bo_ei_example
+
+    bo_ucb_example.main().savefig(savepath / "figure01a.pdf", **SAVE_KWARGS)
+    bo_ei_example.main().savefig(savepath / "figure01b.pdf", **SAVE_KWARGS)
 
 
 def figure02():
-    import bo_example
-
-    bo_example.main().savefig(savepath / "figure02.pdf", **SAVE_KWARGS)
-
-
-def figure03():
     images = [
         Image.open(x)
         for x in ["environment.png", "sensitivity_sim.png", "sensitivity_exp.png"]
     ]
     get_concat_h(images[0], images[1], images[2]).save(
-        savepath / "figure03.pdf", "PDF", resolution=1000
+        savepath / "figure02.pdf", "PDF", resolution=1000
     )
 
 
-def figure04():
+def figure03():
     import obj_performance
 
-    obj_performance.main().savefig(savepath / "figure04.pdf", **SAVE_KWARGS)
+    obj_performance.main().savefig(savepath / "figure03.pdf", **SAVE_KWARGS)
+
+
+def figure04():
+    import param_est
+
+    param_est.main().savefig(savepath / "figure04.pdf", **SAVE_KWARGS)
 
 
 def figure05():
     import param_est
 
-    param_est.main().savefig(savepath / "figure05.pdf", **SAVE_KWARGS)
+    param_est.main(strategy="sobol_50k").savefig(savepath / "figure05.pdf", **SAVE_KWARGS)
 
 
 def figure06():
-    import param_est
-
-    param_est.main(strategy="sobol_50k").savefig(savepath / "figure06.pdf", **SAVE_KWARGS)
-
-
-def figure07():
     import warmup_perf
 
-    warmup_perf.main().savefig(savepath / "figure07.pdf", **SAVE_KWARGS)
+    warmup_perf.main().savefig(savepath / "figure06.pdf", **SAVE_KWARGS)
 
 
 if __name__ == "__main__":
@@ -88,6 +88,5 @@ if __name__ == "__main__":
     # figure02()
     # figure03()
     figure04()
-    # figure05()
+    figure05()
     # figure06()
-    # figure07()
