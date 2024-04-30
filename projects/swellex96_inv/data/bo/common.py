@@ -131,10 +131,10 @@ STRATEGY_COLORS = {
 
 @dataclass(frozen=True)
 class SWELLEX96Paths:
-    path = SWELLEX96PATH
-    main_environment_data = SWELLEX96PATH / "env_models" / "main_env.json"
-    simple_environment_data = SWELLEX96PATH / "env_models" / "simple_env.json"
-    gps_data = SWELLEX96PATH / "gps" / "source_tow.csv"
-    acoustic_path = SWELLEX96PATH / "acoustic" / "processed_001"
-    outputs = SWELLEX96PATH / "outputs"
-    ambiguity_surfaces = SWELLEX96PATH / "acoustic" / "ambiguity_surfaces"
+    path: Path = SWELLEX96PATH
+    main_environment_data: Path = SWELLEX96PATH / "env_models" / "main_env.json"
+    simple_environment_data: Path = SWELLEX96PATH / "env_models" / "simple_env.json"
+    gps_data: Path = SWELLEX96PATH / "gps" / "source_tow.csv"
+    acoustic_path: Path = SWELLEX96PATH / "acoustic" / "processed_001"
+    outputs: Path = SWELLEX96PATH / "outputs"
+    ambiguity_surfaces: Path = SWELLEX96PATH / "acoustic" / "ambiguity_surfaces"
