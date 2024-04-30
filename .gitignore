@@ -177,3 +177,4 @@ tests/
 *.csv
 *.pkl
 *.npz
+projects/swellex96_inv/data/unused
