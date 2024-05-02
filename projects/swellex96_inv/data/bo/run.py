@@ -149,7 +149,7 @@ if __name__ == "__main__":
         "--runs",
         help="Specify the number of MC runs for each strategy.",
         type=int,
-        default=1 if SMOKE_TEST else 30,
+        default=1 if SMOKE_TEST else 100,
     )
     parser.add_argument(
         "--seed",
