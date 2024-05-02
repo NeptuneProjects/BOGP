@@ -66,21 +66,27 @@ def figure03():
 
 
 def figure04():
-    import param_est
+    import diff_ev
 
-    param_est.main().savefig(savepath / "figure04.pdf", **SAVE_KWARGS)
+    diff_ev.main().savefig(savepath / "figure04.pdf", **SAVE_KWARGS)
 
 
 def figure05():
     import param_est
 
-    param_est.main(strategy="sobol_50k").savefig(savepath / "figure05.pdf", **SAVE_KWARGS)
+    param_est.main().savefig(savepath / "figure05.pdf", **SAVE_KWARGS)
 
 
 def figure06():
+    import param_est
+
+    param_est.main(strategy="sobol_50k").savefig(savepath / "figure06.pdf", **SAVE_KWARGS)
+
+
+def figure07():
     import warmup_perf
 
-    warmup_perf.main().savefig(savepath / "figure06.pdf", **SAVE_KWARGS)
+    warmup_perf.main().savefig(savepath / "figure07.pdf", **SAVE_KWARGS)
 
 
 if __name__ == "__main__":
@@ -88,5 +94,6 @@ if __name__ == "__main__":
     # figure02()
     # figure03()
     figure04()
-    figure05()
+    # figure05()
     # figure06()
+    # figure07()
