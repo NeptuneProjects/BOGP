@@ -3,7 +3,6 @@
 
 import csv
 from functools import partial
-import json
 from pathlib import Path
 import time
 
@@ -44,7 +43,8 @@ class Callback:
         self.x.append(intermediate_result.x)
         self.population.append(intermediate_result.population)
         self.population_energies.append(intermediate_result.population_energies)
-    
+        print(intermediate_result)
+
     def save_results(self, path: Path = Path("de_results.npz")) -> None:
         # with open(path, "wb") as f:
         np.savez(
@@ -77,10 +77,11 @@ def main() -> None:
         polish=False,
         maxiter=300,
         init="sobol",
-        population_size=5,
+        popsize=70,
+        mutation=0.9,
         callback=callback,
     )
-    callback.save_results()
+    callback.save_results(path=common.SWELLEX96Paths.outputs / "de_results.npz")
     print(result)
 
 
