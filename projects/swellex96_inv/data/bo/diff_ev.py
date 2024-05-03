@@ -7,21 +7,17 @@ from pathlib import Path
 import time
 
 import numpy as np
+import pandas as pd
 from scipy.optimize import OptimizeResult, differential_evolution
-
-from tritonoa.at.models.kraken import runner
-from tritonoa.sp.beamforming import covariance
+from tqdm import tqdm
 from tritonoa.sp.mfp import MatchedFieldProcessor
-from tritonoa.sp.beamforming import beamformer
 
 import common
 from obj import get_objective
 
+NUM_RUNS = 30
+
 parameter_keys = [i["name"] for i in common.SEARCH_SPACE]
-
-
-def fitness_func(x: np.ndarray, objective: MatchedFieldProcessor = None) -> float:
-    return objective({k: v for k, v in zip(parameter_keys, x)})
 
 
 class Callback:
@@ -43,10 +39,8 @@ class Callback:
         self.x.append(intermediate_result.x)
         self.population.append(intermediate_result.population)
         self.population_energies.append(intermediate_result.population_energies)
-        print(intermediate_result)
 
     def save_results(self, path: Path = Path("de_results.npz")) -> None:
-        # with open(path, "wb") as f:
         np.savez(
             path,
             elapsed_time=self.elapsed_time,
@@ -65,24 +59,45 @@ class Callback:
             writer.writerow(data)
 
 
+def fitness_func(x: np.ndarray, objective: MatchedFieldProcessor = None) -> float:
+    return objective({k: v for k, v in zip(parameter_keys, x)})
+
+
 def main() -> None:
     objective = get_objective(simulate=False)
     bounds = [(i["bounds"][0], i["bounds"][1]) for i in common.SEARCH_SPACE]
+    savepath = common.SWELLEX96Paths.outputs / "runs" / "de"
+    savepath.mkdir(parents=True, exist_ok=True)
 
-    callback = Callback()
-    result = differential_evolution(
-        partial(fitness_func, objective=objective),
-        bounds,
-        disp=True,
-        polish=False,
-        maxiter=300,
-        init="sobol",
-        popsize=70,
-        mutation=0.9,
-        callback=callback,
-    )
-    callback.save_results(path=common.SWELLEX96Paths.outputs / "de_results.npz")
-    print(result)
+    alldata = []
+    for i in tqdm(
+        range(NUM_RUNS), total=NUM_RUNS, bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}"
+    ):
+        callback = Callback()
+        differential_evolution(
+            partial(fitness_func, objective=objective),
+            bounds,
+            maxiter=300,
+            popsize=10,
+            mutation=0.5, # Also known as differential weight, or "F"
+            recombination=0.1, # Also known as crossover probability, or "CR"
+            seed=i,
+            disp=True,
+            callback=callback,
+            polish=False,
+            init="latinhypercube",
+        )
+        callback.save_results(path=savepath / f"de_results{i:02d}.npz")
+        data = pd.DataFrame(data=callback.x, columns=parameter_keys)
+        data["seed"] = i
+        data["wall_time"] = callback.elapsed_time
+        data["nit"] = callback.nit
+        data["nfev"] = callback.nfev
+        data["obj"] = callback.fun
+        alldata.append(data)
+
+    df = pd.concat(alldata, ignore_index=True)
+    df.to_csv(savepath / "de_results.csv", index=False)
 
 
 if __name__ == "__main__":
