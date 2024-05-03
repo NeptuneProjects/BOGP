@@ -25,7 +25,7 @@ def convert_tensor_to_parameters(x: np.ndarray) -> dict:
 
 
 def evaluate_objective(objective: callable, parameters: list[dict]) -> list[float]:
-    with ProcessPoolExecutor(max_workers=min(len(parameters), 16)) as executor:
+    with ProcessPoolExecutor(max_workers=min(len(parameters), 32)) as executor:
         return list(tqdm(executor.map(objective, parameters), total=len(parameters)))
 
 
