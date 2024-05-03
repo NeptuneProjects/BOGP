@@ -14,7 +14,7 @@ class SobolLoopArgs:
     budget: int = 500
     seed: int = None
     dtype: torch.dtype = torch.double
-    device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    device: torch.device = torch.device("cpu")
 
 
 def loop(
