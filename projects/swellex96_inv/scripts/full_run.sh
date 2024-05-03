@@ -1,15 +1,15 @@
-# BOGP - EI
-python projects/swellex96_inv/data/bo/run.py --init=200 --simulate
-python projects/swellex96_inv/data/bo/run.py --init=400
-python projects/swellex96_inv/data/bo/run.py --init=300
-python projects/swellex96_inv/data/bo/run.py --init=200
-python projects/swellex96_inv/data/bo/run.py --init=100
-python projects/swellex96_inv/data/bo/run.py --init=50
+# SOBOL
+python projects/swellex96_inv/data/bo/run.py --optim=sobol --budget=50000 --serial=exp_sobol
+python projects/swellex96_inv/data/bo/run.py --optim=sobol --budget=50000 --serial=sim_sobol --simulate
 
 # BOGP - UCB
-python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=200 --serial=sim_ucb_b1 --simulate
-python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=200 --serial=exp_ucb_b1
+python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=200 --serial=sim_ucb --simulate
+python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=200 --serial=exp_ucb
 
-# SOBOL
-python projects/swellex96_inv/data/bo/run.py --optim=sobol --init=200 --serial=sim_sobol --budget=50000 --simulate
-python projects/swellex96_inv/data/bo/run.py --optim=sobol --init=200 --serial=exp_sobol --budget=50000
+# BOGP - EI
+python projects/swellex96_inv/data/bo/run.py --optim=ei --init=200 --serial=sim_ei --simulate
+python projects/swellex96_inv/data/bo/run.py --optim=ei --init=200 --serial=exp_ei
+python projects/swellex96_inv/data/bo/run.py --optim=ei --init=400 --serial=exp_ei
+python projects/swellex96_inv/data/bo/run.py --optim=ei --init=300 --serial=exp_ei
+python projects/swellex96_inv/data/bo/run.py --optim=ei --init=100 --serial=exp_ei
+python projects/swellex96_inv/data/bo/run.py --optim=ei --init=50 --serial=exp_ei
