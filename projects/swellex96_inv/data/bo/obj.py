@@ -1,12 +1,13 @@
 # -*- coding: utf-8 -*-
 
-from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import ProcessPoolExecutor
 from functools import partial
 from pathlib import Path
 import sys
 from typing import Optional
 
 import numpy as np
+from tqdm import tqdm
 from tritonoa.at.models.kraken.runner import run_kraken
 from tritonoa.sp.beamforming import beamformer
 from tritonoa.sp.mfp import MatchedFieldProcessor
@@ -24,8 +25,8 @@ def convert_tensor_to_parameters(x: np.ndarray) -> dict:
 
 
 def evaluate_objective(objective: callable, parameters: list[dict]) -> list[float]:
-    with ThreadPoolExecutor(max_workers=min(len(parameters), 64)) as executor:
-        return list(executor.map(objective, parameters))
+    with ProcessPoolExecutor(max_workers=min(len(parameters), 16)) as executor:
+        return list(tqdm(executor.map(objective, parameters), total=len(parameters)))
 
 
 def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
