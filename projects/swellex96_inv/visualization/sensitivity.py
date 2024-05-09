@@ -17,6 +17,7 @@ plt.style.use(["science", "ieee"])
 
 def plot_sensitivity(
     sensitivities: np.ndarray,
+    parameters: dict,
     title: Optional[str] = None,
     subfiglabel: Optional[str] = None,
 ):
@@ -57,7 +58,7 @@ def plot_sensitivity(
         B = 10 * np.log10(B / B.max())
 
         ax.plot(parameter["space"], B, label=parameter["name"])
-        ax.axvline(common.TRUE_VALUES[parameter["name"]], color="k", linestyle="--")
+        ax.axvline(parameters[parameter["name"]], color="k", linestyle="--")
         ax.set_xlim(xlim)
 
         if i in [0, 1, 2]:
@@ -65,9 +66,9 @@ def plot_sensitivity(
             ax.set_yticks([-9, -6, -3, 0])
             ax.set_yticks(np.linspace(-9, 0, 4), minor=True)
         else:
-            ax.set_ylim([-2.0, 0.2])
-            ax.set_yticks([-2, -1, 0])
-            ax.set_yticks(np.linspace(-2, 0, 3), minor=True)
+            ax.set_ylim([-1.0, 0.1])
+            ax.set_yticks([-1, -0.5, 0])
+            ax.set_yticks(np.linspace(-1, 0, 3), minor=True)
         ax.set_xlabel(common.VARIABLES[parameter["name"]], labelpad=0)
 
     if subfiglabel:
@@ -84,13 +85,13 @@ def main():
     sensitivities = np.load(
         common.SWELLEX96Paths.outputs / "sensitivity_sim.npy", allow_pickle=True
     )
-    fig = plot_sensitivity(sensitivities, title="Simulated data", subfiglabel="(b)")
+    fig = plot_sensitivity(sensitivities, parameters=common.TRUE_SIM_VALUES, title="Simulated data", subfiglabel="(b)")
     fig.savefig("sensitivity_sim.png")
 
     sensitivities = np.load(
         common.SWELLEX96Paths.outputs / "sensitivity_exp.npy", allow_pickle=True
     )
-    fig = plot_sensitivity(sensitivities, title="Experimental data", subfiglabel="(c)")
+    fig = plot_sensitivity(sensitivities, parameters=common.TRUE_EXP_VALUES, title="Experimental data", subfiglabel="(c)")
     fig.savefig("sensitivity_exp.png")
 
 

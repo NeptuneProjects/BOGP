@@ -22,22 +22,22 @@ FREQ = [
 SWELLEX96PATH = Path("../data/swellex96_S5_VLA_inv")
 
 TIME_STEP = 121
-if TIME_STEP == 20:
-    TRUE_R = 5.87
-    TRUE_SRC_Z = 59.0
-    TILT = 0.5
-    H_W = 217.0
-if TIME_STEP == 50:
-    TRUE_R = 4.15
-    TRUE_SRC_Z = 66
-    TILT = 0.5
-    H_W = 217.0
+# if TIME_STEP == 20:
+#     TRUE_R = 5.87
+#     TRUE_SRC_Z = 59.0
+#     TILT = 0.5
+#     H_W = 217.0
+# if TIME_STEP == 50:
+#     TRUE_R = 4.15
+#     TRUE_SRC_Z = 66
+#     TILT = 0.5
+#     H_W = 217.0
 if TIME_STEP == 121:
     TRUE_R = 1.07
     TRUE_SRC_Z = 71.11
     TILT = 2.0
     H_W = 217
-TRUE_VALUES = {
+TRUE_SIM_VALUES = {
     "rec_r": TRUE_R,
     "src_z": TRUE_SRC_Z,
     "tilt": TILT,
@@ -54,6 +54,32 @@ TRUE_VALUES = {
     "c_p_sed_bot": 1593.0,
     "a_p_sed": 0.2,
     "rho_sed": 1.76,
+    # "c1": 1522.0,
+    # "c2": 1522.0,
+    # "c3": 1495.274,
+    # "c4": 1490.892,
+    # "c5": 1488.394,
+    # "c6": 1488.89,
+    # "c7": 1488.89,
+}
+# The following are obtained from running DE with strong priors (narrow bounds).
+TRUE_EXP_VALUES = {
+    "rec_r": 1.072082,
+    "src_z": 71.526224,
+    "tilt": 2.067787,
+    "h_w": 219.634477,
+    # "z3": 30.0,
+    # "dc1": -22.167,
+    # "dc2": -7.273,
+    # "dc3": -6.0,
+    # "dc4": -1.279,
+    # "dc5": -1.229,
+    "h_sed": 20.070524,
+    "c_p_sed_top": 1567.331676,
+    "dc_p_sed": 22.206878,
+    "c_p_sed_bot": 1589.538554,
+    "a_p_sed": 0.652053,
+    "rho_sed": 1.990237,
     # "c1": 1522.0,
     # "c2": 1522.0,
     # "c3": 1495.274,
@@ -96,12 +122,12 @@ SEARCH_SPACE = [
         {"name": "rec_r", "type": "range", "bounds": [TRUE_R-0.25, TRUE_R + 0.25]},
         {"name": "src_z", "type": "range", "bounds": [60.0, 80.0]},
         {"name": "tilt", "type": "range", "bounds": [-3.0, 3.0]},
-        {"name": "h_w", "type": "range", "bounds": [TRUE_VALUES["h_w"] - 5.0, TRUE_VALUES["h_w"] + 5.0]},
+        {"name": "h_w", "type": "range", "bounds": [TRUE_SIM_VALUES["h_w"] - 5.0, TRUE_SIM_VALUES["h_w"] + 5.0]},
         {"name": "h_sed", "type": "range", "bounds": [10.0, 40.0]},
         {"name": "c_p_sed_top", "type": "range", "bounds": [1540.0, 1640.0]},
         {"name": "dc_p_sed", "type": "range", "bounds": [0.0, 50.0]},
-        # {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
-        # {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
+        {"name": "a_p_sed", "type": "range", "bounds": [0.01, 3.0]},
+        {"name": "rho_sed", "type": "range", "bounds": [1.0, 3.0]},
         # {"name": "z3", "type": "range", "bounds": [10.0, 60.0]},
         # {"name": "c3", "type": "range", "bounds": [1480.0, 1520.0]}, # 30 m
         # {"name": "c4", "type": "range", "bounds": [1480.0, 1520.0]}, # 60 m
@@ -132,7 +158,8 @@ STRATEGY_COLORS = {
 @dataclass(frozen=True)
 class SWELLEX96Paths:
     path: Path = SWELLEX96PATH
-    main_environment_data: Path = SWELLEX96PATH / "env_models" / "main_env.json"
+    main_environment_data_sim: Path = SWELLEX96PATH / "env_models" / "main_sim_env.json"
+    main_environment_data_exp: Path = SWELLEX96PATH / "env_models" / "main_exp_env.json"
     simple_environment_data: Path = SWELLEX96PATH / "env_models" / "simple_env.json"
     gps_data: Path = SWELLEX96PATH / "gps" / "source_tow.csv"
     acoustic_path: Path = SWELLEX96PATH / "acoustic" / "processed_001"

@@ -19,7 +19,7 @@ import numpy as np
 from tritonoa.io.profile import read_ssp
 
 
-def build_environment(
+def build_sim_environment(
     ctd_path: os.PathLike,
     title: str = "swellex96",
     model: str = "KRAKEN",
@@ -74,6 +74,64 @@ def build_environment(
         ],
         "tilt": tilt,
         "z_pivot": 217.0,
+    }
+
+def build_exp_environment(
+    ctd_path: os.PathLike,
+    title: str = "swellex96",
+    model: str = "KRAKEN",
+    tilt: Optional[float] = None,
+) -> dict:
+    """Elements of this environment are obtained using DE."""
+    z_data, c_data = load_ctd_data(ctd_path)
+    z_data = np.append(z_data, 217).tolist()
+    c_data = np.append(c_data, c_data[-1]).tolist()
+    return {
+        # 1. General
+        "title": title,
+        "model": model,
+        # 2. Top medium (halfspace) - Not used
+        # 3. Layered media
+        "layerdata": [
+            {"z": z_data, "c_p": c_data, "rho": 1.0},
+            {"z": [219.634477, 239.705001], "c_p": [1567.331676, 1589.538554], "rho": 1.990237, "a_p": 0.652053},
+            {"z": [239.705001, 1040.0], "c_p": [1881.0, 3245.0], "rho": 2.06, "a_p": 0.06},
+        ],
+        # 4. Bottom medium
+        "bot_opt": "A",
+        "bot_c_p": 5200.0,
+        "bot_rho": 2.66,
+        "bot_a_p": 0.02,
+        # 5. Speed constraints
+        "clow": 1400.0,
+        "chigh": 1800.0,
+        # 6. Receiver parameters
+        # "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
+        "rec_z": [
+            94.125,
+            99.755,
+            105.38,
+            111.0,
+            116.62,
+            122.25,
+            127.88,
+            139.12,
+            144.74,
+            150.38,
+            155.99,
+            161.62,
+            167.26,
+            172.88,
+            178.49,
+            184.12,
+            189.76,
+            195.38,
+            200.99,
+            206.62,
+            212.25,
+        ],
+        "tilt": 2.067787,
+        "z_pivot": 219.634477,
     }
 
 
@@ -169,14 +227,18 @@ def save_to_json(environment: dict, path: os.PathLike) -> None:
 
 
 def main(args: Namespace) -> None:
-    main_environment = build_environment(
+    main_sim_environment = build_sim_environment(
+        ctd_path=args.ctd_path, title=args.title, model=args.model, tilt=args.tilt
+    )
+    main_exp_environment = build_exp_environment(
         ctd_path=args.ctd_path, title=args.title, model=args.model, tilt=args.tilt
     )
     simple_environment = build_simple_environment(
         ctd_path=args.ctd_path, title=args.title, model=args.model, tilt=args.tilt
     )
 
-    save_to_json(main_environment, path=args.destination / "main_env.json")
+    save_to_json(main_sim_environment, path=args.destination / "main_sim_env.json")
+    save_to_json(main_exp_environment, path=args.destination / "main_exp_env.json")
     save_to_json(simple_environment, path=args.destination / "simple_env.json")
 
 

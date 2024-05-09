@@ -18,6 +18,7 @@ from optimization import utils
 
 import common, param_map
 
+
 def convert_tensor_to_parameters(x: np.ndarray) -> dict:
     return [
         {d["name"]: float(xs[i]) for i, d in enumerate(common.SEARCH_SPACE)} for xs in x
@@ -35,17 +36,23 @@ def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
 
 def get_objective(simulate: bool = True) -> MatchedFieldProcessor:
     if simulate:
+        environment = utils.load_env_from_json(
+            common.SWELLEX96Paths.main_environment_data_sim
+        )
         K = simulate_covariance(
             runner=run_kraken,
-            parameters=utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data)
+            parameters=environment
             | {
-                "rec_r": common.TRUE_VALUES["rec_r"],
-                "src_z": common.TRUE_VALUES["src_z"],
-                "tilt": common.TRUE_VALUES["tilt"],
+                "rec_r": common.TRUE_SIM_VALUES["rec_r"],
+                "src_z": common.TRUE_SIM_VALUES["src_z"],
+                "tilt": common.TRUE_SIM_VALUES["tilt"],
             },
             freq=common.FREQ,
         )
     else:
+        environment = utils.load_env_from_json(
+            common.SWELLEX96Paths.main_environment_data_exp
+        )
         K = utils.load_covariance_matrices(
             paths=utils.get_covariance_matrix_paths(
                 freq=common.FREQ, path=common.SWELLEX96Paths.acoustic_path
@@ -56,7 +63,7 @@ def get_objective(simulate: bool = True) -> MatchedFieldProcessor:
         runner=run_kraken,
         covariance_matrix=K,
         freq=common.FREQ,
-        parameters=utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data),
+        parameters=environment,
         parameter_formatter=param_map.format_parameters,
         beamformer=partial(beamformer, atype="cbf_ml"),
         multifreq_method="product",
