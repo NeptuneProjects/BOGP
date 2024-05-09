@@ -189,7 +189,7 @@ def plot_environment(subfiglabel: str = None):
         color="k",
     )
     ax.add_patch(arr)
-    ax.text((SRC_XLOC + VLA_XLOC) / 2, 65, "$r_\mathrm{src}=1.0$ km", ha="center", va="center", fontsize=7)
+    ax.text((SRC_XLOC + VLA_XLOC) / 2, 65, "$r_\mathrm{src}=1.07$ km", ha="center", va="center", fontsize=7)
 
     ax.patch.set_alpha(0)
 
