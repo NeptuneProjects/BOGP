@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import argparse
 import csv
 from functools import partial
 from pathlib import Path
@@ -15,9 +16,31 @@ from tritonoa.sp.mfp import MatchedFieldProcessor
 import common
 from obj import get_objective
 
-NUM_RUNS = 30
+parameter_keys = [
+    "rec_r",
+    "src_z",
+    "tilt",
+    "h_w",
+    "h_sed",
+    "c_p_sed_top",
+    "dc_p_sed",
+    "c_p_sed_bot",
+    "a_p_sed",
+    "rho_sed",
+]
 
-parameter_keys = [i["name"] for i in common.SEARCH_SPACE]
+bounds = [
+    (1.06, 1.09),
+    (69.0, 73.0),
+    (1.8, 2.3),
+    (216.0, 222.0),
+    (20.0, 26.0),
+    (1565.0, 1575.0),
+    (18.0, 23.0),
+    (1588.0, 1598.0),
+    (0.0, 1.0),
+    (1.0, 2.0),
+]
 
 
 class Callback:
@@ -63,29 +86,49 @@ def fitness_func(x: np.ndarray, objective: MatchedFieldProcessor = None) -> floa
     return objective({k: v for k, v in zip(parameter_keys, x)})
 
 
-def main() -> None:
+def main(args: argparse.Namespace) -> None:
+
+    if args.full:
+        print("Running full DE.")
+        num_runs = 1
+        de_kwargs = {
+            "maxiter": 100,
+            "popsize": 50,
+            "mutation": (0.5, 1.0),
+            "recombination": 0.7,
+            "polish": True,
+        }
+        savename = "de_results_full"
+    else:
+        print("Running vanilla DE.")
+        num_runs = args.num_runs
+        de_kwargs = {
+            "maxiter": 300,
+            "popsize": 10,
+            "mutation": 0.5,
+            "recombination": 0.1,
+            "polish": False,
+        }
+        savename = "de_results"
+
     objective = get_objective(simulate=False)
-    bounds = [(i["bounds"][0], i["bounds"][1]) for i in common.SEARCH_SPACE]
+    # bounds = [(i["bounds"][0], i["bounds"][1]) for i in common.SEARCH_SPACE]
     savepath = common.SWELLEX96Paths.outputs / "runs" / "de"
     savepath.mkdir(parents=True, exist_ok=True)
 
     alldata = []
     for i in tqdm(
-        range(NUM_RUNS), total=NUM_RUNS, bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}"
+        range(num_runs), total=num_runs, bar_format="{l_bar}{bar:20}{r_bar}{bar:-20b}"
     ):
         callback = Callback()
         differential_evolution(
             partial(fitness_func, objective=objective),
             bounds,
-            maxiter=300,
-            popsize=10,
-            mutation=0.5, # Also known as differential weight, or "F"
-            recombination=0.1, # Also known as crossover probability, or "CR"
-            seed=i,
+            seed=i if not args.full else 719,
             disp=True,
             callback=callback,
-            polish=False,
             init="latinhypercube",
+            **de_kwargs,
         )
         callback.save_results(path=savepath / f"de_results{i:02d}.npz")
         data = pd.DataFrame(data=callback.x, columns=parameter_keys)
@@ -97,8 +140,12 @@ def main() -> None:
         alldata.append(data)
 
     df = pd.concat(alldata, ignore_index=True)
-    df.to_csv(savepath / "de_results.csv", index=False)
+    df.to_csv(savepath / f"{savename}.csv", index=False)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--num_runs", type=int, default=30)
+    parser.add_argument("--full", action="store_true")
+    args = parser.parse_args()
+    main(args)
