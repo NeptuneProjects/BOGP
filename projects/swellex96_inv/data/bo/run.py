@@ -13,7 +13,7 @@ import warnings
 
 import numpy as np
 
-import baxus, ei, gibbon, helpers, obj, pi, sobol, ucb, grid, common, rand
+import baxus, ei, gibbon, helpers, obj, pi, sobol, ucb, grid, common, rand, logei
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -31,6 +31,7 @@ TRUE_DIM = len(common.SEARCH_SPACE)
 class Strategy(Enum):
     BAXUS = "baxus"
     EI = "ei"
+    LOGEI = "logei"
     GIBBON = "gibbon"
     PI = "pi"
     SOBOL = "sobol"
@@ -53,6 +54,9 @@ def get_loop(
     if optim == Strategy.EI:
         loop = ei.loop
         kwargs = ei.EILoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
+    if optim == Strategy.LOGEI:
+        loop = logei.loop
+        kwargs = logei.LogEILoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
     if optim == Strategy.GIBBON:
         loop = gibbon.loop
         kwargs = gibbon.GIBBONLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
@@ -137,13 +141,13 @@ if __name__ == "__main__":
         "--budget",
         help="Choose the total budget of trials (including warmup).",
         type=int,
-        default=50 if SMOKE_TEST else 500,
+        default=50 if SMOKE_TEST else 100,
     )
     parser.add_argument(
         "--init",
         help="Choose the number of warmup trials.",
         type=int,
-        default=10 if SMOKE_TEST else 200,
+        default=10 if SMOKE_TEST else 32,
     )
     parser.add_argument(
         "--runs",
