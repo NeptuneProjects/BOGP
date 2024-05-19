@@ -20,11 +20,11 @@ plt.style.use(["science", "ieee", "std-colors"])
 
 MODES = ["Simulated", "Experimental"]
 N_INIT = 200
-YLIM = [(1e-8, 1.0), (0.07, 1.0)]
-YTICKS = [[1e-8, 1e-6, 1e-4, 1e-2, 1.0], [0.07, 0.1, 0.5, 1.0]]
+YLIM = [(1e-8, 1.0), (0.06, 1.0)]
+YTICKS = [[1e-8, 1e-6, 1e-4, 1e-2, 1.0], [0.06, 0.1, 0.5, 1.0]]
 YTICKLABELS = [
     ["$10^{-8}$", "$10^{-6}$", "$10^{-4}$", "$10^{-2}$", "$10^{0}$"],
-    ["0.07", "0.1", "0.5", "1"],
+    ["0.06", "0.1", "0.5", "1"],
 ]
 SORTING_RULE = {
     "Sobol": 0,
@@ -203,10 +203,10 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
 def main(prepend=""):
     path = common.SWELLEX96Paths.outputs / "runs"
     data_sim = helpers.load_data(
-        path, f"{prepend}sim_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+        path, f"{prepend}sim_*/*.npz", common.SEARCH_SPACE, common.TRUE_SIM_VALUES
     )
     data_exp = helpers.load_data(
-        path, f"{prepend}exp_*/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+        path, f"{prepend}exp_*/*.npz", common.SEARCH_SPACE, common.TRUE_EXP_VALUES
     )
     fig = performance_plot([data_sim, data_exp])
     return fig
