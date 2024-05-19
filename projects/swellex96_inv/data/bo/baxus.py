@@ -8,7 +8,7 @@ from typing import Optional
 import warnings
 
 import botorch
-from botorch.acquisition.analytic import ExpectedImprovement
+from botorch.acquisition.analytic import LogExpectedImprovement
 from botorch.exceptions import ModelFittingError
 from botorch.fit import fit_gpytorch_mll
 from botorch.generation import MaxPosteriorSampling
@@ -141,9 +141,9 @@ def create_candidate(
             X_next = thompson_sampling(X_cand, num_samples=1)
 
     elif acqf == "ei":
-        ei = ExpectedImprovement(model, Y.max())
+        logei = LogExpectedImprovement(model, Y.max())
         X_next, _ = optimize_acqf(
-            ei,
+            logei,
             bounds=torch.stack([tr_lb, tr_ub]),
             q=1,
             num_restarts=num_restarts,
