@@ -34,11 +34,11 @@ def plot_param_dist(data: np.ndarray, bounds: list, ax: Optional[plt.Axes] = Non
     return ax
 
 
-def plot_parameter_estimates(data: list[pd.DataFrame]) -> plt.Figure:
-    YLIM = [[0, 20], [0, 25]]
+def plot_parameter_estimates(data: list[pd.DataFrame], parameters: list[dict]) -> plt.Figure:
+    YLIM = [[0, 75], [0, 75]]
 
     fig, axs = plt.subplots(
-        nrows=2, ncols=7, figsize=(8, 1.5), gridspec_kw={"wspace": 0.1, "hspace": 0.4}
+        nrows=2, ncols=9, figsize=(8, 1.5), gridspec_kw={"wspace": 0.1, "hspace": 0.4}
     )
 
     for i, axrow in enumerate(axs):
@@ -49,7 +49,7 @@ def plot_parameter_estimates(data: list[pd.DataFrame]) -> plt.Figure:
             param_name = common.SEARCH_SPACE[j]["name"]
             param_label = common.VARIABLES[common.SEARCH_SPACE[j]["name"]]
             bounds = common.SEARCH_SPACE[j]["bounds"]
-            true_value = common.TRUE_VALUES[common.SEARCH_SPACE[j]["name"]]
+            true_value = parameters[i][common.SEARCH_SPACE[j]["name"]]
             if param_name == "dc_p_sed":
                 param_name = "c_p_sed_bot"
                 param_label = common.VARIABLES[param_name]
@@ -58,7 +58,7 @@ def plot_parameter_estimates(data: list[pd.DataFrame]) -> plt.Figure:
 
             ax = plot_param_dist(df[f"best_{param_name}"], bounds, ax=ax)
 
-            ax.text(0, 1.07, f"({ascii_lowercase[7 * i + j]})", transform=ax.transAxes)
+            ax.text(0, 1.07, f"({ascii_lowercase[9 * i + j]})", transform=ax.transAxes)
             ax.axvline(
                 true_value,
                 color="k",
@@ -192,13 +192,13 @@ def plot_parameter_estimates(data: list[pd.DataFrame]) -> plt.Figure:
 #     return fig
 
 
-def main(strategy="ei", prepend=""):
+def main(strategy="ucb", prepend=""):
     path = common.SWELLEX96Paths.outputs / "runs"
     data_sim = helpers.load_data(
-        path, f"{prepend}sim_{strategy}/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+        path, f"{prepend}sim_{strategy}/*-200_*.npz", common.SEARCH_SPACE, common.TRUE_SIM_VALUES
     )
     data_exp = helpers.load_data(
-        path, f"{prepend}exp_{strategy}/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
+        path, f"{prepend}exp_{strategy}/*-200_*.npz", common.SEARCH_SPACE, common.TRUE_EXP_VALUES
     )
     # data_sim = data_exp
     # data_sim.to_csv("data.csv")
@@ -214,7 +214,7 @@ def main(strategy="ei", prepend=""):
             [
                 data_sim[data_sim["Trial"] == last_trial],
                 data_exp[data_exp["Trial"] == last_trial],
-            ]
+            ],
         )
     else:
         print("Plotting seabed inversion.")
@@ -222,7 +222,8 @@ def main(strategy="ei", prepend=""):
             [
                 data_sim[data_sim["Trial"] == last_trial],
                 data_exp[data_exp["Trial"] == last_trial],
-            ]
+            ],
+            parameters=[common.TRUE_SIM_VALUES, common.TRUE_EXP_VALUES],
         )
     return fig
 
