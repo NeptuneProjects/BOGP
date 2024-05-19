@@ -20,7 +20,7 @@ import common, helpers
 class GIBBONLoopArgs:
     dim: int
     budget: int = 500
-    n_init: int = 100
+    n_init: int = 200
     dtype: torch.dtype = torch.double
     device: torch.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     num_restarts: int = 40
