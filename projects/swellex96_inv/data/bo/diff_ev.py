@@ -30,7 +30,7 @@ parameter_keys = [
 ]
 
 bounds = [
-    (1.06, 1.09),
+    (1.05, 1.09),
     (69.0, 73.0),
     (1.8, 2.3),
     (216.0, 222.0),
@@ -39,7 +39,7 @@ bounds = [
     (18.0, 23.0),
     (1588.0, 1598.0),
     (0.0, 1.0),
-    (1.0, 2.0),
+    (1.75, 2.25),
 ]
 
 
@@ -62,6 +62,14 @@ class Callback:
         self.x.append(intermediate_result.x)
         self.population.append(intermediate_result.population)
         self.population_energies.append(intermediate_result.population_energies)
+        vals = [f"{key}={self.x[-1][i]}" for i, key in enumerate(parameter_keys)]
+        print(
+            f"Time: {self.elapsed_time[-1]:.2f} s, "
+            f"Obj: {self.fun[-1]}, "
+            f"It: {self.nit[-1]}, "
+            f"nfev: {self.nfev[-1]} | "
+            f"{' | '.join(vals)}"
+        )
 
     def save_results(self, path: Path = Path("de_results.npz")) -> None:
         np.savez(
@@ -93,10 +101,11 @@ def main(args: argparse.Namespace) -> None:
         num_runs = 1
         de_kwargs = {
             "maxiter": 100,
-            "popsize": 50,
-            "mutation": (0.5, 1.0),
-            "recombination": 0.7,
+            "popsize": 100,
+            "mutation": (0.7, 1.0),
+            "recombination": 0.1,
             "polish": True,
+            "updating": "immediate",
         }
         savename = "de_results_full"
     else:
@@ -108,6 +117,7 @@ def main(args: argparse.Namespace) -> None:
             "mutation": 0.5,
             "recombination": 0.1,
             "polish": False,
+            "updating": "deferred",
         }
         savename = "de_results"
 
