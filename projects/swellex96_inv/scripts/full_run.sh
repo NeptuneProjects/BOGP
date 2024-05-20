@@ -1,6 +1,6 @@
 # BOGP - UCB
 # python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=32 --serial=sim_ucb --simulate
-python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=32 --serial=exp_ucb
+# python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=32 --serial=exp_ucb
 
 # BOGP - EI
 python projects/swellex96_inv/data/bo/run.py --optim=ei --init=32 --serial=sim_ei --simulate
