@@ -147,9 +147,10 @@ SEARCH_SPACE = [
 
 
 STRATEGY_COLORS = {
-    "Sobol": "red",
-    "UCB": "green",
-    "EI": "blue",
+    "Sobol": "tab:red",
+    "UCB": "tab:green",
+    "EI": "tab:blue",
+    "LogEI": "tab:orange",
     "BAxUS": "orange",
     "Random": "green",
 }

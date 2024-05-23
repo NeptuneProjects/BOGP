@@ -43,10 +43,11 @@ def get_concat_h(im1, im2, im3):
 #     sobol_demo.sample_comparison().savefig(savepath / "figure01.pdf", **SAVE_KWARGS)
 
 def figure01():
-    import bo_ucb_example, bo_ei_example
+    import bo_ucb_example, bo_ei_example, bo_logei_example
 
     bo_ucb_example.main().savefig(savepath / "figure01a.pdf", **SAVE_KWARGS)
     bo_ei_example.main().savefig(savepath / "figure01b.pdf", **SAVE_KWARGS)
+    bo_logei_example.main().savefig(savepath / "figure01c.pdf", **SAVE_KWARGS)
 
 
 def figure02():
@@ -92,8 +93,8 @@ def figure07():
 if __name__ == "__main__":
     # figure01()
     # figure02()
-    # figure03()
+    figure03()
     # figure04()
-    figure05()
+    # figure05()
     # figure06()
     # figure07()

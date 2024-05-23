@@ -16,7 +16,7 @@ from tritonoa.sp.mfp import MatchedFieldProcessor
 from tritonoa.sp.processing import simulate_covariance
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from data.bo import common, helpers
+from data.bo import common
 
 sys.path.insert(0, str(Path(__file__).parents[3]))
 from optimization import utils
@@ -67,11 +67,11 @@ def get_gp_data() -> (
     )
     mu, sigma = gpr.predict(x_t.reshape(-1, 1), return_std=True)
     alpha = expected_improvement(-mu, sigma, np.max(-y))
-    return x, y, x_t, f, mu, sigma, alpha / alpha.max()
+    return x, y, x_t, f, mu, sigma, alpha
 
 
 def initialize_data() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    environment = utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data)
+    environment = utils.load_env_from_json(common.SWELLEX96Paths.main_environment_data_sim)
     freq = common.FREQ
     rec_r_true = 1.0
     src_z_true = 60.0
@@ -115,6 +115,7 @@ def plot_bo_example() -> plt.Figure:
     x, y, x_t, f, mu, sigma, alpha = get_gp_data()
     lcb = mu - 2 * sigma
     ucb = mu + 2 * sigma
+    # alpha /= alpha.max()
     x_next = x_t[np.argmax(alpha)]
     y_next = f[np.argmax(alpha)]
 
