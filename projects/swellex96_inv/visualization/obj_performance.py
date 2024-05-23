@@ -19,18 +19,19 @@ plt.style.use(["science", "ieee", "std-colors"])
 
 
 MODES = ["Simulated", "Experimental"]
-N_INIT = 200
-YLIM = [(1e-8, 1.0), (0.06, 1.0)]
-YTICKS = [[1e-8, 1e-6, 1e-4, 1e-2, 1.0], [0.06, 0.1, 0.5, 1.0]]
+N_INIT = 32
+N_SOBOL = 10000
+YLIM = [(0.6e-6, 1.0), (0.07, 1.0)]
+YTICKS = [[1e-6, 1e-4, 1e-2, 1.0], [0.07, 0.1, 0.5, 1.0]]
 YTICKLABELS = [
-    ["$10^{-8}$", "$10^{-6}$", "$10^{-4}$", "$10^{-2}$", "$10^{0}$"],
-    ["0.06", "0.1", "0.5", "1"],
+    ["$10^{-6}$", "$10^{-4}$", "$10^{-2}$", "$10^{0}$"],
+    ["0.07", "0.1", "0.5", "1"],
 ]
 SORTING_RULE = {
     "Sobol": 0,
-    "Random": 1,
-    "UCB": 2,
-    "EI": 3,
+    "UCB": 1,
+    "EI": 2,
+    "LogEI": 3,
 }
 
 
@@ -39,9 +40,7 @@ def plot_performance_history(
 ) -> plt.Axes:
     if ax is None:
         ax = plt.gca()
-
     strategies = sorted(list(df["Strategy"].unique()), key=SORTING_RULE.__getitem__)
-
     for strategy in strategies:
         if strategy != "Sobol":
             df_ = df[df["n_init"] == N_INIT]
@@ -52,11 +51,13 @@ def plot_performance_history(
         )
 
         mean = dfp.mean(axis=1)
+        std = dfp.std(axis=1)
         min_ = dfp.min(axis=1)
         max_ = dfp.max(axis=1)
         ax.plot(dfp.index, mean, color=common.STRATEGY_COLORS[strategy])
         ax.plot(
             dfp.index,
+            # mean - 2 * std,
             min_,
             color=common.STRATEGY_COLORS[strategy],
             linestyle="-.",
@@ -64,11 +65,13 @@ def plot_performance_history(
         )
         ax.plot(
             dfp.index,
+            # mean + 2 * std,
             max_,
             color=common.STRATEGY_COLORS[strategy],
             linestyle="-.",
             linewidth=0.5,
         )
+        ax.axvline(x=N_INIT, color="black", linestyle="--", linewidth=0.5)
 
     return ax
 
@@ -78,6 +81,11 @@ def plot_wall_time(df: pd.DataFrame, ax: Optional[plt.Axes] = None):
         ax = plt.gca()
 
     strategies = sorted(list(df["Strategy"].unique()), key=SORTING_RULE.__getitem__)
+
+    sel = ((df["Strategy"] == "Sobol") & (df["Trial"] == N_SOBOL)) | (
+        (df["Strategy"] != "Sobol") & (df["n_init"] == N_INIT) & (df["Trial"] == 100)
+    )
+    df = df.loc[sel]
 
     for strategy in strategies:
         for seed in df["seed"].unique():
@@ -89,12 +97,21 @@ def plot_wall_time(df: pd.DataFrame, ax: Optional[plt.Axes] = None):
                 ]
             else:
                 dfp = df.loc[(df["Strategy"] == strategy) & (df["seed"] == seed)]
-            ax.plot(
+                dfp.loc[:, "wall_time"] = dfp["wall_time"] * 32 # Account for multi-processing
+            # ax.plot(
+            #     dfp["wall_time"],
+            #     dfp["best_obj"],
+            #     color=common.STRATEGY_COLORS[strategy],
+            #     alpha=0.5,
+            #     linewidth=0.75,
+            # )
+            ax.scatter(
                 dfp["wall_time"],
                 dfp["best_obj"],
                 color=common.STRATEGY_COLORS[strategy],
-                alpha=0.5,
-                linewidth=0.75,
+                s=5,
+                marker="x",
+                alpha=0.75,
             )
 
     return ax
@@ -108,8 +125,8 @@ def plot_est_dist(df: pd.DataFrame, ax: Optional[plt.Axes] = None) -> plt.Axes:
     if ax is None:
         ax = plt.gca()
 
-    sel = ((df["Strategy"] == "Sobol") & (df["Trial"] == 50000)) | (
-        (df["Strategy"] != "Sobol") & (df["n_init"] == N_INIT) & (df["Trial"] == 500)
+    sel = ((df["Strategy"] == "Sobol") & (df["Trial"] == N_SOBOL)) | (
+        (df["Strategy"] != "Sobol") & (df["n_init"] == N_INIT) & (df["Trial"] == 100)
     )
 
     dfp = df.loc[sel].sort_values(by="Strategy", key=lambda x: x.apply(lambda y: SORTING_RULE.get(y, 1000)))
@@ -132,18 +149,18 @@ def plot_est_dist(df: pd.DataFrame, ax: Optional[plt.Axes] = None) -> plt.Axes:
 
 def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
     fig, axs = plt.subplots(
-        nrows=2, ncols=3, figsize=(8, 3), gridspec_kw={"wspace": 0.05, "hspace": 0.2}
+        nrows=2, ncols=3, figsize=(8, 3), gridspec_kw={"wspace": 0.07, "hspace": 0.2}
     )
 
     for i, df in enumerate(data):
         axrow = axs[i]
         ax = axrow[0]
         ax = plot_performance_history(df, ax=ax)
-        ax.set_xlim(-5, 505)
+        ax.set_xlim(1, 100)
 
         ax = axrow[1]
         ax = plot_wall_time(df, ax=ax)
-        ax.set_xlim(-10, 3000)
+        ax.set_xlim(0, 1500)
 
         ax = axrow[2]
         ax = plot_est_dist(df, ax=ax)
@@ -160,11 +177,17 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
                     ax.set_xlabel("Strategy")
 
             ax.grid(True, linestyle="dotted")
+            # Logarithmic Y-axis
             ax.set_yscale("log")
             ax.set_ylim(YLIM[i])
             ax.set_yticks(YTICKS[i])
-            ax.set_xticklabels([]) if i != 1 else None
             ax.set_yticklabels([]) if j != 0 else ax.set_yticklabels(YTICKLABELS[i])
+            # Linear Y-axis
+            # ax.set_ylim(0, 1)
+            # ax.set_yticks([0, 0.5, 1])
+            # ax.set_yticklabels([]) if j != 0 else ax.set_yticklabels([0, 0.5, 1])
+
+            ax.set_xticklabels([]) if i != 1 else None
             ax.set_ylabel("$\widehat{{\phi}}$", rotation=0) if j == 0 else None
             ax.text(
                 -0.28,
@@ -192,7 +215,7 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
                     handles=handles,
                     loc="upper center",
                     bbox_to_anchor=(0.5, -0.35),
-                    ncol=3,
+                    ncol=4,
                     frameon=False,
                     borderaxespad=0.0,
                 )
@@ -213,4 +236,5 @@ def main(prepend=""):
 
 
 if __name__ == "__main__":
-    main()
+    fig = main()
+    plt.show()
