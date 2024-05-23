@@ -88,6 +88,7 @@ def log_best_value_and_parameters(
 def parse_name(name: str) -> tuple[str, int, int, str]:
     strategy_names = {
         "ei": "EI",
+        "logei": "LogEI",
         "pi": "PI",
         "ucb": "UCB",
         "sobol": "Sobol",
