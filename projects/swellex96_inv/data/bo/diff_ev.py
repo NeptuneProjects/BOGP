@@ -62,7 +62,7 @@ class Callback:
         self.x.append(intermediate_result.x)
         self.population.append(intermediate_result.population)
         self.population_energies.append(intermediate_result.population_energies)
-        vals = [f"{key}={self.x[-1][i]}" for i, key in enumerate(parameter_keys)]
+        # vals = [f"{key}={self.x[-1][i]}" for i, key in enumerate(parameter_keys)]
         # print(
         #     f"Time: {self.elapsed_time[-1]:.2f} s, "
         #     f"Obj: {self.fun[-1]}, "
