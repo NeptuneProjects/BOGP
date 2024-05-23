@@ -29,7 +29,7 @@ parameter_keys = [
     "rho_sed",
 ]
 
-bounds = [
+full_bounds = [
     (1.05, 1.09),
     (69.0, 73.0),
     (1.8, 2.3),
@@ -99,6 +99,7 @@ def main(args: argparse.Namespace) -> None:
     if args.full:
         print("Running full DE.")
         num_runs = 1
+        bounds = full_bounds
         de_kwargs = {
             "maxiter": 100,
             "popsize": 100,
@@ -111,6 +112,7 @@ def main(args: argparse.Namespace) -> None:
     else:
         print("Running vanilla DE.")
         num_runs = args.num_runs
+        bounds = [(i["bounds"][0], i["bounds"][1]) for i in common.SEARCH_SPACE]
         de_kwargs = {
             "maxiter": 300,
             "popsize": 10,
@@ -122,7 +124,6 @@ def main(args: argparse.Namespace) -> None:
         savename = "de_results"
 
     objective = get_objective(simulate=False)
-    # bounds = [(i["bounds"][0], i["bounds"][1]) for i in common.SEARCH_SPACE]
     savepath = common.SWELLEX96Paths.outputs / "runs" / "de"
     savepath.mkdir(parents=True, exist_ok=True)
 
@@ -155,7 +156,7 @@ def main(args: argparse.Namespace) -> None:
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--num_runs", type=int, default=30)
+    parser.add_argument("--num_runs", type=int, default=100)
     parser.add_argument("--full", action="store_true")
     args = parser.parse_args()
     main(args)
