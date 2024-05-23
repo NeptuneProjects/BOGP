@@ -24,9 +24,8 @@ parameter_keys = [
     "h_sed",
     "c_p_sed_top",
     "dc_p_sed",
-    "c_p_sed_bot",
-    "a_p_sed",
-    "rho_sed",
+    # "a_p_sed",
+    # "rho_sed",
 ]
 
 full_bounds = [
@@ -113,8 +112,9 @@ def main(args: argparse.Namespace) -> None:
         print("Running vanilla DE.")
         num_runs = args.num_runs
         bounds = [(i["bounds"][0], i["bounds"][1]) for i in common.SEARCH_SPACE]
+        parameter_keys = [i["name"] for i in common.SEARCH_SPACE]
         de_kwargs = {
-            "maxiter": 300,
+            "maxiter": 3,
             "popsize": 10,
             "mutation": 0.5,
             "recombination": 0.1,
