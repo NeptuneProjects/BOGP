@@ -155,7 +155,13 @@ STRATEGY_COLORS = {
     "BAxUS": "orange",
     "Random": "green",
 }
-
+SORTING_RULE = {
+    "Sobol (100)": 0,
+    "Sobol (10k)": 1,
+    "UCB": 2,
+    "EI": 3,
+    "LogEI": 4,
+}
 
 @dataclass(frozen=True)
 class SWELLEX96Paths:
