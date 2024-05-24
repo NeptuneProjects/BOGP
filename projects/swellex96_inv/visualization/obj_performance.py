@@ -26,13 +26,6 @@ YTICKLABELS = [
     ["$10^{-6}$", "$10^{-4}$", "$10^{-2}$", "$10^{0}$"],
     ["0.07", "0.1", "0.5", "1"],
 ]
-SORTING_RULE = {
-    "Sobol (100)": -1,
-    "Sobol (10k)": 0,
-    "UCB": 1,
-    "EI": 2,
-    "LogEI": 3,
-}
 DIST_LABELS = [
     "Sobol\n(100)",
     "Sobol\n(10k)",
@@ -47,7 +40,9 @@ def plot_performance_history(
 ) -> plt.Axes:
     if ax is None:
         ax = plt.gca()
-    strategies = sorted(list(df["Strategy"].unique()), key=SORTING_RULE.__getitem__)
+    strategies = sorted(
+        list(df["Strategy"].unique()), key=common.SORTING_RULE.__getitem__
+    )
     strategies.remove("Sobol (10k)")
 
     for strategy in strategies:
@@ -93,7 +88,9 @@ def plot_wall_time(df: pd.DataFrame, ax: Optional[plt.Axes] = None):
     if ax is None:
         ax = plt.gca()
 
-    strategies = sorted(list(df["Strategy"].unique()), key=SORTING_RULE.__getitem__)
+    strategies = sorted(
+        list(df["Strategy"].unique()), key=common.SORTING_RULE.__getitem__
+    )
 
     sel = (
         ((df["Strategy"] == "Sobol (100)") & (df["Trial"] == 100))
@@ -108,30 +105,26 @@ def plot_wall_time(df: pd.DataFrame, ax: Optional[plt.Axes] = None):
 
     for strategy in strategies:
         for seed in df["seed"].unique():
-            if strategy != "Sobol (10k)":
-                dfp = df.loc[
-                    (df["Strategy"] == strategy)
-                    & (df["seed"] == seed)
-                    & (df["n_init"] == N_INIT)
-                ]
-            elif strategy == "Sobol (100)":
+            if strategy == "Sobol (100)":
                 dfp = df.loc[
                     (df["Strategy"] == strategy)
                     & (df["seed"] == seed)
                     & (df["Trial"] == 100)
                 ]
-            else:
+                dfp.loc[:, "wall_time"] = (
+                    dfp["wall_time"] * 32
+                )  # Account for multi-processing
+            elif strategy == "Sobol (10k)":
                 dfp = df.loc[(df["Strategy"] == strategy) & (df["seed"] == seed)]
                 dfp.loc[:, "wall_time"] = (
                     dfp["wall_time"] * 32
                 )  # Account for multi-processing
-            # ax.plot(
-            #     dfp["wall_time"],
-            #     dfp["best_obj"],
-            #     color=common.STRATEGY_COLORS[strategy],
-            #     alpha=0.5,
-            #     linewidth=0.75,
-            # )
+            else:
+                dfp = df.loc[
+                    (df["Strategy"] == strategy)
+                    & (df["seed"] == seed)
+                    & (df["n_init"] == N_INIT)
+                ]
             ax.scatter(
                 dfp["wall_time"],
                 dfp["best_obj"],
@@ -145,10 +138,6 @@ def plot_wall_time(df: pd.DataFrame, ax: Optional[plt.Axes] = None):
 
 
 def plot_est_dist(df: pd.DataFrame, ax: Optional[plt.Axes] = None) -> plt.Axes:
-
-    # def sort_func():
-    #     return
-
     if ax is None:
         ax = plt.gca()
 
@@ -163,18 +152,8 @@ def plot_est_dist(df: pd.DataFrame, ax: Optional[plt.Axes] = None) -> plt.Axes:
     )
 
     dfp = df.loc[sel].sort_values(
-        by="Strategy", key=lambda x: x.apply(lambda y: SORTING_RULE.get(y, 1000))
+        by="Strategy", key=lambda x: x.apply(lambda y: common.SORTING_RULE.get(y, 1000))
     )
-    # sns.boxplot(
-    #     data=dfp,
-    #     x="Strategy",
-    #     y="best_obj",
-    #     hue="Strategy",
-    #     # whis=[0, 100],
-    #     width=0.6,
-    #     palette=common.STRATEGY_COLORS,
-    #     ax=ax,
-    # )
     sns.violinplot(
         data=dfp,
         x="Strategy",
@@ -212,13 +191,7 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
 
     for i, df in enumerate(data):
 
-        # print(df)
-        subsel = (df["Strategy"] == "Sobol") & (df["Trial"] <= 100)
-        df.loc[subsel, "Strategy"] = "Sobol (100)"
-        subsel = (df["Strategy"] == "Sobol") & (df["Trial"] > 100)
-        df.loc[subsel, "Strategy"] = "Sobol (10k)"
-        # print(df)
-        # return
+        df = helpers.split_sobol_results(df, 100)
 
         axrow = axs[i]
         ax = axrow[0]
@@ -241,7 +214,7 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
                 if j == 1:
                     ax.set_xlabel("Time [s]")
                 # if j == 2:
-                    # ax.set_xlabel("Strategy")
+                # ax.set_xlabel("Strategy")
 
             ax.grid(True, linestyle="dotted")
             if i == 0 and j == 2:
@@ -279,7 +252,7 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
 
             if i == 1 and j == 1:
                 strategies = sorted(
-                    list(df["Strategy"].unique()), key=SORTING_RULE.__getitem__
+                    list(df["Strategy"].unique()), key=common.SORTING_RULE.__getitem__
                 )
                 handles = [
                     plt.Line2D(
@@ -305,7 +278,7 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
     return fig
 
 
-def main(prepend=""):
+def main(prepend: str = ""):
     path = common.SWELLEX96Paths.outputs / "runs"
     data_sim = helpers.load_data(
         path, f"{prepend}sim_*/*.npz", common.SEARCH_SPACE, common.TRUE_SIM_VALUES
