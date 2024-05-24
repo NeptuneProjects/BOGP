@@ -137,6 +137,14 @@ def record_best_evaluations(
     return df
 
 
+def split_sobol_results(df: pd.DataFrame, index: int) -> pd.DataFrame:
+    subsel = (df["Strategy"] == "Sobol") & (df["Trial"] <= index)
+    df.loc[subsel, "Strategy"] = "Sobol (100)"
+    subsel = (df["Strategy"] == "Sobol") & (df["Trial"] > index)
+    df.loc[subsel, "Strategy"] = "Sobol (10k)"
+    return df
+
+
 def construct_run_df(
     f: Path, search_space: list[dict], true_values: dict
 ) -> pd.DataFrame:
