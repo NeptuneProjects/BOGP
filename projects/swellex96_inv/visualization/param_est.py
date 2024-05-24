@@ -20,6 +20,7 @@ plt.style.use(["science", "ieee", "std-colors"])
 
 MODES = ["Simulated", "Experimental"]
 NBINS = 50
+N_INIT = 32
 
 
 def plot_param_dist(data: np.ndarray, bounds: list, ax: Optional[plt.Axes] = None):
@@ -38,7 +39,7 @@ def plot_parameter_estimates(data: list[pd.DataFrame], parameters: list[dict]) -
     YLIM = [[0, 75], [0, 75]]
 
     fig, axs = plt.subplots(
-        nrows=2, ncols=9, figsize=(8, 1.5), gridspec_kw={"wspace": 0.1, "hspace": 0.4}
+        nrows=2, ncols=7, figsize=(8, 1.5), gridspec_kw={"wspace": 0.1, "hspace": 0.4}
     )
 
     for i, axrow in enumerate(axs):
@@ -192,21 +193,21 @@ def plot_parameter_estimates(data: list[pd.DataFrame], parameters: list[dict]) -
 #     return fig
 
 
-def main(strategy="ucb", prepend=""):
+def main(strategy="sobol", prepend=""):
     path = common.SWELLEX96Paths.outputs / "runs"
     data_sim = helpers.load_data(
-        path, f"{prepend}sim_{strategy}/*-200_*.npz", common.SEARCH_SPACE, common.TRUE_SIM_VALUES
+        path, f"{prepend}sim_{strategy}/*-{N_INIT}_*.npz", common.SEARCH_SPACE, common.TRUE_SIM_VALUES
     )
     data_exp = helpers.load_data(
-        path, f"{prepend}exp_{strategy}/*-200_*.npz", common.SEARCH_SPACE, common.TRUE_EXP_VALUES
+        path, f"{prepend}exp_{strategy}/*-{N_INIT}_*.npz", common.SEARCH_SPACE, common.TRUE_EXP_VALUES
     )
     # data_sim = data_exp
     # data_sim.to_csv("data.csv")
 
     if "sobol" in strategy:
-        last_trial = 50000
+        last_trial = 10000
     else:
-        last_trial = 500
+        last_trial = 100
 
     if prepend in ["full_", "thermo_"]:
         print("Plotting full inversion.")
