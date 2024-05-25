@@ -114,7 +114,7 @@ def main(args: argparse.Namespace) -> None:
         bounds = [(i["bounds"][0], i["bounds"][1]) for i in common.SEARCH_SPACE]
         parameter_keys = [i["name"] for i in common.SEARCH_SPACE]
         de_kwargs = {
-            "maxiter": 100,
+            "maxiter": 200,
             "popsize": 10,
             "mutation": 0.5,
             "recombination": 0.1,
