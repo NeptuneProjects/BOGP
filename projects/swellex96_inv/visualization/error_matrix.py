@@ -9,7 +9,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from data.bo import common, helpers
 
-N_INIT = 32
+N_INIT = 64
 N_SOBOL = 10000
 N_TRIALS = 100
 
