@@ -63,10 +63,10 @@ def plot_perf_vs_warmup(df: pd.DataFrame) -> plt.Figure:
     return fig
 
 
-def main():
+def main(strategy: str = "exp_logei"):
     path = common.SWELLEX96Paths.outputs / "runs"
     data = helpers.load_data(
-        path, "exp_logei/*.npz", common.SEARCH_SPACE, common.TRUE_EXP_VALUES
+        path, f"{strategy}/*.npz", common.SEARCH_SPACE, common.TRUE_EXP_VALUES
     )
     data = data.loc[data["Trial"] == N_TRIALS]
     return plot_perf_vs_warmup(data)
