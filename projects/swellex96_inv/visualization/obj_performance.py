@@ -18,7 +18,7 @@ plt.style.use(["science", "ieee", "std-colors"])
 
 
 MODES = ["Simulated", "Experimental"]
-N_INIT = 32
+N_INIT = 64
 N_SOBOL = 10000
 YLIM = [(0.6e-6, 1.0), (0.07, 1.0)]
 YTICKS = [[1e-6, 1e-4, 1e-2, 1.0], [0.07, 0.1, 0.5, 1.0]]
@@ -55,11 +55,11 @@ def plot_performance_history(
         )
 
         mean = dfp.mean(axis=1)
-        std = dfp.std(axis=1)
+        # std = dfp.std(axis=1)
         min_ = dfp.min(axis=1)
         max_ = dfp.max(axis=1)
-        ql = dfp.quantile(0.05, axis=1)
-        qh = dfp.quantile(0.95, axis=1)
+        # ql = dfp.quantile(0.05, axis=1)
+        # qh = dfp.quantile(0.95, axis=1)
         ax.plot(dfp.index, mean, color=common.STRATEGY_COLORS[strategy])
         ax.plot(
             dfp.index,
@@ -226,7 +226,7 @@ def performance_plot(data: list[pd.DataFrame]) -> plt.Figure:
                 # Linear Y-axis
                 ax.set_ylim(0.06, 0.12)
                 ax.set_yticks([0.06, 0.08, 0.12])
-                ax.set_yticklabels([0.06, 0.08, 0.12])
+                ax.set_yticklabels([0.06, 0.09, 0.12])
             else:
                 # Logarithmic Y-axis
                 ax.set_yscale("log")
