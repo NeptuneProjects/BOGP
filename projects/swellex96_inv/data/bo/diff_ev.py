@@ -94,6 +94,10 @@ def fitness_func(x: np.ndarray, objective: MatchedFieldProcessor = None) -> floa
 
 
 def main(args: argparse.Namespace) -> None:
+    if args.simulate:
+        prepend = "sim_"
+    else:
+        prepend = ""
 
     if args.full:
         print("Running full DE.")
@@ -123,7 +127,7 @@ def main(args: argparse.Namespace) -> None:
         }
         savename = "de_results"
 
-    objective = get_objective(simulate=False)
+    objective = get_objective(simulate=args.simulate)
     savepath = common.SWELLEX96Paths.outputs / "runs" / "de"
     savepath.mkdir(parents=True, exist_ok=True)
 
@@ -141,7 +145,7 @@ def main(args: argparse.Namespace) -> None:
             init="latinhypercube",
             **de_kwargs,
         )
-        callback.save_results(path=savepath / f"de_results{i:02d}.npz")
+        callback.save_results(path=savepath / f"{prepend}de_results{i:02d}.npz")
         data = pd.DataFrame(data=callback.x, columns=parameter_keys)
         data["seed"] = i
         data["wall_time"] = callback.elapsed_time
@@ -151,12 +155,13 @@ def main(args: argparse.Namespace) -> None:
         alldata.append(data)
 
     df = pd.concat(alldata, ignore_index=True)
-    df.to_csv(savepath / f"{savename}.csv", index=False)
+    df.to_csv(savepath / f"{prepend}{savename}.csv", index=False)
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--num_runs", type=int, default=100)
     parser.add_argument("--full", action="store_true")
+    parser.add_argument("--simulate", action="store_true")
     args = parser.parse_args()
     main(args)
