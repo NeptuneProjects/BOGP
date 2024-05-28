@@ -1,3 +1,7 @@
+# RANDOM
+python projects/swellex96_inv/data/bo/run.py --optim=random --init=32 --budget=10000 --serial=sim_random --simulate
+python projects/swellex96_inv/data/bo/run.py --optim=random --init=32 --budget=10000 --serial=exp_random
+
 # BOGP - UCB
 # python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=64 --serial=sim_ucb --simulate
 # python projects/swellex96_inv/data/bo/run.py --optim=ucb --init=64 --serial=exp_ucb
@@ -14,5 +18,5 @@
 python projects/swellex96_inv/data/bo/run.py --optim=logei --init=8 --serial=exp_logei
 
 # SOBOL
-# python projects/swellex96_inv/data/bo/run.py --optim=sobol --budget=50000 --serial=sim_sobol --simulate
-# python projects/swellex96_inv/data/bo/run.py --optim=sobol --budget=50000 --serial=exp_sobol
+# python projects/swellex96_inv/data/bo/run.py --optim=sobol --budget=10000 --serial=sim_sobol --simulate
+# python projects/swellex96_inv/data/bo/run.py --optim=sobol --budget=10000 --serial=exp_sobol
