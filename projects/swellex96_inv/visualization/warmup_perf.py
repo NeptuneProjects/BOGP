@@ -19,12 +19,8 @@ plt.style.use(["science", "ieee"])
 # MODES = "Simulated"
 MODES = "Experimental"
 N_TRIALS = 100
-if MODES == "Simulated":
-    YLIM = (1e-8, 1.0)
-    YTICKS = [1e-8, 1e-6, 1e-4, 1e-2, 1.0]
-if MODES == "Experimental":
-    YLIM = (0.05, 1.0)
-    YTICKS = [0.05, 0.1, 0.5, 1.0]
+YLIM = (0.05, 1.0)
+YTICKS = [0.05, 0.1, 0.5, 1.0]
 
 
 def plot_perf_vs_warmup(df: pd.DataFrame) -> plt.Figure:
@@ -45,6 +41,7 @@ def plot_perf_vs_warmup(df: pd.DataFrame) -> plt.Figure:
     ax1.set_xticks([8, 16, 32, 64])
     ax1.tick_params(axis="x", which="minor", bottom=False, top=False)
     ax1.set_xlabel("$N_\mathrm{init}$")
+    ax1.grid(True, linestyle="dotted", linewidth=0.5)
 
     ax2 = ax1.twinx()
     sns.lineplot(

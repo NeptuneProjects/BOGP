@@ -5,25 +5,12 @@ from pathlib import Path
 import sys
 from PIL import Image
 
-import matplotlib.pyplot as plt
-import seaborn as sns
-
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from conf import common
 
 savepath = Path.cwd().parent / "reports/manuscripts/202401_JASA"
 
 SAVE_KWARGS = {"bbox_inches": "tight", "dpi": 1000}
-
-# sns.set_theme(style="white")
-
-# df = sns.load_dataset("penguins")
-
-# g = sns.PairGrid(df, diag_sharey=False)
-# g.map_upper(sns.scatterplot, s=15)
-# g.map_lower(sns.kdeplot)
-# g.map_diag(sns.kdeplot, lw=2)
-# plt.show()
 
 
 def get_concat_h(im1, im2, im3):
@@ -36,11 +23,6 @@ def get_concat_h(im1, im2, im3):
     dst.paste(im3, (im1.width + im2.width + 2 * h_pad, 0))
     return dst
 
-
-# def figure01():
-#     import sobol_demo
-
-#     sobol_demo.sample_comparison().savefig(savepath / "figure01.pdf", **SAVE_KWARGS)
 
 def figure01():
     import bo_ucb_example, bo_ei_example, bo_logei_example
@@ -61,9 +43,13 @@ def figure02():
 
 
 def figure03():
-    import obj_performance
+    import obj_performance_rand
 
-    obj_performance.main().savefig(savepath / "figure03.pdf", **SAVE_KWARGS)
+    obj_performance_rand.main(n_init=64).savefig(savepath / "figure03.pdf", **SAVE_KWARGS)
+
+    # import obj_performance
+
+    # obj_performance.main(n_init=64).savefig(savepath / "figure03.pdf", **SAVE_KWARGS)
 
 
 def figure04():
@@ -73,28 +59,44 @@ def figure04():
 
 
 def figure05():
-    import param_est
+    import warmup_perf
 
-    param_est.main().savefig(savepath / "figure05.pdf", **SAVE_KWARGS)
+    warmup_perf.main(strategy="exp_logei").savefig(
+        savepath / "figure05.pdf", **SAVE_KWARGS
+    )
 
 
 def figure06():
     import param_est
 
-    param_est.main(strategy="sobol_50k").savefig(savepath / "figure06.pdf", **SAVE_KWARGS)
+    param_est.main(strategy="random", n_init=32).savefig(
+        savepath / "figure06.pdf", **SAVE_KWARGS
+    )
 
 
 def figure07():
-    import warmup_perf
+    import param_est
 
-    warmup_perf.main().savefig(savepath / "figure07.pdf", **SAVE_KWARGS)
+    param_est.main(strategy="ucb", n_init=64).savefig(
+        savepath / "figure07.pdf", **SAVE_KWARGS
+    )
+
+
+def figure08():
+    # import time_projection
+
+    # time_projection.main().savefig(savepath / "figure08.pdf", **SAVE_KWARGS)
+    import time_projection_rand
+
+    time_projection_rand.main().savefig(savepath / "figure08.pdf", **SAVE_KWARGS)
 
 
 if __name__ == "__main__":
     # figure01()
     # figure02()
-    figure03()
+    # figure03()
     # figure04()
     # figure05()
     # figure06()
     # figure07()
+    figure08()
