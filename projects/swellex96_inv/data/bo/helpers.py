@@ -87,10 +87,10 @@ def log_best_value_and_parameters(
 
 def parse_name(name: str) -> tuple[str, int, int, str]:
     strategy_names = {
-        "ei": "EI",
-        "logei": "LogEI",
-        "pi": "PI",
-        "ucb": "UCB",
+        "ei": "BO-EI",
+        "logei": "BO-LogEI",
+        "pi": "BO-PI",
+        "ucb": "BO-UCB",
         "sobol": "Sobol",
         "baxus": "BAxUS",
         "random": "Random",
@@ -134,6 +134,14 @@ def record_best_evaluations(
         df["best_" + param] = np.array(best_params_history)[:, i]
         df["best_" + param + "_err"] = np.abs(df[param] - true_values[param])
 
+    return df
+
+
+def split_random_results(df: pd.DataFrame, index: int) -> pd.DataFrame:
+    subsel = (df["Strategy"] == "Random") & (df["Trial"] <= index)
+    df.loc[subsel, "Strategy"] = "Random (100)"
+    subsel = (df["Strategy"] == "Random") & (df["Trial"] > index)
+    df.loc[subsel, "Strategy"] = "Random (10k)"
     return df
 
 

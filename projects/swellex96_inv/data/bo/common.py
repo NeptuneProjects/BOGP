@@ -148,19 +148,23 @@ SEARCH_SPACE = [
 
 STRATEGY_COLORS = {
     "Sobol (100)": "tab:red",
+    "Random (100)": "tab:red",
     "Sobol (10k)": "tab:orange",
-    "UCB": "tab:purple",
-    "EI": "tab:blue",
-    "LogEI": "tab:green",
-    "BAxUS": "orange",
-    "Random": "green",
+    "Random (10k)": "tab:orange",
+    "BO-UCB": "tab:purple",
+    "BO-EI": "tab:blue",
+    "BO-LogEI": "tab:green",
+    "DE": "black",
 }
 SORTING_RULE = {
     "Sobol (100)": 0,
-    "Sobol (10k)": 1,
-    "UCB": 2,
-    "EI": 3,
-    "LogEI": 4,
+    "Random (100)": 1,
+    "Sobol (10k)": 2,
+    "Random (10k)": 3,
+    "BO-UCB": 4,
+    "BO-EI": 5,
+    "BO-LogEI": 6,
+    "DE": 7,
 }
 
 @dataclass(frozen=True)
