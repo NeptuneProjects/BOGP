@@ -38,9 +38,9 @@ def figure05():
 
 
 def figure06():
-    import warmup_perf
+    import param_est
 
-    warmup_perf.main(strategy="exp_logei").savefig(
+    param_est.main(strategy="random", n_init=32).savefig(
         SAVEPATH / "figure06.pdf", **SAVE_KWARGS
     )
 
@@ -48,15 +48,15 @@ def figure06():
 def figure07():
     import param_est
 
-    param_est.main(strategy="random", n_init=32).savefig(
+    param_est.main(strategy="ucb", n_init=64).savefig(
         SAVEPATH / "figure07.pdf", **SAVE_KWARGS
     )
 
 
 def figure08():
-    import param_est
+    import warmup_perf
 
-    param_est.main(strategy="ucb", n_init=64).savefig(
+    warmup_perf.main(strategy="exp_logei").savefig(
         SAVEPATH / "figure08.pdf", **SAVE_KWARGS
     )
 
@@ -68,12 +68,12 @@ def figure09():
 
 
 if __name__ == "__main__":
-    figure01()
+    # figure01()
     # figure02()
     # figure03()
     # figure04()
     # figure05()
     # figure06()
     # figure07()
-    # figure08()
+    figure08()
     # figure09()
