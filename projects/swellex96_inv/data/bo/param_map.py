@@ -120,6 +120,7 @@ def format_c_p_sed_top(
     fixed_parameters: dict,
     search_parameters: dict,
     c_p_sed_top: Optional[float] = None,
+    c_p_sed_bot: Optional[float] = None,
     dc_p_sed: float = 0.0,
 ) -> tuple[dict, dict]:
     sediment_data = fixed_parameters["layerdata"][1]
@@ -127,6 +128,9 @@ def format_c_p_sed_top(
         # NOTE: If c_p_sed_top is specified without an accompanying SSP
         # gradient, the sediment sound speed is fixed to a constant value.
         sediment_data["c_p"] = [c_p_sed_top, c_p_sed_top + dc_p_sed]
+        fixed_parameters["layerdata"][1] = sediment_data
+    if c_p_sed_bot is not None:
+        sediment_data["c_p"] = [c_p_sed_top, c_p_sed_bot]
         fixed_parameters["layerdata"][1] = sediment_data
     return fixed_parameters, search_parameters
 
@@ -171,9 +175,10 @@ def format_parameters(
 
     # Adjust sediment sound speed
     c_p_sed_top = search_parameters.pop("c_p_sed_top", None)
+    c_p_sed_bot = search_parameters.pop("c_p_sed_bot", None)
     dc_p_sed = search_parameters.pop("dc_p_sed", 0.0)
     fixed_parameters, search_parameters = format_c_p_sed_top(
-        fixed_parameters, search_parameters, c_p_sed_top, dc_p_sed
+        fixed_parameters, search_parameters, c_p_sed_top, c_p_sed_bot, dc_p_sed
     )
 
     # Adjust sediment attenuation
