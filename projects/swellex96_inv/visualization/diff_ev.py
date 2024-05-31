@@ -21,7 +21,7 @@ YTICKLABELS = ["", "0.1", "0.2", "0.3", "0.4"]
 
 
 def main():
-    path = common.SWELLEX96Paths.outputs / "runs" / "de" / "de_results.csv"
+    path = common.SWELLEX96Paths.outputs / "runs" / "de" / "exp_de_results.csv"
     df = pd.read_csv(path)
 
     nit = df[df["seed"] == 0]["nit"].values
