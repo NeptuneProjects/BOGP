@@ -17,10 +17,18 @@ plt.style.use(["science", "ieee", "std-colors"])
 
 MODES = ["Simulated", "Experimental"]
 N_INIT = 64
-N_RAND = 10000
+N_SOBOL = 10000
 YLIM = [(-0.01, 0.4), (0.0, 0.4)]
 YTICKS = [[0.0, 0.2, 0.4], [0.0, 0.2, 0.4]]
 YTICKLABELS = YTICKS
+DIST_LABELS = [
+    "Sobol\n(100)",
+    "Sobol\n(10k)",
+    "UCB",
+    "EI",
+    "LogEI",
+    "DE",
+]
 MP_MULT = 32
 T0 = 0.05
 
@@ -28,7 +36,7 @@ T0 = 0.05
 def time_projection_plot(
     df: pd.DataFrame, de: pd.DataFrame, n_init: int = 32
 ) -> plt.Figure:
-    df = helpers.split_random_results(df, 100)
+    df = helpers.split_sobol_results(df, 100)
     df = get_time_constants(df, de, n_init)
 
     T1 = np.logspace(-2, 2, 100)
@@ -51,28 +59,20 @@ def time_projection_plot(
     ax.grid(True, linestyle=":", which="minor", linewidth=0.25)
     ax.set_xlim(0.01, 100)
     ax.set_ylim(1e0, 3e6)
-    ax.tick_params(axis="both", which="major", labelsize=10)
-    ax.set_xlabel("Objective Function Duration [s]", size=12)
-    ax.set_ylabel("Projected Wall Time [s]", size=12)
-    handles, labels = ax.get_legend_handles_labels()
-    handles = [handles[3], handles[4], handles[5], handles[2], handles[0], handles[1]]
-    labels = [labels[3], labels[4], labels[5], labels[2], labels[0], labels[1]]
+    # ax.tick_params(axis="y", which="minor")
+    ax.set_xlabel("Objective Function Duration [s]")
+    ax.set_ylabel("Projected Wall Time [s]")
     ax.legend(
-        handles,
-        labels,
-        prop={"size": 8},
-        ncol=2,
+        # prop={"size": 5},
+        ncol=3,
         loc="upper left",
         fancybox=False,
         frameon=True,
         framealpha=1.0,
         title="Strategy",
-        title_fontsize=10,
+        # title_fontsize=5,
         # bbox_to_anchor=(0.0, 1.1),
     )
-    # plt.rc('axes', labelsize=24)
-    # plt.rc('xtick', labelsize=24)    # fontsize of the tick labels
-    # plt.rc('ytick', labelsize=12)
     return fig
 
 
@@ -94,10 +94,10 @@ def get_time_constants(
     df: pd.DataFrame, de: pd.DataFrame, n_init: int = 64
 ) -> pd.DataFrame:
     sel = (
-        ((df["Strategy"] == "Random (100)") & (df["Trial"] == 100))
-        | ((df["Strategy"] == "Random (10k)") & (df["Trial"] == N_RAND))
+        ((df["Strategy"] == "Sobol (100)") & (df["Trial"] == 100))
+        | ((df["Strategy"] == "Sobol (10k)") & (df["Trial"] == N_SOBOL))
         | (
-            (df["Strategy"] != "Random")
+            (df["Strategy"] != "Sobol")
             & (df["n_init"] == n_init)
             & (df["Trial"] == 100)
         )
@@ -110,7 +110,7 @@ def get_time_constants(
         .reset_index()
     )
     df = df.drop(columns=df.columns.difference(["Strategy", "wall_time"]), axis=1)
-    subsel = (df["Strategy"] == "Random (100)") | (df["Strategy"] == "Random (10k)")
+    subsel = (df["Strategy"] == "Sobol (100)") | (df["Strategy"] == "Sobol (10k)")
     df.loc[subsel, "wall_time"] = df.loc[subsel, "wall_time"] * MP_MULT
 
     de = de.loc[de.groupby("seed")["nit"].idxmax()]

@@ -19,7 +19,7 @@ plt.style.use(["science", "ieee", "std-colors"])
 
 MODES = ["Simulated", "Experimental"]
 N_INIT = 64
-N_RAND = 10000
+N_SOBOL = 10000
 # YLIM = [(0.6e-6, 1.0), (0.07, 1.0)]
 # YTICKS = [[1e-6, 1e-4, 1e-2, 1.0], [0.07, 0.1, 0.5, 1.0]]
 # YTICKLABELS = [
@@ -30,8 +30,8 @@ YLIM = [(-0.01, 0.4), (0.0, 0.4)]
 YTICKS = [[0.0, 0.2, 0.4], [0.0, 0.2, 0.4]]
 YTICKLABELS = YTICKS
 DIST_LABELS = [
-    "Rand\n(100)",
-    "Rand\n(10k)",
+    "Sobol\n(100)",
+    "Sobol\n(10k)",
     "BO-\nUCB",
     "BO-\nEI",
     "BO-\nLogEI",
@@ -44,8 +44,8 @@ def performance_plot(data: list[pd.DataFrame], de_data: list[pd.DataFrame], n_in
         nrows=2, ncols=3, figsize=(8, 4), gridspec_kw={"wspace": 0.08, "hspace": 0.15}
     )
     for i, (df, de) in enumerate(zip(data, de_data)):
-        df = helpers.split_random_results(df, 100)
-        df = df.loc[df["Strategy"] != "Sobol"]
+        df = helpers.split_sobol_results(df, 100)
+        df = df.loc[df["Strategy"] != "Random"]
 
         axrow = axs[i]
         ax = axrow[0]
@@ -146,10 +146,10 @@ def plot_performance_history(
     strategies = sorted(
         list(df["Strategy"].unique()), key=common.SORTING_RULE.__getitem__
     )
-    strategies.remove("Random (10k)")
+    strategies.remove("Sobol (10k)")
 
     for strategy in strategies:
-        if (strategy != "Random (100)") and (strategy != "Random (10k)"):
+        if (strategy != "Sobol (100)") and (strategy != "Sobol (10k)"):
             df_ = df[df["n_init"] == n_init]
         else:
             df_ = df
@@ -206,10 +206,10 @@ def plot_wall_time(df: pd.DataFrame, de: pd.DataFrame, n_init: int = 32, ax: Opt
     )
 
     sel = (
-        ((df["Strategy"] == "Random (100)") & (df["Trial"] == 100))
-        | ((df["Strategy"] == "Random (10k)") & (df["Trial"] == N_RAND))
+        ((df["Strategy"] == "Sobol (100)") & (df["Trial"] == 100))
+        | ((df["Strategy"] == "Sobol (10k)") & (df["Trial"] == N_SOBOL))
         | (
-            (df["Strategy"] != "Random")
+            ((df["Strategy"] != "Sobol (100)") | (df["Strategy"] != "Sobol (10k)"))
             & (df["n_init"] == n_init)
             & (df["Trial"] == 100)
         )
@@ -218,7 +218,7 @@ def plot_wall_time(df: pd.DataFrame, de: pd.DataFrame, n_init: int = 32, ax: Opt
 
     for strategy in strategies:
         for seed in df["seed"].unique():
-            if strategy == "Random (100)":
+            if strategy == "Sobol (100)":
                 dfp = df.loc[
                     (df["Strategy"] == strategy)
                     & (df["seed"] == seed)
@@ -227,7 +227,7 @@ def plot_wall_time(df: pd.DataFrame, de: pd.DataFrame, n_init: int = 32, ax: Opt
                 dfp.loc[:, "wall_time"] = (
                     dfp["wall_time"] * 32
                 )  # Account for multi-processing
-            elif strategy == "Random (10k)":
+            elif strategy == "Sobol (10k)":
                 dfp = df.loc[(df["Strategy"] == strategy) & (df["seed"] == seed)]
                 dfp.loc[:, "wall_time"] = (
                     dfp["wall_time"] * 32
@@ -264,10 +264,10 @@ def plot_est_dist(
         ax = plt.gca()
 
     sel = (
-        ((df["Strategy"] == "Random (100)") & (df["Trial"] == 100))
-        | ((df["Strategy"] == "Random (10k)") & (df["Trial"] == N_RAND))
+        ((df["Strategy"] == "Sobol (100)") & (df["Trial"] == 100))
+        | ((df["Strategy"] == "Sobol (10k)") & (df["Trial"] == N_SOBOL))
         | (
-            (df["Strategy"] != "Random")
+            (df["Strategy"] != "Sobol")
             & (df["n_init"] == n_init)
             & (df["Trial"] == 100)
         )
