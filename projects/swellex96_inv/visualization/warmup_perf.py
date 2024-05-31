@@ -38,7 +38,7 @@ def plot_perf_vs_warmup(df: pd.DataFrame) -> plt.Figure:
     )
     ax1.set_ylabel("$\hat{\phi}(\mathbf{m})$", color="tab:blue")
     ax1.tick_params(axis="y", labelcolor="tab:blue")
-    ax1.set_xticks([8, 16, 32, 64])
+    ax1.set_xticks([8, 16, 32, 64, 96])
     ax1.tick_params(axis="x", which="minor", bottom=False, top=False)
     ax1.set_xlabel("$N_\mathrm{init}$")
     ax1.grid(True, linestyle="dotted", linewidth=0.5)
