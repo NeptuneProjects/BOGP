@@ -265,3 +265,12 @@ def adjust_subplotyticklabels(
         ticklabels[low].set_va("bottom")
     if high is not None:
         ticklabels[high].set_va("top")
+
+
+def agg_de_data(df: pd.DataFrame) -> pd.DataFrame:
+    df = df.loc[df.groupby("seed")["nit"].idxmax()]
+    # df_new = pd.DataFrame(columns=["Strategy", "best_obj"])
+    df["Strategy"] = ["DE"] * len(df)
+    df["best_obj"] = df["obj"].values
+    df["c_p_sed_bot"] = df["c_p_sed_top"] + df["dc_p_sed"]
+    return df
