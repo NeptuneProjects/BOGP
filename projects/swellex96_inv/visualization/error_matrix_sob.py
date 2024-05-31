@@ -10,7 +10,7 @@ sys.path.insert(0, str(Path(__file__).parents[1]))
 from data.bo import common, helpers
 
 N_INIT = 64
-N_RAND = 10000
+N_SOBOL = 10000
 N_TRIALS = 100
 
 
@@ -23,21 +23,21 @@ def load_data(prepend: str = "") -> list[pd.DataFrame]:
         df = helpers.load_data(
             common.SWELLEX96Paths.outputs / "runs", glob, common.SEARCH_SPACE, true_vals
         )
-        df = helpers.split_random_results(df, N_TRIALS)
-        df = df.loc[df["Strategy"] != "Sobol"]
+        df = helpers.split_sobol_results(df, N_TRIALS)
+        df = df.loc[df["Strategy"] != "Random"]
 
         sel = (
-            ((df["Strategy"] == "Random (100)") & (df["Trial"] == N_TRIALS))
-            | ((df["Strategy"] == "Random (10k)") & (df["Trial"] == N_RAND))
+            ((df["Strategy"] == "Sobol (100)") & (df["Trial"] == N_TRIALS))
+            | ((df["Strategy"] == "Sobol (10k)") & (df["Trial"] == N_SOBOL))
             | (
-                ((df["Strategy"] != "Random (100)") | (df["Strategy"] != "Random (10k)"))
+                ((df["Strategy"] != "Sobol (100)") | (df["Strategy"] != "Sobol (10k)"))
                 & (df["n_init"] == N_INIT)
                 & (df["Trial"] == N_TRIALS)
             )
         )
         df = df.loc[sel]
 
-        sel = (df["Strategy"] == "Random (100)") | (df["Strategy"] == "Random (10k)")
+        sel = (df["Strategy"] == "Sobol (100)") | (df["Strategy"] == "Sobol (10k)")
         df.loc[sel, "wall_time"] = df.loc[sel, "wall_time"] * 32
 
         data.append(df)
@@ -46,9 +46,7 @@ def load_data(prepend: str = "") -> list[pd.DataFrame]:
 
 
 def get_err_matrix(df: pd.DataFrame) -> None:
-    strategies = sorted(
-        list(df["Strategy"].unique()), key=common.SORTING_RULE.__getitem__
-    )
+    strategies = sorted(list(df["Strategy"].unique()), key=common.SORTING_RULE.__getitem__)
     df = df.drop(
         columns=[
             "seed",
@@ -85,8 +83,8 @@ def get_err_matrix(df: pd.DataFrame) -> None:
 
 def main() -> None:
     data = load_data()
-    data[0].to_csv("errmat_rand_sim.csv")
-    data[1].to_csv("errmat_rand_exp.csv")
+    data[0].to_csv("errmat_sob_sim.csv")
+    data[1].to_csv("errmat_sob_exp.csv")
     get_err_matrix(data[0])
     get_err_matrix(data[1])
 
