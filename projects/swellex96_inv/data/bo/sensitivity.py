@@ -19,8 +19,9 @@ from optimization import utils
 
 import common, param_map
 
-NUM_POINTS = 51
+NUM_POINTS = 201
 PLOT = True
+CP_SB = {"name": "c_p_sed_bot", "type": "range", "bounds": [1570.0, 1610.0]}
 
 
 def compute_sensitivity(simulate=True, num_points=51):
@@ -64,6 +65,8 @@ def compute_sensitivity(simulate=True, num_points=51):
 
     sensitivities = list()
     for i, parameter in enumerate(search_space):
+        if parameter["name"] == "dc_p_sed":
+            parameter = CP_SB
         print(f"Computing {parameter['name']}")
         space = np.linspace(
             parameter["bounds"][0], parameter["bounds"][1], num_points
@@ -106,17 +109,18 @@ def compute_sensitivity(simulate=True, num_points=51):
 
 
 def plot_sensitivity(sensitivities: np.ndarray, parameters: dict):
-    fig, axs = plt.subplots(nrows=len(sensitivities), ncols=1, figsize=(6, 12))
+    fig, axs = plt.subplots(nrows=len(sensitivities), ncols=1, figsize=(6, 8))
     for i, parameter in enumerate(sensitivities):
         if len(sensitivities) > 1:
             ax = axs[i]
         else:
             ax = plt.gca()
-        B = parameter["value"]
+        B = 1 - parameter["value"]
+        print(B.shape, B.max())
+        B = 10 * np.log10(B / B.max())
 
         ax.plot(parameter["space"], B, label=parameter["name"])
         ax.axvline(parameters[parameter["name"]], color="k", linestyle="--")
-        ax.legend()
 
     fig.suptitle(f"{common.FREQ} Hz")
     plt.tight_layout()
@@ -124,8 +128,14 @@ def plot_sensitivity(sensitivities: np.ndarray, parameters: dict):
 
 
 def main():
-    sensitivities_sim = compute_sensitivity(simulate=True, num_points=NUM_POINTS)
-    sensitivities_exp = compute_sensitivity(simulate=False, num_points=NUM_POINTS)
+    # sensitivities_sim = compute_sensitivity(simulate=True, num_points=NUM_POINTS)
+    # sensitivities_exp = compute_sensitivity(simulate=False, num_points=NUM_POINTS)
+    sensitivities_sim = np.load(
+        common.SWELLEX96Paths.outputs / "sensitivity_sim.npy", allow_pickle=True
+    )
+    sensitivities_exp = np.load(
+        common.SWELLEX96Paths.outputs / "sensitivity_exp.npy", allow_pickle=True
+    )
     if PLOT:
         plot_sensitivity(sensitivities_sim, common.TRUE_SIM_VALUES)
         plot_sensitivity(sensitivities_exp, common.TRUE_EXP_VALUES)
