@@ -23,8 +23,8 @@ def plot_sensitivity(
     fig, axs = plt.subplots(
         nrows=nrows,
         ncols=1,
-        figsize=(3, 6),
-        gridspec_kw={"hspace": 0.9, "wspace": 0.25},
+        figsize=(3, 5),
+        gridspec_kw={"hspace": 1.0, "wspace": 0.25},
     )
     print(axs.shape)
     for i, ax in enumerate(axs):
@@ -58,7 +58,9 @@ def plot_sensitivity(
 
         if i < 3:
             ax.set_ylim(0.0, 1.0)
+            ax.set_yticks([0.0, 1.0])
             ax2.set_ylim(0.0, 1.0)
+            ax2.set_yticks([0.0, 1.0])
         elif i == 3:
             ax.set_ylim(0.0, 0.08)
             ax.set_yticks([0.0, 0.08])
@@ -83,10 +85,10 @@ def plot_sensitivity(
             ax2.set_yticks([0.076, 0.082])
 
     lines1, labels1 = ax.get_legend_handles_labels()
-    fig.legend(lines1, labels1, loc="upper center", ncol=1, bbox_to_anchor=(0.2, 0.925))
+    fig.legend(lines1, labels1, loc="upper center", ncol=1, bbox_to_anchor=(0.2, 0.93))
 
     lines2, labels2 = ax2.get_legend_handles_labels()
-    fig.legend(lines2, labels2, loc="upper center", ncol=1, bbox_to_anchor=(0.8, 0.925))
+    fig.legend(lines2, labels2, loc="upper center", ncol=1, bbox_to_anchor=(0.8, 0.93))
 
     return fig
 
