@@ -137,19 +137,19 @@ The file `conf/optimization/common.py` contains configurations common to individ
 
 To generate a queue of optimization configurations that can be run sequentially or in parallel, run the following from the `src` directory:
 ```bash
-bash ./projects/swellex96_localization/scripts/config.sh <serial name> <mode | experimental,simulation>
+bash ./projects/swellex96_loc_tilt/scripts/config.sh <serial name> <mode | experimental,simulation>
 ```
 
 To run an optimization serial (a batch of configurations), run the following from the `src` directory:
 ```bash
-bash ./projects/swellex96_localization/scripts/run.sh <path to queue> <num jobs>
+bash ./projects/swellex96_loc_tilt/scripts/run.sh <path to queue> <num jobs>
 ```
 The queue can be run in parallel by specifying `<num jobs>`.
 
 ### Aggregate Optimization Results
 To aggregate the results of an optimization serial, run the following from the `src` directory:
 ```bash
-bash ./projects/swellex96_localization/scripts/agg.sh <path to queue>
+bash ./projects/swellex96_loc_tilt/scripts/agg.sh <path to queue>
 ```
 Edit `agg.sh` directly to specify which serial to aggregate.
 The output of this script results in two `.csv` files:
@@ -159,6 +159,6 @@ The output of this script results in two `.csv` files:
 ### Plotting Results
 To plot results, run the following from the `src` directory:
 ```bash
-python3 ./projects/swellex96_localization/plotting/figures.py --figures=<1,2,5,...>
+python3 ./projects/swellex96_loc_tilt/visualization/figures.py --figures=<1,2,5,...>
 ```
 The `--figures` argument is a comma-separated list of figures to plot.
