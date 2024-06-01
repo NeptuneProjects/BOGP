@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
-from conf.common import SWELLEX96Paths
+from data.bo.common import SWELLEX96Paths
 
 TIME_STEP = 121
 NOISE_FREQS = [143, 248, 401]
