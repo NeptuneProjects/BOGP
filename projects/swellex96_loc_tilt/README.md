@@ -113,20 +113,19 @@ To perform pre-processing, run the following script from the `src` directory:
 bash ./projects/swellex96_loc_tilt/scripts/process.sh
 ```
 
-<!-- ### Building the Environment Model `json` File
+### Building the Environment Model `json` File
 The environment model for SWellEx-96 is built by running the following script from the `src` directory:
 ```bash
-bash ./projects/swellex96_localization/scripts/build_at_env.sh
+bash ./projects/swellex96_loc_tilt/scripts/build_at_env.sh
 ```
 
-### High-resolution Matched Field Processing (MFP)
-High-resolution MFP is performed to serve as a baseline comparison for the other optimization methods.
-To configure MFP, edit the following file:  
-`conf/data/mfp.yaml`
+### Computing the apparent source location and array tilt
+Apparent values of source location and array tilt are computed from experiment data sources.
+Localization is corrected for the acoustic mirage effect, which arises from the mismatch between the real, range-dependent environment and the range-independent environment model used in localization.
 
-To run MFP, run the following from the `src` directory:
+To compute these values, run the following from the `src` directory:
 ```bash
-python3 ./projects/swellex96_localization/data/mfp.py
+python3 ./projects/swellex96_loc_tilt/data/source_tow.py
 ```
 
 ### Optimization
@@ -157,17 +156,9 @@ The output of this script results in two `.csv` files:
 - `aggregated_results.csv` contains the results of each step of all optimization configurations concatenated into one `csv` file.
 - `best_results.csv` contains only the optimal results from each optimization configuration.
 
-### Collate Results
-For use in producing figures, a final, collated `.csv` is created by collating data and metadata from various sources in the epxerimental data.
-To collate results, run the following from the `src` directory:
-```bash
-bash ./projects/swellex96_localization/scripts/collate.sh
-```
-Edit `collate.sh` directly to specify which serial to aggregate.
-
 ### Plotting Results
 To plot results, run the following from the `src` directory:
 ```bash
 python3 ./projects/swellex96_localization/plotting/figures.py --figures=<1,2,5,...>
 ```
-The `--figures` argument is a comma-separated list of figures to plot. -->
+The `--figures` argument is a comma-separated list of figures to plot.
