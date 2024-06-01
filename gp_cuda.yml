@@ -22,6 +22,7 @@ dependencies:
   - pip:
     - ax-platform
     - hydra-core
+    - hydra-zen
     - SciencePlots
     - tinygp
     - git+https://github.com/NeptuneProjects/OAOptimization.git
