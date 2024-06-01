@@ -6,7 +6,9 @@ This repository contains code used to perform acoustic parameter estimation usin
 
 > William Jenkins, Peter Gerstoft, and Yongsung Park, “Bayesian optimization with Gaussian process surrogate model for source localization,” J Acoust. Soc. Am., vol. 154, no. 3, pp. 1459–1470, Sep. 2023, doi: [10.1121/10.0020839](https://doi.org/10.1121/10.0020839).
 
-> William Jenkins and Peter Gerstoft. "Bayesian optimization with Gaussian processes for robust localization," submitted to IEEE Int. Conf. Acoust., Speech, Signal Process., Sep. 2023.
+> W. F. Jenkins and P. Gerstoft, “Bayesian Optimization with Gaussian Processes for Robust Localization,” in 2024 IEEE International Conference on Acoustics, Speech and Signal Processing, Seoul, Republic of Korea, Apr. 2024, pp. 6010–6014. doi: [10.1109/ICASSP48485.2024.10445808](https://doi.org/10.1109/ICASSP48485.2024.10445808).
+
+> W. F. Jenkins II, P. Gerstoft, and Y. Park, “Geoacoustic inversion with Bayesian optimization,” under review with the Journal of the Acoustical Society of America, Jan. 2024.
 
 ## Installation
 
@@ -35,3 +37,4 @@ This workflow applies to multiple projects and data sets. Specific instructions 
 ----------|------|--------------|
 | Acoustic source localization | SWellEx-96 | [README.md](projects/swellex96_localization/README.md)
 | Source localization robust to array tilt | SWellEx-96 | [README.md](projects/swellex96_loc_tilt/README.md)
+| Geoacoustic inversion | SWellEx-96 | [README.md](projects/swellex96_inv/README.md)
