@@ -34,38 +34,27 @@ The configuration scheme is organized as follows:
 ```
 .
 +-- conf
-|   +-- data
-|   |   +-- acoustics.yaml
-|   |   +-- mfp.yaml
-|   +-- optimization
+|   +-- acoustics.yaml
+|   +-- mfp.yaml
++-- data
+|   +-- bo
 |   |   +-- common.py
-|   |   +-- configure.py
-|   |   +-- run.py
 ```
-The subdirectory `conf/data` implements `yaml` files that are used with the [`Hydra`](https://hydra.cc) configuration management framework.
+The directory `conf` implements `yaml` files that are used with the [`Hydra`](https://hydra.cc) configuration management framework.
 These configuration files control acoustic data preprocessing steps for later use in the workflow.
 
-The subdirectory `conf/optimization` implements Python modules which are used by the [`hydra-zen`](https://mit-ll-responsible-ai.github.io/hydra-zen/) configuration management framework.
-These modules are used to configure the optimization workflow.
-
-Both the `Hydra` and `hydra-zen` frameworks are implemented as I was interested in comparing the two. I think I prefer the `hydra-zen` framework.
+The subdirectory `data/bo` contains Python modules used for Bayesian optimization.
+The `common.py` module contains configurations common to individual optimization strategies and the broader experiment.
 
 ### Source Data Directories
 Experimental data directories are organized as follows:
 ```
 ../../
 +-- data
-|   +-- swellex96_S5_VLA_loc_tilt
+|   +-- swellex96_S5_VLA_inv
 |   |   +-- acoustic
-|   |   |   +-- ambiguity_surfaces
-|   |   |   |   +-- 148-166-201-235-283-338-388_200x100
-|   |   |   |   |   +-- grid_parameters.pkl
-|   |   |   |   |   +-- parameterization.json
-|   |   |   |   |   +-- surface_000.npy
-|   |   |   |   |   +-- ...
-|   |   |   |   |   +-- surface_349.npy
 |   |   |   +-- processed
-|   |   |   |   +-- 201.0Hz
+|   |   |   |   +-- 148.0Hz
 |   |   |   |   |   +-- covariance.npy
 |   |   |   |   |   +-- data_201Hz.mat
 |   |   |   |   |   +-- data.npy
@@ -110,64 +99,49 @@ run:
 
 To perform pre-processing, run the following script from the `src` directory:
 ```bash
-bash ./projects/swellex96_loc_tilt/scripts/process.sh
+bash ./projects/swellex96_inv/scripts/process.sh
 ```
 
-<!-- ### Building the Environment Model `json` File
+### Building the Environment Model `json` File
 The environment model for SWellEx-96 is built by running the following script from the `src` directory:
 ```bash
-bash ./projects/swellex96_localization/scripts/build_at_env.sh
-```
-
-### High-resolution Matched Field Processing (MFP)
-High-resolution MFP is performed to serve as a baseline comparison for the other optimization methods.
-To configure MFP, edit the following file:  
-`conf/data/mfp.yaml`
-
-To run MFP, run the following from the `src` directory:
-```bash
-python3 ./projects/swellex96_localization/data/mfp.py
+bash ./projects/swellex96_inv/scripts/build_at_env.sh
 ```
 
 ### Optimization
-There are two primary optimization configuration files.
-- In `conf/optimization/run.py`, the individual optimization strategies are configured.
-- In `conf/optimization/configure.py`, an entire optimization workflow is configured.
-
-The file `conf/optimization/common.py` contains configurations common to individual optimization strategies and the broader experiment.
-
-To generate a queue of optimization configurations that can be run sequentially or in parallel, run the following from the `src` directory:
+Optimization is run using the following script:
 ```bash
-bash ./projects/swellex96_localization/scripts/config.sh <serial name> <mode | experimental,simulation>
+bash ./projects/swellex96_inv/scripts/run.sh
 ```
 
-To run an optimization serial (a batch of configurations), run the following from the `src` directory:
+To adjust the optimization configuration, make changes to `run.sh` directly.
+The syntax for individual lines in the script can be queried by running:
 ```bash
-bash ./projects/swellex96_localization/scripts/run.sh <path to queue> <num jobs>
+python ./projects/swellex96_inv/data/bo/run.py --help
 ```
-The queue can be run in parallel by specifying `<num jobs>`.
+Nine optimization strategies are available:
+- `ucb`: Bayesian optimization with upper confidence bound acquisition function.
+- `pi`: Bayesian optimization with probability of improvement acquisition function.
+- `ei`: Bayesian optimization with expected improvement acquisition function.
+- `logei`: Bayesian optimization with logarithmic expected improvement acquisition function.
+- `gibbon`: A subspace Bayesian optimization strategy.
+- `baxus`: A subspace Bayesian optimization strategy.
+- `grid`: A gridded direct-search optimization strategy.
+- `random`: A random direct-search optimization strategy.
+- `sobol`: A Sobol sequence direct-search optimization strategy.
 
-### Aggregate Optimization Results
-To aggregate the results of an optimization serial, run the following from the `src` directory:
-```bash
-bash ./projects/swellex96_localization/scripts/agg.sh <path to queue>
+Optimization results are saved to:
 ```
-Edit `agg.sh` directly to specify which serial to aggregate.
-The output of this script results in two `.csv` files:
-- `aggregated_results.csv` contains the results of each step of all optimization configurations concatenated into one `csv` file.
-- `best_results.csv` contains only the optimal results from each optimization configuration.
-
-### Collate Results
-For use in producing figures, a final, collated `.csv` is created by collating data and metadata from various sources in the epxerimental data.
-To collate results, run the following from the `src` directory:
-```bash
-bash ./projects/swellex96_localization/scripts/collate.sh
+../../
++-- data
+|   +-- swellex96_S5_VLA_inv
+|   |   +-- outputs
+|   |   |   +-- runs
+|   |   |   |   +-- <optimization strategy>
 ```
-Edit `collate.sh` directly to specify which serial to aggregate.
 
 ### Plotting Results
 To plot results, run the following from the `src` directory:
 ```bash
-python3 ./projects/swellex96_localization/plotting/figures.py --figures=<1,2,5,...>
+python3 ./projects/swellex96_inv/visualization/figures.py
 ```
-The `--figures` argument is a comma-separated list of figures to plot. -->
