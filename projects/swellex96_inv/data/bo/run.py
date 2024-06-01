@@ -29,15 +29,15 @@ TRUE_DIM = len(common.SEARCH_SPACE)
 
 
 class Strategy(Enum):
-    BAXUS = "baxus"
+    UCB = "ucb"
+    PI = "pi"
     EI = "ei"
     LOGEI = "logei"
     GIBBON = "gibbon"
-    PI = "pi"
-    SOBOL = "sobol"
-    UCB = "ucb"
+    BAXUS = "baxus"
     GRID = "grid"
     RANDOM = "random"
+    SOBOL = "sobol"
 
     def __str__(self):
         return self.value
@@ -46,11 +46,11 @@ class Strategy(Enum):
 def get_loop(
     optim: Strategy, dummy_dim: int, budget: int, n_init: int, beta: float
 ) -> tuple[callable, dict]:
-    if optim == Strategy.BAXUS:
-        loop = baxus.loop
-        kwargs = baxus.BAxUSLoopArgs(
-            true_dim=TRUE_DIM, budget=budget, n_init=n_init, dummy_dim=dummy_dim
-        )
+    if optim == Strategy.UCB:
+        loop = ucb.loop
+    if optim == Strategy.PI:
+        loop = pi.loop
+        kwargs = pi.PILoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
     if optim == Strategy.EI:
         loop = ei.loop
         kwargs = ei.EILoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
@@ -60,21 +60,21 @@ def get_loop(
     if optim == Strategy.GIBBON:
         loop = gibbon.loop
         kwargs = gibbon.GIBBONLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
-    if optim == Strategy.PI:
-        loop = pi.loop
-        kwargs = pi.PILoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
-    if optim == Strategy.SOBOL:
-        loop = sobol.loop
-        kwargs = sobol.SobolLoopArgs(dim=TRUE_DIM, budget=budget)
-    if optim == Strategy.UCB:
-        loop = ucb.loop
-        kwargs = ucb.UCBLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init, beta=beta)
+    if optim == Strategy.BAXUS:
+        loop = baxus.loop
+        kwargs = baxus.BAxUSLoopArgs(
+            true_dim=TRUE_DIM, budget=budget, n_init=n_init, dummy_dim=dummy_dim
+        )
     if optim == Strategy.GRID:
         loop = grid.loop
         kwargs = grid.GridLoopArgs(dim=TRUE_DIM, budget=budget)
     if optim == Strategy.RANDOM:
         loop = rand.loop
         kwargs = rand.RandomLoopArgs(dim=TRUE_DIM, budget=budget)
+    if optim == Strategy.SOBOL:
+        loop = sobol.loop
+        kwargs = sobol.SobolLoopArgs(dim=TRUE_DIM, budget=budget)
+        kwargs = ucb.UCBLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init, beta=beta)
     return loop, asdict(kwargs)
 
 
