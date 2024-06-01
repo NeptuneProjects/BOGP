@@ -1,0 +1,26 @@
+name: gp310
+channels:
+  - pytorch
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.10
+  - arviz
+  - cmocean
+  - jax
+  - jupyterlab
+  - matplotlib
+  - parallel
+  - pip
+  - pyproj
+  - python-graphviz
+  - pytorch
+  - seaborn
+  - pip:
+    - ax-platform
+    - hydra-core
+    - SciencePlots
+    - tinygp
+    - git+https://github.com/NeptuneProjects/TritonOA.git
+    - git+https://github.com/NeptuneProjects/OAOptimization.git
+  
