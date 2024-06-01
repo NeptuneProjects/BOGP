@@ -239,7 +239,7 @@ cs.store(name="run_config", node=RunConfig)
 
 
 @hydra.main(
-    config_path=str(Path(__file__).parents[1] / "conf" / "data"),
+    config_path=str(Path(__file__).parents[1] / "conf"),
     config_name="mfp",
     version_base=None,
 )
