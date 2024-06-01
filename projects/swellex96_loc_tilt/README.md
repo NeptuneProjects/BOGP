@@ -2,7 +2,7 @@
 
 This repository contains the code used to perform acoustic source localization and array tilt estimation using Bayesian optimization with a Gaussian process surrogate model. This work was submitted to IEEE International Conference on Acoustics, Speech, and Signal Processing:
 
-> W. F. Jenkins and P. Gerstoft, “Bayesian Optimization with Gaussian Processes for Robust Localization,” in 2024 IEEE International Conference on Acoustics, Speech and Signal Processing, Seoul, Republic of Korea, Apr. 2024, pp. 6010–6014. doi: 10.1109/ICASSP48485.2024.10445808.
+> W. F. Jenkins and P. Gerstoft, “Bayesian Optimization with Gaussian Processes for Robust Localization,” in 2024 IEEE International Conference on Acoustics, Speech and Signal Processing, Seoul, Republic of Korea, Apr. 2024, pp. 6010–6014. doi: [10.1109/ICASSP48485.2024.10445808](https://doi.org/10.1109/ICASSP48485.2024.10445808).
 
 ## Installation
 
