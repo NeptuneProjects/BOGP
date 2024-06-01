@@ -68,12 +68,12 @@ def figure09():
 
 
 if __name__ == "__main__":
-    # figure01()
-    # figure02()
-    # figure03()
-    # figure04()
-    # figure05()
-    # figure06()
-    # figure07()
+    figure01()
+    figure02()
+    figure03()
+    figure04()
+    figure05()
+    figure06()
+    figure07()
     figure08()
-    # figure09()
+    figure09()
