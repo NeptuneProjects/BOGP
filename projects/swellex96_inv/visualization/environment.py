@@ -31,7 +31,7 @@ BOUNDARY_KWARGS = {
 TEXT_KWARGS = {
     "ha": "center",
     "va": "center",
-    "fontsize": 7,
+    "fontsize": 5,
 }
 CLABEL_XLOC = -0.1
 GLABEL_XLOC = 0.6
@@ -56,7 +56,7 @@ def plot_environment(subfiglabel: str = None):
     ylim = [boundary_locs[0], boundary_locs[-1]]
 
     fig, axs = plt.subplots(
-        ncols=2, figsize=(3, 4), gridspec_kw={"width_ratios": [0.3, 0.7], "wspace": 0.0}
+        ncols=2, figsize=(3, 3), gridspec_kw={"width_ratios": [0.3, 0.7], "wspace": 0.0}
     )
 
     # === SSP Model ===
