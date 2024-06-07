@@ -125,7 +125,7 @@ def plot_environment(subfiglabel: str = None):
 
     # VLA
     ax.plot([VLA_XLOC] * (len(rec_z) + 1), rec_z + [z_b], "k-")
-    ax.scatter([VLA_XLOC] * len(rec_z), rec_z, marker="o", color="k", s=10)
+    ax.scatter([VLA_XLOC] * len(rec_z), rec_z, marker="o", color="k", s=5)
     ax.text(VLA_XLOC, rec_z[0] - 5, "VLA", ha="center")
 
     # Source
@@ -204,13 +204,13 @@ def plot_environment(subfiglabel: str = None):
     )
     ax.text(
         CLABEL_XLOC,
-        boundary_locs[2] + 6,
+        boundary_locs[2] + 9,
         "$c_{m,t} = 1881$ m/s",
         **TEXT_KWARGS,
     )
     ax.text(
         CLABEL_XLOC,
-        boundary_locs[3] - 6,
+        boundary_locs[3] - 9,
         "$c_{m,b} = 3245$ m/s",
         **TEXT_KWARGS,
     )
