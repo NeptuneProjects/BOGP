@@ -212,7 +212,7 @@ def plot_bo_example() -> plt.Figure:
         ax0.plot(x_t, f, color="k", label="$\phi(\mathbf{m})$")
         # Observed data
         ax0.scatter(
-            x, y, color="k", marker="o", facecolor="none", label="$\\boldsymbol{\phi}$"
+            x, y, color="k", marker="o", facecolor="none", label="$\\mathbf{y}$"
         )
         # Posterior mean
         ax0.plot(x_t, mu, color="k", linestyle="--", label="$\mu(\mathbf{m})$")
@@ -230,10 +230,10 @@ def plot_bo_example() -> plt.Figure:
             x_next,
             y_next,
             markerfmt="rD",
-            linefmt=":",
+            linefmt="k:",
             basefmt=" ",
             bottom=-0.2,
-            label="$\phi(\mathbf{m}_{t+1})$",
+            label="$y(\mathbf{m}_{t+1})$",
         )
         markerline.set_markerfacecolor("none")
         ax0.set_xlim(xlim)
@@ -260,7 +260,7 @@ def plot_bo_example() -> plt.Figure:
         ax1.set_yscale(**strategy["acq_yscale"])
         ax1.set_yticks(strategy["yticks"])
         ax1.set_xlabel("$\mathbf{m} = r_\mathrm{src}$ [km]", labelpad=0)
-        ax1.set_ylabel(f"{strategy['label']}\n$\\alpha(\phi(\mathbf{{m}}))$")
+        ax1.set_ylabel(f"{strategy['label']}\n$\\alpha(f(\mathbf{{m}}))$")
 
     return fig
 
