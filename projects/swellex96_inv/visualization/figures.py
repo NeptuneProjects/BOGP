@@ -26,15 +26,15 @@ def figure03():
 
 
 def figure04():
-    import obj_performance
+    import diff_ev
 
-    obj_performance.main(n_init=64).savefig(SAVEPATH / "figure04.pdf", **SAVE_KWARGS)
+    diff_ev.main().savefig(SAVEPATH / "figure04.pdf", **SAVE_KWARGS)
 
 
 def figure05():
-    import diff_ev
+    import obj_performance
 
-    diff_ev.main().savefig(SAVEPATH / "figure05.pdf", **SAVE_KWARGS)
+    obj_performance.main(n_init=64).savefig(SAVEPATH / "figure05.pdf", **SAVE_KWARGS)
 
 
 def figure06():
