@@ -4,7 +4,7 @@
 from pathlib import Path
 
 SAVEPATH = Path.cwd().parent / "reports/manuscripts/202401_JASA"
-SAVE_KWARGS = {"bbox_inches": "tight", "dpi": 1000}
+SAVE_KWARGS = {"bbox_inches": "tight", "dpi": 1200}
 
 
 def figure01():
