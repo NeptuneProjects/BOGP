@@ -58,7 +58,7 @@ def plot_parameter_estimates(data: list[pd.DataFrame], parameters: list[dict]) -
 
             ax = plot_param_dist(df[f"best_{param_name}"], bounds, ax=ax)
 
-            ax.text(0, 1.07, f"({ascii_lowercase[9 * i + j]})", transform=ax.transAxes)
+            ax.text(0, 1.07, f"({ascii_lowercase[7 * i + j]})", transform=ax.transAxes)
             ax.axvline(
                 true_value,
                 color="k",
