@@ -128,8 +128,6 @@ def plot_sensitivity(sensitivities: np.ndarray, parameters: dict):
 
 
 def main():
-    # sensitivities_sim = compute_sensitivity(simulate=True, num_points=NUM_POINTS)
-    # sensitivities_exp = compute_sensitivity(simulate=False, num_points=NUM_POINTS)
     sensitivities_sim = np.load(
         common.SWELLEX96Paths.outputs / "sensitivity_sim.npy", allow_pickle=True
     )

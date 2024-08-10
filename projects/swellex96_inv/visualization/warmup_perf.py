@@ -2,9 +2,7 @@
 # -*- coding: utf-8 -*-
 
 from pathlib import Path
-from string import ascii_lowercase
 import sys
-from typing import Optional
 
 import matplotlib.pyplot as plt
 import pandas as pd

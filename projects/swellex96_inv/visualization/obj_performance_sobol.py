@@ -20,12 +20,6 @@ plt.style.use(["science", "ieee", "std-colors"])
 MODES = ["Simulated", "Experimental"]
 N_INIT = 64
 N_SOBOL = 10000
-# YLIM = [(0.6e-6, 1.0), (0.07, 1.0)]
-# YTICKS = [[1e-6, 1e-4, 1e-2, 1.0], [0.07, 0.1, 0.5, 1.0]]
-# YTICKLABELS = [
-#     ["$10^{-6}$", "$10^{-4}$", "$10^{-2}$", "$10^{0}$"],
-#     ["0.07", "0.1", "0.5", "1.0"],
-# ]
 YLIM = [(-0.01, 0.4), (0.0, 0.4)]
 YTICKS = [[0.0, 0.2, 0.4], [0.0, 0.2, 0.4]]
 YTICKLABELS = YTICKS
@@ -67,31 +61,11 @@ def performance_plot(data: list[pd.DataFrame], de_data: list[pd.DataFrame], n_in
                     ax.set_xlabel("Trial")
                 if j == 1:
                     ax.set_xlabel("Time [s]")
-                # if j == 2:
-                # ax.set_xlabel("Strategy")
 
             ax.grid(True, linestyle="dotted")
-            # if i == 0 and j == 2:
-            #     # Linear Y-axis
-            #     ax.set_ylim(-0.001, 0.04)
-            #     yticks = [0.0, 0.02, 0.04]
-            #     ax.set_yticks(yticks)
-            #     ax.set_yticklabels(yticks)
-            # elif i == 1 and j == 2:
-            #     # Linear Y-axis
-            #     ax.set_ylim(0.07, 0.12)
-            #     yticks = [0.07, 0.10, 0.12]
-            #     minor = [0.08, 0.09, 0.11]
-            #     ax.set_yticks(yticks)
-            #     ax.set_yticks(minor, minor=True)                
-            #     ax.set_yticklabels(yticks)
-            # else:
-            # Logarithmic Y-axis
-            # ax.set_yscale("log")
             ax.set_ylim(YLIM[i])
             ax.set_yticks(YTICKS[i])
             ax.set_yticklabels([]) if j != 0 else ax.set_yticklabels(YTICKLABELS[i])
-            # ax.set_yticklabels(YTICKLABELS[i])
 
             ax.set_xticklabels([]) if i != 1 else None
             ax.set_ylabel("$\widehat{{\phi}}$", rotation=0) if j == 0 else None
@@ -158,26 +132,19 @@ def plot_performance_history(
         )
 
         mean = dfp.mean(axis=1)
-        # std = dfp.std(axis=1)
         min_ = dfp.min(axis=1)
         max_ = dfp.max(axis=1)
-        # ql = dfp.quantile(0.05, axis=1)
-        # qh = dfp.quantile(0.95, axis=1)
         ax.plot(dfp.index, mean, color=common.STRATEGY_COLORS[strategy])
         ax.plot(
             dfp.index,
-            # mean - 2 * std,
             min_,
-            # ql,
             color=common.STRATEGY_COLORS[strategy],
             linestyle="-.",
             linewidth=0.5,
         )
         ax.plot(
             dfp.index,
-            # mean + 2 * std,
             max_,
-            # qh,
             color=common.STRATEGY_COLORS[strategy],
             linestyle="-.",
             linewidth=0.5,
@@ -192,7 +159,6 @@ def plot_wall_time(df: pd.DataFrame, de: pd.DataFrame, n_init: int = 32, ax: Opt
     SCATTER_KWARGS = {
         "s": 10,
         "marker": "o",
-        # "edgecolor": "black",
         "alpha": 0.25,
         "linewidths": 0.5,
         "zorder": 50,

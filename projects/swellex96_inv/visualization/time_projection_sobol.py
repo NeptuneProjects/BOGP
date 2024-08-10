@@ -59,19 +59,15 @@ def time_projection_plot(
     ax.grid(True, linestyle=":", which="minor", linewidth=0.25)
     ax.set_xlim(0.01, 100)
     ax.set_ylim(1e0, 3e6)
-    # ax.tick_params(axis="y", which="minor")
     ax.set_xlabel("Objective Function Duration [s]")
     ax.set_ylabel("Projected Wall Time [s]")
     ax.legend(
-        # prop={"size": 5},
         ncol=3,
         loc="upper left",
         fancybox=False,
         frameon=True,
         framealpha=1.0,
         title="Strategy",
-        # title_fontsize=5,
-        # bbox_to_anchor=(0.0, 1.1),
     )
     return fig
 

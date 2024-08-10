@@ -48,7 +48,6 @@ def build_sim_environment(
         "clow": 1400.0,
         "chigh": 1800.0,
         # 6. Receiver parameters
-        # "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
         "rec_z": [
             94.125,
             99.755,
@@ -106,7 +105,6 @@ def build_exp_environment(
         "clow": 1400.0,
         "chigh": 1800.0,
         # 6. Receiver parameters
-        # "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
         "rec_z": [
             94.125,
             99.755,
@@ -182,7 +180,6 @@ def build_simple_environment(
         "clow": 1400.0,
         "chigh": 1800.0,
         # 6. Receiver parameters
-        # "rec_z": np.linspace(94.125, 212.25, 64).tolist(),
         "rec_z": [
             94.125,
             99.755,

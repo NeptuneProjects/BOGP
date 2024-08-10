@@ -24,8 +24,6 @@ parameter_keys = [
     "h_sed",
     "c_p_sed_top",
     "dc_p_sed",
-    # "a_p_sed",
-    # "rho_sed",
 ]
 
 full_bounds = [
@@ -61,14 +59,6 @@ class Callback:
         self.x.append(intermediate_result.x)
         self.population.append(intermediate_result.population)
         self.population_energies.append(intermediate_result.population_energies)
-        # vals = [f"{key}={self.x[-1][i]}" for i, key in enumerate(parameter_keys)]
-        # print(
-        #     f"Time: {self.elapsed_time[-1]:.2f} s, "
-        #     f"Obj: {self.fun[-1]}, "
-        #     f"It: {self.nit[-1]}, "
-        #     f"nfev: {self.nfev[-1]} | "
-        #     f"{' | '.join(vals)}"
-        # )
 
     def save_results(self, path: Path = Path("de_results.npz")) -> None:
         np.savez(

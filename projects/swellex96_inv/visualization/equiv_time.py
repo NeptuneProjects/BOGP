@@ -115,9 +115,6 @@ def main():
     data_sobol = helpers.load_data(
         path, "sim_sobol_50k/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )
-    # data_rand = helpers.load_data(
-    #     path, "exp_rand_50k/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
-    # )
     data_ei = helpers.load_data(
         path, "sim_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )

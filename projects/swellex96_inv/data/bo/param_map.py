@@ -2,9 +2,6 @@
 
 from typing import Optional
 
-import numpy as np
-# from scipy.interpolate import Akima1DInterpolator
-
 
 def update_depth_and_ssp(
     h_w: float, z_values: list, c_p_values: list
@@ -30,7 +27,7 @@ def update_receiver_depth(dz: float, rec_z: list) -> list:
     return [el + dz for el in rec_z]
 
 
-def update_pivot_depth(dz: float, z_pivot: float) -> float:
+def update_pivot_depth(dz: float, z_pivot: Optional[float] = None) -> float:
     if z_pivot is None:
         return None
     return z_pivot + dz
@@ -38,31 +35,6 @@ def update_pivot_depth(dz: float, z_pivot: float) -> float:
 
 def update_sediment(dz: float, z_values: list) -> list:
     return [el + dz for el in z_values]
-
-
-# def update_ssp(data: dict) -> dict:
-#     z = data["z"]
-#     c = data["c_p"]
-
-    # assert len(z) == len(c)
-    # cs = CubicSpline(z, c, bc_type="clamped")
-    # cs = Akima1DInterpolator(z, c)
-
-    # zs = np.linspace(z[0], z[-1], 100)
-    # data["z"] = zs.tolist()
-    # data["c_p"] = cs(zs).tolist()
-
-    # zs = np.linspace(z[1], z[-2], 50).tolist()
-    # z = [z[0]] + zs + [z[-1]]
-    # c = [c[0]] + cs(zs).tolist() + [c[-1]]
-    # data["z"] = z
-    # data["c_p"] = c
-
-    # plt.plot(c, z, "ko-")
-    # plt.gca().invert_yaxis()
-    # plt.show()
-    # np.save("ssp.npy", data)
-    # return data
 
 
 def format_h_w(
@@ -192,58 +164,5 @@ def format_parameters(
     fixed_parameters, search_parameters = format_rho_sed_top(
         fixed_parameters, search_parameters, rho_sed
     )
-
-    # Adjust SSP
-    # c1 = 1522.0
-    # c2 = 1522.0
-    # c3 = search_parameters.pop("c3", None)
-    # c4 = search_parameters.pop("c4", None)
-    # c5 = search_parameters.pop("c5", None)
-    # c6 = search_parameters.pop("c6", None)
-    # c7 = c6
-    # water_data = fixed_parameters["layerdata"][0]
-    # water_data["z"] = [0.0, 5.0, 30.0, 60.0, 100.0, 150.0, h_w]
-    # water_data["c_p"] = [c1, c2, c3, c4, c5, c6, c7]
-
-    # if z3 is not None and c3 is not None:
-    #     z1, c1 = 0.0, 1522.0
-    #     z2, c2 = 5.0, 1522.0
-    #     # c4 = c3 + dc3
-    #     c4 = c3
-    #     water_data = fixed_parameters["layerdata"][0]
-    #     water_data["z"] = [z1, z2, z3, h_w]
-    #     water_data["c_p"] = [c1, c2, c3, c4]
-    #     fixed_parameters["layerdata"][0] = water_data
-
-
-    # c1 = search_parameters.pop("c1", fixed_parameters["layerdata"][0]["c_p"][0])
-    # c2 = search_parameters.pop("c2", None)
-    # c3 = search_parameters.pop("c3", None)
-    # c4 = search_parameters.pop("c4", None)
-    # c5 = search_parameters.pop("c5", None)
-    # c6 = search_parameters.pop("c6", None)
-    # dc1 = search_parameters.pop("dc1", None)
-    # dc2 = search_parameters.pop("dc2", None)
-    # dc3 = search_parameters.pop("dc3", None)
-    # dc4 = search_parameters.pop("dc4", None)
-    # dc5 = search_parameters.pop("dc5", None)
-
-    # c2 = c1 + dc1
-    # c3 = c2 + dc2
-    # c4 = c3 + dc3
-    # c5 = c4 + dc4
-    # c6 = c5 + dc5
-    # c7 = c6
-    # c_p_values = [c1, c2, c3, c4, c5, c6, c7]
-    
-    # num_extra = len(fixed_parameters["layerdata"][0]["c_p"]) - len(c_p_values)
-    # if num_extra > 0:
-    #     [c_p_values.append(fixed_parameters["layerdata"][0]["c_p"][-1]) for i in range(num_extra)]
-    # else:
-    #     fixed_parameters["layerdata"][0]["c_p"] = c_p_values
-
-    # Interpolate SSP using cubic spline
-    # new_water_data = update_ssp(fixed_parameters["layerdata"][0])
-    # fixed_parameters["layerdata"][0] = new_water_data
 
     return fixed_parameters | {"freq": freq, "title": title} | search_parameters

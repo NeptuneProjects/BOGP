@@ -2,16 +2,11 @@
 # -*- coding: utf-8 -*-
 
 from pathlib import Path
-from string import ascii_lowercase
 import sys
-from typing import Optional
 
-import matplotlib.gridspec as gridspec
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from scipy.interpolate import Akima1DInterpolator
-import seaborn as sns
 import scienceplots
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
@@ -35,19 +30,6 @@ def plot_ssp(data: list[pd.DataFrame]) -> plt.Figure:
     c7 = c6
     c1 = 1522 * np.ones_like(c3)
     c2 = c1
-    # c1 = np.ones_like(c7) * c1
-    # c = np.array([c1, c2, c3, c4, c5, c6, c7])
-    # z = np.array([0, 20, 40, 60, 80, 100, 217])
-
-    # c3 = df["best_c3"]
-    # # c4 = df["best_c4"]
-    # c4 = c3
-    # c1 = np.ones_like(c3) * c1
-    # c2 = c1
-    # c = np.array([c1, c2, c3, c4])
-
-    # z3 = df["best_z3"]
-    # z = np.array([np.zeros_like(z3), np.ones_like(z3) * 5, z3, np.ones_like(z3) * z4])
 
     z1 = np.zeros_like(c1)
     z2 = 5 * np.ones_like(c1)
@@ -61,13 +43,6 @@ def plot_ssp(data: list[pd.DataFrame]) -> plt.Figure:
     c = np.array([c1, c2, c3, c4, c5, c6, c7])
 
     for i in range(c.shape[1]):
-        # zs = np.linspace(z[1], z[-2], 50).tolist()
-        # cs = Akima1DInterpolator(z, c[:, i])
-
-        # zq = [z[0]] + zs + [z[-1]]
-        # cq = [c[0, i]] + cs(zs).tolist() + [c[-1, i]]
-        # plt.plot(cq, zq, "k")
-
         plt.plot(c[:, i], z[:, i], "k", alpha=0.5)
 
     plt.plot(waterdata["c_p"], waterdata["z"], "r")
@@ -80,9 +55,6 @@ def plot_ssp(data: list[pd.DataFrame]) -> plt.Figure:
 
 def main():
     path = common.SWELLEX96Paths.outputs / "runs"
-    # data_sim = helpers.load_data(
-    #     path, f"thermo_sim_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
-    # )
     data_exp = helpers.load_data(
         path, f"full_exp_ei/*.npz", common.SEARCH_SPACE, common.TRUE_VALUES
     )

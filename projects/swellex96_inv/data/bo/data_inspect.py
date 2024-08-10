@@ -6,7 +6,6 @@ import numpy as np
 
 import common, helpers, obj
 
-# PATH = Path.cwd().parent / "data/swellex96_S5_VLA_inv/outputs/runs/sim_logei/logei_100-32_0083.npz"
 PATH = (
     Path.cwd().parent
     / "data/swellex96_S5_VLA_inv/outputs/runs/sim_random/random_10000-32_9216.npz"

@@ -68,11 +68,7 @@ def time_projection_plot(
         framealpha=1.0,
         title="Strategy",
         title_fontsize=10,
-        # bbox_to_anchor=(0.0, 1.1),
     )
-    # plt.rc('axes', labelsize=24)
-    # plt.rc('xtick', labelsize=24)    # fontsize of the tick labels
-    # plt.rc('ytick', labelsize=12)
     return fig
 
 

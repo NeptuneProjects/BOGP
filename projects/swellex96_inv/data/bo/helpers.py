@@ -109,14 +109,7 @@ def parse_name(name: str) -> tuple[str, int, int, str]:
 def record_best_evaluations(
     df: pd.DataFrame, search_space: list[dict], true_values: dict
 ) -> pd.DataFrame:
-    search_parameters = [d["name"] for d in search_space] + [
-        "c_p_sed_bot",
-        # "c2",
-        # "c3",
-        # "c4",
-        # "c5",
-        # "c6",
-    ]
+    search_parameters = [d["name"] for d in search_space] + ["c_p_sed_bot"]
     # Iterate through the dataframe and record the running best evaluation and the corresponding parameters.
     best_obj = np.inf
     best_params = np.zeros(len(search_parameters))
@@ -186,14 +179,12 @@ def construct_run_df(
         df[param] = X[:, j]
 
     df = compute_c_p_sed_bot(df)
-    # df = compute_ssp(df)
 
     df["obj"] = Y
     df["Strategy"] = strategy
     df["n_iter"] = n_iter
     df["n_init"] = n_init
     df["seed"] = seed
-    # df["wall_time"] = pd.TimedeltaIndex(np.cumsum(t), unit="s")
     df["wall_time"] = np.cumsum(t)
     df = record_best_evaluations(df, search_space, true_values)
 
@@ -204,34 +195,6 @@ def compute_c_p_sed_bot(df: pd.DataFrame) -> pd.DataFrame:
     df["c_p_sed_bot"] = df["c_p_sed_top"] + df["dc_p_sed"]
     df["best_c_p_sed_bot"] = np.nan
     df["best_c_p_sed_bot_err"] = np.nan
-    return df
-
-
-def compute_ssp(df: pd.DataFrame) -> pd.DataFrame:
-
-    # df["c4"] = df["c3"]
-    # df["best_c4"] = np.nan
-    # df["best_c4_err"] = np.nan
-
-#     df["c2"] = 1522.0 + df["dc1"]
-#     df["best_c2"] = np.nan
-#     df["best_c2_err"] = np.nan
-
-#     df["c3"] = df["c2"] + df["dc2"]
-#     df["best_c3"] = np.nan
-#     df["best_c3_err"] = np.nan
-
-#     df["c4"] = df["c3"] + df["dc3"]
-#     df["best_c4"] = np.nan
-#     df["best_c4_err"] = np.nan
-
-#     df["c5"] = df["c4"] + df["dc4"]
-#     df["best_c5"] = np.nan
-#     df["best_c5_err"] = np.nan
-
-#     df["c6"] = df["c5"] + df["dc5"]
-#     df["best_c6"] = np.nan
-#     df["best_c6_err"] = np.nan
     return df
 
 
@@ -269,7 +232,6 @@ def adjust_subplotyticklabels(
 
 def agg_de_data(df: pd.DataFrame) -> pd.DataFrame:
     df = df.loc[df.groupby("seed")["nit"].idxmax()]
-    # df_new = pd.DataFrame(columns=["Strategy", "best_obj"])
     df["Strategy"] = ["DE"] * len(df)
     df["best_obj"] = df["obj"].values
     df["c_p_sed_bot"] = df["c_p_sed_top"] + df["dc_p_sed"]
