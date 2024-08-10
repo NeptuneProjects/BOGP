@@ -8,7 +8,7 @@ This repository contains code used to perform acoustic parameter estimation usin
 
 > W. F. Jenkins and P. Gerstoft, “Bayesian Optimization with Gaussian Processes for Robust Localization,” in 2024 IEEE International Conference on Acoustics, Speech and Signal Processing, Seoul, Republic of Korea, Apr. 2024, pp. 6010–6014. doi: [10.1109/ICASSP48485.2024.10445808](https://doi.org/10.1109/ICASSP48485.2024.10445808).
 
-> W. F. Jenkins II, P. Gerstoft, and Y. Park, “Geoacoustic inversion with Bayesian optimization,” under review with the Journal of the Acoustical Society of America, Jan. 2024.
+> W. F. Jenkins, P. Gerstoft, and Y. Park, “Geoacoustic inversion using Bayesian optimization with a Gaussian process surrogate model,” J. Acoust. Soc. Am., vol. 156, no. 2, pp. 812–822, Aug. 2024, doi: [10.1121/10.0028177](https://doi.org/10.1121/10.0028177).
 
 ## Installation
 

@@ -2,7 +2,7 @@
 
 This repository contains the code used to perform geoacoustic inversion using Bayesian optimization with a Gaussian process surrogate model. This work has been submitted to the Journal of the Acoustical Society of America and is currently in review:
 
-> W. F. Jenkins II, P. Gerstoft, and Y. Park, “Geoacoustic inversion with Bayesian optimization,” under review with the Journal of the Acoustical Society of America, Jan. 2024.
+> W. F. Jenkins, P. Gerstoft, and Y. Park, “Geoacoustic inversion using Bayesian optimization with a Gaussian process surrogate model,” J. Acoust. Soc. Am., vol. 156, no. 2, pp. 812–822, Aug. 2024, doi: [10.1121/10.0028177](https://doi.org/10.1121/10.0028177).
 
 ## Installation
 
