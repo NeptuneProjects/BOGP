@@ -1,0 +1,2 @@
+python projects/swellex96_inv/data/bo/run.py --runs=50 --seed=2 --optim=turbo --init=16 --budget=50 --serial=race_sim_turbo --batch_size=1 --simulate
+python projects/swellex96_inv/data/bo/run.py --runs=50 --seed=719 --optim=turbo --init=16 --budget=50 --serial=race_exp_turbo --batch_size=1

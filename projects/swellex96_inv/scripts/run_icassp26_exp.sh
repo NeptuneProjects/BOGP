@@ -1,0 +1,2 @@
+python projects/swellex96_inv/data/bo/run.py --runs=80 --seed=2010 --optim=turbo --init=32 --serial=icassp26_exp_turbo --batch_size=1
+python projects/swellex96_inv/data/bo/run.py --runs=80 --seed=2010 --optim=turbo --init=32 --serial=icassp26_exp_turbo_b4 --batch_size=4

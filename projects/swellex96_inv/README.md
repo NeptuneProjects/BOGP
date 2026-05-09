@@ -5,6 +5,8 @@ This work was published in:
 
 > W. F. Jenkins, P. Gerstoft, and Y. Park, “Geoacoustic inversion using Bayesian optimization with a Gaussian process surrogate model,” J. Acoust. Soc. Am., vol. 156, no. 2, pp. 812–822, Aug. 2024, doi: [10.1121/10.0028177](https://doi.org/10.1121/10.0028177).
 
+> W. F. Jenkins, P. Gerstoft, and Y. Park, "Source Localization and Acoustic Inversion usingh Bayesian Optimization with Local Gaussian Processes," in 2026 IEEE International Conference on Acoustics, Speech and Signal Processing, Barcelona, Spain, May 2026, pp. 22512-22516. doi: [10.1109/ICASSP55912.2026.11463921](https://doi.org/10.1109/ICASSP55912.2026.11463921).
+
 ## Installation
 
 In your desired target directory, run the following command:

@@ -1,0 +1,1 @@
+python projects/swellex96_inv/data/bo/run.py --runs=100 --seed=2010 --optim=logei --init=32 --serial=icassp26_sim_logei --batch_size=1 --simulate

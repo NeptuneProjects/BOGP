@@ -27,30 +27,30 @@ from optimization import utils
 plt.style.use(["science", "ieee", "std-colors"])
 
 strategy_data = [
-    {
-        "label": "UCB",
-        "subfig": "a",
-        "seed": 2009,
-        "bbox_to_anchor": (0.40, 0.71),
-        "ylim": [0.4, 1.25],
-        "acq_yscale": {"value": "linear"},
-        "yticks": [0.5, 1.0],
-        "kappa": 1.0,
-    },
-    {
-        "label": "EI",
-        "subfig": "b",
-        "seed": 719,
-        "bbox_to_anchor": (0.68, 0.71),
-        "ylim": [-0.005, 0.08],
-        "acq_yscale": {"value": "linear"},
-        "yticks": [0.0, 0.05],
-    },
+    # {
+    #     "label": "UCB",
+    #     "subfig": "a",
+    #     "seed": 2009,
+    #     "bbox_to_anchor": (0.40, 0.71),
+    #     "ylim": [0.4, 1.25],
+    #     "acq_yscale": {"value": "linear"},
+    #     "yticks": [0.5, 1.0],
+    #     "kappa": 1.0,
+    # },
+    # {
+    #     "label": "EI",
+    #     "subfig": "b",
+    #     "seed": 719,
+    #     "bbox_to_anchor": (0.68, 0.71),
+    #     "ylim": [-0.005, 0.08],
+    #     "acq_yscale": {"value": "linear"},
+    #     "yticks": [0.0, 0.05],
+    # },
     {
         "label": "LogEI",
-        "subfig": "c",
-        "seed": 719,
-        "bbox_to_anchor": (0.68, 0.71),
+        "subfig": "",
+        "seed": 2009,
+        "bbox_to_anchor": (0.7, 0.7),
         "ylim": [-1e6, -1],
         "acq_yscale": {"value": "symlog", "linthresh": 1e-3},
         "yticks": [-1e6, -1e4, -1e2],
@@ -101,7 +101,7 @@ def log_expected_improvement(
         Log expected improvements at points X.
     """
     print("Computing LogEI")
-    u = _scaled_improvement(mu, sigma, best_f, False)
+    u = _scaled_improvement(torch.tensor(mu), torch.tensor(sigma), best_f, False)
     log_ei = _log_ei_helper(torch.tensor(u)) + np.log(torch.tensor(sigma))
     return log_ei.detach().numpy()
 
@@ -241,15 +241,15 @@ def plot_bo_example() -> plt.Figure:
         ax0.set_xticklabels([])
         ax0.set_ylabel("$\phi(\mathbf{m})$")
         ax0.legend(bbox_to_anchor=strategy["bbox_to_anchor"], prop={"size": 7})
-        ax0.text(
-            -0.14,
-            1.0,
-            f"({strategy['subfig']})",
-            horizontalalignment="center",
-            verticalalignment="center",
-            transform=ax0.transAxes,
-            size=10,
-        )
+        # ax0.text(
+        #     -0.14,
+        #     1.0,
+        #     f"{strategy['subfig']}",
+        #     horizontalalignment="center",
+        #     verticalalignment="center",
+        #     transform=ax0.transAxes,
+        #     size=10,
+        # )
 
         # Acquisition function
         ax1 = fig.add_subplot(inner_gs[1])
@@ -271,4 +271,4 @@ def main() -> plt.Figure:
 
 if __name__ == "__main__":
     fig = main()
-    fig.savefig("bo_ucb_example.png", bbox_inches="tight")
+    fig.savefig("bo_logei_example.png", bbox_inches="tight", dpi=300)

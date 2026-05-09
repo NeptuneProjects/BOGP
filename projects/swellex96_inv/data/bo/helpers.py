@@ -16,11 +16,14 @@ def get_random_seeds(n: int) -> list[int]:
 
 
 def get_initial_points(
-    dim: int, n_pts: int, dtype: torch.dtype, device: torch.device, seed=0
+    dim: int,
+    n_pts: int,
+    dtype: torch.dtype,
+    device: torch.device,
+    seed=0,
 ) -> torch.Tensor:
     sobol = SobolEngine(dimension=dim, scramble=True, seed=seed)
-    # points have to be in [-1, 1]^d
-    return 2 * sobol.draw(n=n_pts).to(dtype=dtype, device=device) - 1
+    return sobol.draw(n=n_pts).to(dtype=dtype, device=device)
 
 
 def initialize_logger_file(
@@ -45,7 +48,7 @@ def get_bounds_from_search_space(search_space: list[dict]) -> np.ndarray:
 
 def transform_to_original_space(X: np.ndarray, search_space: list[dict]) -> np.ndarray:
     bounds = get_bounds_from_search_space(search_space)
-    return bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * (X + 1) / 2
+    return bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * X
 
 
 def get_best_params(X: np.ndarray, Y: np.ndarray, search_space: dict) -> np.ndarray:
@@ -94,6 +97,7 @@ def parse_name(name: str) -> tuple[str, int, int, str]:
         "sobol": "Sobol",
         "baxus": "BAxUS",
         "random": "Random",
+        "turbo": "TuRBO",
     }
 
     parts = name.strip(".npz").split("_")
@@ -147,7 +151,7 @@ def split_sobol_results(df: pd.DataFrame, index: int) -> pd.DataFrame:
 
 
 def construct_run_df(
-    f: Path, search_space: list[dict], true_values: dict
+    f: Path, search_space: list[dict], true_values: dict, include_time: bool = True
 ) -> pd.DataFrame:
     search_parameters = [d["name"] for d in search_space]
     columns = (
@@ -185,7 +189,8 @@ def construct_run_df(
     df["n_iter"] = n_iter
     df["n_init"] = n_init
     df["seed"] = seed
-    df["wall_time"] = np.cumsum(t)
+    if include_time:
+        df["wall_time"] = np.cumsum(t)
     df = record_best_evaluations(df, search_space, true_values)
 
     return df
@@ -199,15 +204,24 @@ def compute_c_p_sed_bot(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def construct_agg_df(
-    files: Generator, search_space: list[dict], true_values: dict
+    files: Generator,
+    search_space: list[dict],
+    true_values: dict,
+    include_time: bool = True,
 ) -> pd.DataFrame:
-    return pd.concat([construct_run_df(f, search_space, true_values) for f in files])
+    return pd.concat(
+        [construct_run_df(f, search_space, true_values, include_time) for f in files]
+    )
 
 
 def load_data(
-    path: Path, pattern: str, search_space: list[dict], true_values: dict
+    path: Path,
+    pattern: str,
+    search_space: list[dict],
+    true_values: dict,
+    include_time: bool = True,
 ) -> pd.DataFrame:
-    return construct_agg_df(path.glob(pattern), search_space, true_values)
+    return construct_agg_df(path.glob(pattern), search_space, true_values, include_time)
 
 
 def adjust_subplotxticklabels(

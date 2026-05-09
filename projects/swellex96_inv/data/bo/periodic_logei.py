@@ -6,20 +6,19 @@ import time
 
 import botorch
 from botorch.acquisition.analytic import LogExpectedImprovement
-from botorch.fit import fit_gpytorch_mll
 from botorch.models import SingleTaskGP
 from botorch.optim import optimize_acqf
-from gpytorch.constraints import Interval
+from gpytorch.constraints import Interval, Positive
+from gpytorch.kernels import ScaleKernel, PeriodicKernel
 from gpytorch.likelihoods import GaussianLikelihood
 from gpytorch.mlls import ExactMarginalLogLikelihood
-import numpy as np
 import torch
 
 import common, helpers
 
 
 @dataclass
-class LogEILoopArgs:
+class PeriodicKernelLogEILoopArgs:
     dim: int
     budget: int = 500
     n_init: int = 100
@@ -39,7 +38,6 @@ def loop(
     device,
     num_restarts,
     raw_samples,
-    starting_points: torch.Tensor | None = None,
     seed: int = 0,
     *args,
     **kwargs,
@@ -48,13 +46,8 @@ def loop(
 
     start = time.time()
 
-    if starting_points is not None:
-        X = starting_points
-    else:
-        X = helpers.get_initial_points(dim, n_init, dtype, device, seed)
-    Y = -torch.tensor(
-        np.array(objective(X.detach().cpu().numpy())), dtype=dtype, device=device
-    )
+    X = helpers.get_initial_points(dim, n_init, dtype, device, seed)
+    Y = -torch.tensor(objective(X.detach().cpu().numpy()), dtype=dtype, device=device)
 
     stop = time.time() - start
     times = [stop / n_init for _ in range(n_init)]
@@ -72,19 +65,24 @@ def loop(
 
             train_Y = (Y - Y.mean()) / Y.std()
             likelihood = GaussianLikelihood(noise_constraint=Interval(1e-8, 1e-3))
-            model = SingleTaskGP(X, train_Y, likelihood=likelihood)
+            model = SingleTaskGP(
+                X,
+                train_Y,
+                likelihood=likelihood,
+                covar_module=ScaleKernel(
+                    PeriodicKernel(lengthscale_constraint=Positive())
+                ),
+            )
             mll = ExactMarginalLogLikelihood(model.likelihood, model)
-
-            fit_gpytorch_mll(mll)
-            # optimizer = torch.optim.AdamW([{"params": model.parameters()}], lr=0.1)
-            # model.train()
-            # model.likelihood.train()
-            # for _ in range(100):
-            #     optimizer.zero_grad()
-            #     output = model(X)
-            #     loss = -mll(output, train_Y.squeeze())
-            #     loss.backward()
-            #     optimizer.step()
+            optimizer = torch.optim.AdamW([{"params": model.parameters()}], lr=0.1)
+            model.train()
+            model.likelihood.train()
+            for _ in range(100):
+                optimizer.zero_grad()
+                output = model(X)
+                loss = -mll(output, train_Y.squeeze())
+                loss.backward()
+                optimizer.step()
 
             # Create a batch
             logei = LogExpectedImprovement(model, train_Y.max())
@@ -92,7 +90,7 @@ def loop(
                 logei,
                 bounds=torch.stack(
                     [
-                        torch.zeros(dim, dtype=dtype, device=device),
+                        -torch.ones(dim, dtype=dtype, device=device),
                         torch.ones(dim, dtype=dtype, device=device),
                     ]
                 ),
@@ -101,7 +99,7 @@ def loop(
                 raw_samples=raw_samples,
             )
             Y_next = -torch.tensor(
-                np.array(objective(candidate.detach().cpu().numpy())),
+                objective(candidate.detach().cpu().numpy()),
                 dtype=dtype,
                 device=device,
             )

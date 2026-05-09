@@ -2,18 +2,31 @@
 # -*- coding: utf-8 -*-
 
 import argparse
+import json
+import logging
+import random
+import warnings
 from dataclasses import asdict
 from enum import Enum
 from functools import partial
-import json
-import logging
 from pathlib import Path
-import random
-import warnings
 
+import baxus
+import common
+import ei
+import gibbon
+import grid
+import helpers
+import logei
 import numpy as np
-
-import baxus, ei, gibbon, helpers, obj, pi, sobol, ucb, grid, common, rand, logei
+import obj
+import periodic_logei
+import pi
+import rand
+import sobol
+import torch
+import turbo
+import ucb
 
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
@@ -38,13 +51,20 @@ class Strategy(Enum):
     GRID = "grid"
     RANDOM = "random"
     SOBOL = "sobol"
+    PERIODIC_LOGEI = "periodic_logei"
+    TURBO = "turbo"
 
     def __str__(self):
         return self.value
 
 
 def get_loop(
-    optim: Strategy, dummy_dim: int, budget: int, n_init: int, beta: float
+    optim: Strategy,
+    dummy_dim: int,
+    budget: int,
+    n_init: int,
+    beta: float,
+    batch_size: int = 1,
 ) -> tuple[callable, dict]:
     if optim == Strategy.UCB:
         loop = ucb.loop
@@ -57,6 +77,11 @@ def get_loop(
     if optim == Strategy.LOGEI:
         loop = logei.loop
         kwargs = logei.LogEILoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
+    if optim == Strategy.PERIODIC_LOGEI:
+        loop = periodic_logei.loop
+        kwargs = periodic_logei.PeriodicKernelLogEILoopArgs(
+            dim=TRUE_DIM, budget=budget, n_init=n_init
+        )
     if optim == Strategy.GIBBON:
         loop = gibbon.loop
         kwargs = gibbon.GIBBONLoopArgs(dim=TRUE_DIM, budget=budget, n_init=n_init)
@@ -64,6 +89,11 @@ def get_loop(
         loop = baxus.loop
         kwargs = baxus.BAxUSLoopArgs(
             true_dim=TRUE_DIM, budget=budget, n_init=n_init, dummy_dim=dummy_dim
+        )
+    if optim == Strategy.TURBO:
+        loop = turbo.loop
+        kwargs = turbo.TurboLoopArgs(
+            dim=TRUE_DIM, budget=budget, n_init=n_init, batch_size=batch_size
         )
     if optim == Strategy.GRID:
         loop = grid.loop
@@ -82,40 +112,87 @@ def main(args) -> None:
     Path.mkdir(args.dir / args.serial, parents=True, exist_ok=True)
 
     loop, kwargs = get_loop(
-        args.optim, dummy_dim=args.ndummy, budget=args.budget, n_init=args.init, beta=args.beta
+        args.optim,
+        dummy_dim=args.ndummy,
+        budget=args.budget,
+        n_init=args.init,
+        batch_size=args.batch_size,
+        beta=args.beta,
     )
     dtype = kwargs.pop("dtype", None)
     device = kwargs.pop("device", None)
 
-    random.seed(args.seed)
+    # X_start = helpers.get_initial_points(
+    #     TRUE_DIM, args.init, dtype, device, args.seed
+    # )
+
+    # objective = partial(obj.objective, simulate=args.simulate)
+    # Y = -torch.tensor(
+    #     np.array(objective(X_start.detach().cpu().numpy())), dtype=dtype, device=device
+    # )
+    # print(f"Initial best value: {(-Y).min().item():.5f}")
+    # helpers.log_best_value_and_parameters(
+    #     X_start.detach().cpu().numpy(), -Y.detach().cpu().numpy(), common.SEARCH_SPACE
+    # )
+
     seeds = helpers.get_random_seeds(args.runs)
+    print(seeds)
 
     print("=" * 100)
     for seed in seeds:
         fname = f"{args.optim}_{args.budget}-{args.init}_{seed:04d}"
-        helpers.initialize_logger_file(args.dir / args.serial / f"{fname}.log", logger, logfmt)
+        if (args.dir / args.serial / f"{fname}.npz").exists() and (
+            args.dir / args.serial / f"{fname}.json"
+        ).exists():
+            print(f"Skipping {fname} ...")
+            continue
+        helpers.initialize_logger_file(
+            args.dir / args.serial / f"{fname}.log", logger, logfmt
+        )
 
-        X, Y, times = loop(
-            objective=partial(obj.objective, simulate=args.simulate),
-            dtype=dtype,
-            device=device,
-            **{**kwargs | {"seed": seed}},
-        )
-        X, Y, times = (
-            X.detach().cpu().numpy(),
-            Y.detach().cpu().numpy(),
-            np.array(times),
-        )
+        if args.optim == Strategy.TURBO:
+            X, Y, times, lengths = loop(
+                objective=partial(obj.objective, simulate=args.simulate),
+                # starting_points=X_start,
+                dtype=dtype,
+                device=device,
+                **{**kwargs | {"seed": seed}},
+            )
+            X, Y, times, lengths = (
+                X.detach().cpu().numpy(),
+                Y.detach().cpu().numpy(),
+                np.array(times),
+                np.array(lengths),
+            )
+            np.savez(
+                args.dir / args.serial / fname,
+                X=X,
+                Y=Y,
+                t=times,
+                l=lengths,
+            )
+        else:
+            X, Y, times = loop(
+                objective=partial(obj.objective, simulate=args.simulate),
+                # starting_points=X_start,
+                dtype=dtype,
+                device=device,
+                **{**kwargs | {"seed": seed}},
+            )
+            X, Y, times = (
+                X.detach().cpu().numpy(),
+                Y.detach().cpu().numpy(),
+                np.array(times),
+            )
+            np.savez(
+                args.dir / args.serial / fname,
+                X=X,
+                Y=Y,
+                t=times,
+            )
 
         with open(args.dir / args.serial / f"{fname}.json", "w") as f:
             json.dump(kwargs, f, indent=4)
-
-        np.savez(
-            args.dir / args.serial / fname,
-            X=X,
-            Y=Y,
-            t=times,
-        )
 
         print("-" * 100)
         logger.info("*** Optimization complete. ***")
@@ -148,6 +225,12 @@ if __name__ == "__main__":
         help="Choose the number of warmup trials.",
         type=int,
         default=10 if SMOKE_TEST else 32,
+    )
+    parser.add_argument(
+        "--batch_size",
+        help="Choose the batch size (only for TURBO).",
+        type=int,
+        default=1,
     )
     parser.add_argument(
         "--runs",
@@ -191,4 +274,7 @@ if __name__ == "__main__":
         action="store_true",
     )
     args = parser.parse_args()
+    random.seed(args.seed)
+    np.random.seed(args.seed)
+    torch.manual_seed(args.seed)
     main(args)

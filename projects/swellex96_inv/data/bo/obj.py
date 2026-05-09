@@ -73,11 +73,11 @@ def get_objective(simulate: bool = True) -> MatchedFieldProcessor:
 def objective(
     x: np.ndarray, true_dim: Optional[int] = None, simulate: bool = True
 ) -> list[float]:
-    """x is assumed to be in [-1, 1]^D"""
+    """x is assumed to be in [0, 1]^D"""
     xs = x[:, :true_dim]
     objective = get_objective(simulate=simulate)
     search_space = common.SEARCH_SPACE
     bounds = get_bounds_from_search_space(search_space)
-    xs = bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * (xs + 1) / 2
+    xs = bounds[:, 0] + (bounds[:, 1] - bounds[:, 0]) * xs
     parameters = convert_tensor_to_parameters(xs)
     return evaluate_objective(objective, parameters)

@@ -75,15 +75,19 @@ SEARCH_SPACE = [
 STRATEGY_COLORS = {
     "Sobol (100)": "tab:red",
     "Random (100)": "tab:red",
+    "Random": "tab:red",
     "Sobol (10k)": "tab:orange",
     "Random (10k)": "tab:orange",
     "BO-UCB": "tab:purple",
     "BO-EI": "tab:blue",
     "BO-LogEI": "tab:green",
     "DE": "black",
+    "TuRBO (q=1)": "tab:cyan",
+    "TuRBO (q=4)": "tab:olive",
 }
 SORTING_RULE = {
     "Sobol (100)": 0,
+    "Random": 1,
     "Random (100)": 1,
     "Sobol (10k)": 2,
     "Random (10k)": 3,
@@ -91,6 +95,8 @@ SORTING_RULE = {
     "BO-EI": 5,
     "BO-LogEI": 6,
     "DE": 7,
+    "TuRBO (q=1)": 8,
+    "TuRBO (q=4)": 9,
 }
 
 
