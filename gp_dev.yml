@@ -10,11 +10,13 @@ dependencies:
   - jax
   - jupyterlab
   - matplotlib
+  - numpy
   - parallel
   - pip
   - pyproj
   - python-graphviz
   - pytorch
+  - scipy
   - seaborn
   - pip:
     - ax-platform
